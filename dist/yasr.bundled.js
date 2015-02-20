@@ -49855,7 +49855,7 @@ return jQuery;
 },{}],24:[function(require,module,exports){
 module.exports={
   "name": "yasgui-utils",
-  "version": "1.5.0",
+  "version": "1.5.2",
   "description": "Utils for YASGUI libs",
   "main": "src/main.js",
   "repository": {
@@ -49868,12 +49868,13 @@ module.exports={
       "url": "http://yasgui.github.io/license.txt"
     }
   ],
-  "author": "Laurens Rietveld",
+  "author": {
+    "name": "Laurens Rietveld"
+  },
   "maintainers": [
     {
-      "name": "Laurens Rietveld",
-      "email": "laurens.rietveld@gmail.com",
-      "web": "http://laurensrietveld.nl"
+      "name": "laurens.rietveld",
+      "email": "laurens.rietveld@gmail.com"
     }
   ],
   "bugs": {
@@ -49882,7 +49883,21 @@ module.exports={
   "homepage": "https://github.com/YASGUI/Utils",
   "dependencies": {
     "store": "^1.3.14"
-  }
+  },
+  "_id": "yasgui-utils@1.5.2",
+  "dist": {
+    "shasum": "c7d06928898e788ee2958969e4c2dc26f435aa64",
+    "tarball": "http://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.5.2.tgz"
+  },
+  "_from": "yasgui-utils@>=1.4.1 <2.0.0",
+  "_npmVersion": "1.4.3",
+  "_npmUser": {
+    "name": "laurens.rietveld",
+    "email": "laurens.rietveld@gmail.com"
+  },
+  "directories": {},
+  "_shasum": "c7d06928898e788ee2958969e4c2dc26f435aa64",
+  "_resolved": "https://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.5.2.tgz"
 }
 
 },{}],25:[function(require,module,exports){
@@ -49892,6 +49907,17 @@ module.exports = {
 	svg: require("./svg.js"),
 	version: {
 		"yasgui-utils" : require("../package.json").version,
+	},
+	nestedExists : function(obj) {
+		var args = Array.prototype.slice.call(arguments, 1);
+
+		for (var i = 0; i < args.length; i++) {
+			if (!obj || !obj.hasOwnProperty(args[i])) {
+				return false;
+			}
+			obj = obj[args[i]];
+		}
+		return true;
 	}
 };
 
@@ -49912,7 +49938,7 @@ var times = {
 var root = module.exports = {
 	set : function(key, val, exp) {
     if (!store.enabled) return;//this is probably in private mode. Don't run, as we might get Js errors
-		if (key && val) {
+		if (key && val !== undefined) {
 			if (typeof exp == "string") {
 				exp = times[exp]();
 			}
@@ -51341,6 +51367,7 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"yasgui-utils": require("yasgui-utils").version
 };
+root.utils = require('./utils.js');
 root.$ = $;
 
 
@@ -52215,7 +52242,7 @@ var root = module.exports = function(yasr) {
 	};
 	
 	plugin.draw = function() {
-		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable"></table>');
+		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable table table-striped table-bordered fixedCellWidth"></table>');
 		$(yasr.resultsContainer).html(table);
 
 		var dataTableConfig = options.datatable;
@@ -52365,9 +52392,6 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 
 
 
-
-
-
 var addPrefLabel = function(td) {
 	var addEmptyTitle = function() {
 		td.attr("title","");//this avoids trying to fetch the label again on next hover
@@ -52409,7 +52433,7 @@ root.defaults = {
 	 * @return string
 	 * @default YASR.plugins.table.getFormattedValueFromBinding
 	 */
-	getCellContent: getCellContent,
+	getCellContent: getCellContentCustom,
 	
 	persistency: {
 		tableLength: "tableLength",
@@ -52519,12 +52543,12 @@ root.defaults = {
 		],
 	},
 };
-
 root.version = {
 	"YASR-table" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 	"jquery-datatables": $.fn.DataTable.version
 };
+
 
 },{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":28,"./bindingsToCsv.js":29,"./imgs.js":36,"./utils.js":49,"jquery":19,"yasgui-utils":25}],49:[function(require,module,exports){
 'use strict';

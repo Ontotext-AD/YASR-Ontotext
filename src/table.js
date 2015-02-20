@@ -96,7 +96,7 @@ var root = module.exports = function(yasr) {
 	};
 	
 	plugin.draw = function() {
-		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable"></table>');
+		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable table table-striped table-bordered fixedCellWidth"></table>');
 		$(yasr.resultsContainer).html(table);
 
 		var dataTableConfig = options.datatable;
@@ -246,9 +246,6 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 
 
 
-
-
-
 var addPrefLabel = function(td) {
 	var addEmptyTitle = function() {
 		td.attr("title","");//this avoids trying to fetch the label again on next hover
@@ -290,7 +287,7 @@ root.defaults = {
 	 * @return string
 	 * @default YASR.plugins.table.getFormattedValueFromBinding
 	 */
-	getCellContent: getCellContent,
+	getCellContent: getCellContentCustom,
 	
 	persistency: {
 		tableLength: "tableLength",
@@ -400,9 +397,9 @@ root.defaults = {
 		],
 	},
 };
-
 root.version = {
 	"YASR-table" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 	"jquery-datatables": $.fn.DataTable.version
 };
+

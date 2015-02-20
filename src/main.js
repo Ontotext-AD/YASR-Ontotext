@@ -385,6 +385,7 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"yasgui-utils": require("yasgui-utils").version
 };
+root.utils = require('./utils.js');
 root.$ = $;
 
 

@@ -311,7 +311,7 @@ var root = module.exports = function(parent, options, queryResults) {
 			})
 			yasr.header.append(embedBtn);
 		};
-		drawFullscreenButton();drawSmallscreenButton();
+		// drawFullscreenButton();drawSmallscreenButton();
 		if (yasr.options.drawOutputSelector) drawOutputSelector();
 		if (yasr.options.drawDownloadIcon && checkBlobDownloadSupported()) drawDownloadIcon();//only draw when it's supported
 		drawEmbedButton();
@@ -390,10 +390,11 @@ root.$ = $;
 
 
 
+// Desi: make table default
 //put these in a try-catch. When using the unbundled version, and when some dependencies are missing, then YASR as a whole will still function
 try {root.registerOutput('boolean', require("./boolean.js"))} catch(e){};
-try {root.registerOutput('rawResponse', require("./rawResponse.js"))} catch(e){};
 try {root.registerOutput('table', require("./table.js"))} catch(e){};
+try {root.registerOutput('rawResponse', require("./rawResponse.js"))} catch(e){};
 try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};

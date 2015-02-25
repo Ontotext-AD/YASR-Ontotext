@@ -251,7 +251,12 @@ var root = module.exports = function(parent, options, queryResults) {
 //						downloadMockLink[0].click();
 					}
 				});
+			var saveAsDropDown = $(require('./extensions.js').saveAsDropDown);
+			saveAsDropDown.find(".format").click(function () {
+				yasr.getQueryResultsAsFormat($(this).data("accepts"));
+			});
 			yasr.header.append(button);
+			yasr.header.append(saveAsDropDown);
 		};
 		var drawFullscreenButton = function() {
 			var button = $("<button class='yasr_btn btn_fullscreen btn_icon'></button>")

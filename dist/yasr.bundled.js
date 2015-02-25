@@ -3,7 +3,7 @@
 //the current browserify version does not support require-ing js files which are used as entry-point
 //this way, we can still require our main.js file
 module.exports = require('./main.js');
-},{"./main.js":39}],2:[function(require,module,exports){
+},{"./main.js":40}],2:[function(require,module,exports){
 /*! DataTables 1.10.2
  * ©2008-2014 SpryMedia Ltd - datatables.net/license
  */
@@ -50239,7 +50239,7 @@ root.version = {
 };
 
 
-},{"../package.json":28,"./imgs.js":36,"jquery":19,"yasgui-utils":25}],31:[function(require,module,exports){
+},{"../package.json":28,"./imgs.js":37,"jquery":19,"yasgui-utils":25}],31:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
 module.exports = {
@@ -50450,6 +50450,30 @@ module.exports = {
 	}
 }
 },{}],34:[function(require,module,exports){
+'use strict';
+module.exports = {
+	saveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
+                                '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
+                                    'Save as &nbsp;<span class="caret"></span>' + 
+                                '</button>' + 
+                                '<ul class="dropdown-menu" role="menu">' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/sparql-results+json" href="javascript:;">JSON</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/sparql-results+xml" href="javascript:;">XML</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="text/csv" href="javascript:;">CSV</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="text/tab-separated-values" href="javascript:;">TSV</a>' +
+                                    '</li>' + 
+                                '</ul>' + 
+                            '</div>'
+};
+
+},{}],35:[function(require,module,exports){
 (function (global){
 var EventEmitter = require('events').EventEmitter,
 	$ = require('jquery');
@@ -50561,7 +50585,7 @@ module.exports = new loader();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"events":5,"jquery":19}],35:[function(require,module,exports){
+},{"events":5,"jquery":19}],36:[function(require,module,exports){
 (function (global){
 'use strict';
 /**
@@ -50864,7 +50888,7 @@ function deepEq$(x, y, type){
 }
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./exceptions.js":33,"./gChartLoader.js":34,"./utils.js":49,"jquery":19,"yasgui-utils":25}],36:[function(require,module,exports){
+},{"./exceptions.js":33,"./gChartLoader.js":35,"./utils.js":50,"jquery":19,"yasgui-utils":25}],37:[function(require,module,exports){
 'use strict';
 module.exports = {
 	cross: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve"><g>	<path d="M83.288,88.13c-2.114,2.112-5.575,2.112-7.689,0L53.659,66.188c-2.114-2.112-5.573-2.112-7.687,0L24.251,87.907   c-2.113,2.114-5.571,2.114-7.686,0l-4.693-4.691c-2.114-2.114-2.114-5.573,0-7.688l21.719-21.721c2.113-2.114,2.113-5.573,0-7.686   L11.872,24.4c-2.114-2.113-2.114-5.571,0-7.686l4.842-4.842c2.113-2.114,5.571-2.114,7.686,0L46.12,33.591   c2.114,2.114,5.572,2.114,7.688,0l21.721-21.719c2.114-2.114,5.573-2.114,7.687,0l4.695,4.695c2.111,2.113,2.111,5.571-0.003,7.686   L66.188,45.973c-2.112,2.114-2.112,5.573,0,7.686L88.13,75.602c2.112,2.111,2.112,5.572,0,7.687L83.288,88.13z"/></g></svg>',
@@ -50877,9 +50901,9 @@ module.exports = {
 	fullscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="640"     inkscape:window-height="480"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="0"     inkscape:current-layer="Layer_1" /><path     d="m -7.962963,-10 v 38.889 l 16.667,-16.667 16.667,16.667 5.555,-5.555 -16.667,-16.667 16.667,-16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 92.037037,-10 v 38.889 l -16.667,-16.667 -16.666,16.667 -5.556,-5.555 16.666,-16.667 -16.666,-16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M -7.962963,90 V 51.111 l 16.667,16.666 16.667,-16.666 5.555,5.556 -16.667,16.666 16.667,16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M 92.037037,90 V 51.111 l -16.667,16.666 -16.666,-16.666 -5.556,5.556 16.666,16.666 -16.666,16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 	smallscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="1855"     inkscape:window-height="1056"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="1"     inkscape:current-layer="Layer_1" /><path     d="m 30.926037,28.889 0,-38.889 -16.667,16.667 -16.667,-16.667 -5.555,5.555 16.667,16.667 -16.667,16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,28.889 0,-38.889 16.667,16.667 16.666,-16.667 5.556,5.555 -16.666,16.667 16.666,16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 30.926037,51.111 0,38.889 -16.667,-16.666 -16.667,16.666 -5.555,-5.556 16.667,-16.666 -16.667,-16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,51.111 0,38.889 16.667,-16.666 16.666,16.666 5.556,-5.556 -16.666,-16.666 16.666,-16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 };
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 require('./tableToCsv.js');
-},{"./tableToCsv.js":38}],38:[function(require,module,exports){
+},{"./tableToCsv.js":39}],39:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
 
@@ -50979,7 +51003,7 @@ $.fn.tableToCsv = function(config) {
 }
 
 
-},{"jquery":19}],39:[function(require,module,exports){
+},{"jquery":19}],40:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var utils = require("yasgui-utils");
@@ -51233,7 +51257,12 @@ var root = module.exports = function(parent, options, queryResults) {
 //						downloadMockLink[0].click();
 					}
 				});
+			var saveAsDropDown = $(require('./extensions.js').saveAsDropDown);
+			saveAsDropDown.find(".format").click(function () {
+				yasr.getQueryResultsAsFormat($(this).data("accepts"));
+			});
 			yasr.header.append(button);
+			yasr.header.append(saveAsDropDown);
 		};
 		var drawFullscreenButton = function() {
 			var button = $("<button class='yasr_btn btn_fullscreen btn_icon'></button>")
@@ -51293,7 +51322,7 @@ var root = module.exports = function(parent, options, queryResults) {
 			})
 			yasr.header.append(embedBtn);
 		};
-		drawFullscreenButton();drawSmallscreenButton();
+		// drawFullscreenButton();drawSmallscreenButton();
 		if (yasr.options.drawOutputSelector) drawOutputSelector();
 		if (yasr.options.drawDownloadIcon && checkBlobDownloadSupported()) drawDownloadIcon();//only draw when it's supported
 		drawEmbedButton();
@@ -51372,20 +51401,21 @@ root.$ = $;
 
 
 
+// Desi: make table default
 //put these in a try-catch. When using the unbundled version, and when some dependencies are missing, then YASR as a whole will still function
 try {root.registerOutput('boolean', require("./boolean.js"))} catch(e){};
-try {root.registerOutput('rawResponse', require("./rawResponse.js"))} catch(e){};
 try {root.registerOutput('table', require("./table.js"))} catch(e){};
+try {root.registerOutput('rawResponse', require("./rawResponse.js"))} catch(e){};
 try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};
-},{"../package.json":28,"./boolean.js":30,"./defaults.js":31,"./error.js":32,"./gChartLoader.js":34,"./gchart.js":35,"./imgs.js":36,"./jquery/extendJquery.js":37,"./parsers/wrapper.js":44,"./pivot.js":46,"./rawResponse.js":47,"./table.js":48,"./utils.js":49,"jquery":19,"yasgui-utils":25}],40:[function(require,module,exports){
+},{"../package.json":28,"./boolean.js":30,"./defaults.js":31,"./error.js":32,"./extensions.js":34,"./gChartLoader.js":35,"./gchart.js":36,"./imgs.js":37,"./jquery/extendJquery.js":38,"./parsers/wrapper.js":45,"./pivot.js":47,"./rawResponse.js":48,"./table.js":49,"./utils.js":50,"jquery":19,"yasgui-utils":25}],41:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, ",");
 };
-},{"./dlv.js":41,"jquery":19}],41:[function(require,module,exports){
+},{"./dlv.js":42,"jquery":19}],42:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
 require("../../lib/jquery.csv-0.71.js");
@@ -51447,7 +51477,7 @@ var root = module.exports = function(queryResponse, separator) {
 	
 	return json;
 };
-},{"../../lib/jquery.csv-0.71.js":4,"jquery":19}],42:[function(require,module,exports){
+},{"../../lib/jquery.csv-0.71.js":4,"jquery":19}],43:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
@@ -51465,13 +51495,13 @@ var root = module.exports = function(queryResponse) {
 	return false;
 	
 };
-},{"jquery":19}],43:[function(require,module,exports){
+},{"jquery":19}],44:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, "\t");
 };
-},{"./dlv.js":41,"jquery":19}],44:[function(require,module,exports){
+},{"./dlv.js":42,"jquery":19}],45:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 
@@ -51705,7 +51735,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 
 
 
-},{"./csv.js":40,"./json.js":42,"./tsv.js":43,"./xml.js":45,"jquery":19}],45:[function(require,module,exports){
+},{"./csv.js":41,"./json.js":43,"./tsv.js":44,"./xml.js":46,"jquery":19}],46:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(xml) {
@@ -51791,7 +51821,7 @@ var root = module.exports = function(xml) {
 	return json;
 };
 
-},{"jquery":19}],46:[function(require,module,exports){
+},{"jquery":19}],47:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	utils = require('./utils.js'),
@@ -52054,7 +52084,7 @@ root.version = {
 	"YASR-rawResponse" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 };
-},{"../node_modules/pivottable/dist/d3_renderers.js":20,"../node_modules/pivottable/dist/gchart_renderers.js":21,"../package.json":28,"./gChartLoader.js":34,"./imgs.js":36,"./utils.js":49,"d3":14,"jquery":19,"jquery-ui/sortable":17,"pivottable":22,"yasgui-utils":25}],47:[function(require,module,exports){
+},{"../node_modules/pivottable/dist/d3_renderers.js":20,"../node_modules/pivottable/dist/gchart_renderers.js":21,"../package.json":28,"./gChartLoader.js":35,"./imgs.js":37,"./utils.js":50,"d3":14,"jquery":19,"jquery-ui/sortable":17,"pivottable":22,"yasgui-utils":25}],48:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	CodeMirror = require("codemirror");
@@ -52143,7 +52173,7 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"CodeMirror" : CodeMirror.version
 };
-},{"../package.json":28,"codemirror":11,"codemirror/addon/edit/matchbrackets.js":6,"codemirror/addon/fold/brace-fold.js":7,"codemirror/addon/fold/foldcode.js":8,"codemirror/addon/fold/foldgutter.js":9,"codemirror/addon/fold/xml-fold.js":10,"codemirror/mode/javascript/javascript.js":12,"codemirror/mode/xml/xml.js":13,"jquery":19}],48:[function(require,module,exports){
+},{"../package.json":28,"codemirror":11,"codemirror/addon/edit/matchbrackets.js":6,"codemirror/addon/fold/brace-fold.js":7,"codemirror/addon/fold/foldcode.js":8,"codemirror/addon/fold/foldgutter.js":9,"codemirror/addon/fold/xml-fold.js":10,"codemirror/mode/javascript/javascript.js":12,"codemirror/mode/xml/xml.js":13,"jquery":19}],49:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	yutils = require("yasgui-utils"),
@@ -52550,7 +52580,7 @@ root.version = {
 };
 
 
-},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":28,"./bindingsToCsv.js":29,"./imgs.js":36,"./utils.js":49,"jquery":19,"yasgui-utils":25}],49:[function(require,module,exports){
+},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":28,"./bindingsToCsv.js":29,"./imgs.js":37,"./utils.js":50,"jquery":19,"yasgui-utils":25}],50:[function(require,module,exports){
 'use strict';
 var $ = require('jquery'),
 	GoogleTypeException = require('./exceptions.js').GoogleTypeException;

@@ -4866,10 +4866,20 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.updateHeader = function() {
 		var downloadIcon = yasr.header.find(".yasr_downloadIcon")
 				.removeAttr("title");//and remove previous titles
+		var saveAsButton = yasr.header.find(".saveAsDropDown");
 		var embedButton = yasr.header.find(".yasr_embedBtn");
 		var outputPlugin = yasr.plugins[yasr.options.output];
 		if (outputPlugin) {
-			
+			// Show our SaveAs for table view
+			if (outputPlugin.name == 'Table') {
+				downloadIcon.hide();
+				// jquery show puts display:block and moves the element
+				saveAsButton.removeAttr("style");
+			} else {
+				saveAsButton.hide();
+				downloadIcon.show();
+			}
+						
 			//Manage download link
 			var info = (outputPlugin.getDownloadInfo? outputPlugin.getDownloadInfo(): null);
 			if (info) {
@@ -5040,8 +5050,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				}
 				return url;
 			};
-			var button = $("<button class='yasr_btn yasr_downloadIcon btn_icon'></button>")
-				.append(require("yasgui-utils").svg.getElement(require('./imgs.js').download))
+			var button = $("<button class='btn btn-success btn-sm yasr_downloadIcon'>Save</button>")
 				.click(function() {
 					var currentPlugin = yasr.plugins[yasr.options.output];
 					if (currentPlugin && currentPlugin.getDownloadInfo) {

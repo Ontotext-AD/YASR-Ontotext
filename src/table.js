@@ -133,8 +133,10 @@ var root = module.exports = function(yasr) {
 			//and: make sure the height of the resize handlers matches the height of the table header
 			$(yasr.resultsContainer).find('.JCLRgrip').css('marginTop', headerHeight + 'px');
 		}
-		
-		
+		// Use placeholder instead of label
+		var searchFilter = yasr.resultsContainer.find('.dataTables_filter label');
+		searchFilter.contents().get(0).remove()
+		searchFilter.find('input[type=search]').attr('placeholder', 'Filter query results').addClass('form-control');
 	};
 	
 	var drawSvgIcons = function() {

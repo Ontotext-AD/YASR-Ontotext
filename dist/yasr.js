@@ -6131,9 +6131,16 @@ var root = module.exports = function(yasr) {
 		};
 		table.find(".sortIcons").remove();
 		for (var sorting in sortings) {
-			var svgDiv = $("<div class='sortIcons'></div>");
-			yutils.svg.draw(svgDiv, imgs[sortings[sorting]]);
-			table.find("th." + sorting).append(svgDiv);
+			var sortIconsDiv = $("<div class='sortIcons'></div>");
+			if (sorting == "sorting") {
+				sortIconsDiv.append("<a class='icon-sort'></a>");
+			} else if (sorting == "sorting_asc") {
+				sortIconsDiv.append("<a class='icon-sort-by-alphabet'></a>");
+			} else if (sorting == "sorting_desc") {
+				sortIconsDiv.append("<a class='iicon-sort-by-alphabet-alt'></a>");
+			}
+
+			table.find("th." + sorting).append(sortIconsDiv);
 		}
 	};
 	/**

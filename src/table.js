@@ -151,7 +151,7 @@ var root = module.exports = function(yasr) {
 			} else if (sorting == "sorting_asc") {
 				sortIconsDiv.append("<a class='icon-sort-by-alphabet'></a>");
 			} else if (sorting == "sorting_desc") {
-				sortIconsDiv.append("<a class='iicon-sort-by-alphabet-alt'></a>");
+				sortIconsDiv.append("<a class='icon-sort-by-alphabet-alt'></a>");
 			}
 
 			table.find("th." + sorting).append(sortIconsDiv);

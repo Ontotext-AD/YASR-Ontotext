@@ -50454,7 +50454,7 @@ module.exports = {
 module.exports = {
 	saveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
                                 '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Save as &nbsp;<span class="caret"></span>' + 
+                                    'Save all as &nbsp;<span class="caret"></span>' + 
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
@@ -51080,7 +51080,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				saveAsButton.hide();
 				downloadIcon.show();
 			}
-						
+
 			//Manage download link
 			var info = (outputPlugin.getDownloadInfo? outputPlugin.getDownloadInfo(): null);
 			if (info) {
@@ -51209,17 +51209,18 @@ var root = module.exports = function(parent, options, queryResults) {
 	var embedBtn = null;
 	var drawHeader = function(yasr) {
 		var drawOutputSelector = function() {
-			var btnGroup = $('<div class="yasr_btnGroup"></div>');
+			var menuUl = $('<ul class="yasr_btnGroup nav nav-tabs"></ul>');
 			$.each(yasr.plugins, function(pluginName, plugin) {
 				if (plugin.hideFromSelection) return;
 				var name = plugin.name || pluginName;
-				var button = $("<button class='yasr_btn'></button>")
+				var li = $("<li></li>");
+				var link = $("<a></a>")
 				.text(name)
 				.addClass("select_" + pluginName)
 				.click(function() {
 					//update buttons
-					btnGroup.find("button.selected").removeClass("selected");
-					$(this).addClass("selected");
+					menuUl.find("li.active").removeClass("active");
+					li.addClass("active");
 					//set and draw output
 					yasr.options.output = pluginName;
 					
@@ -51235,11 +51236,12 @@ var root = module.exports = function(parent, options, queryResults) {
 					yasr.draw();
 					yasr.updateHeader();
 				})
-				.appendTo(btnGroup);
-				if (yasr.options.output == pluginName) button.addClass("selected");
+				.appendTo(li);
+				li.appendTo(menuUl);
+				if (yasr.options.output == pluginName) li.addClass("active");
 			});
 			
-			if (btnGroup.children().length > 1) yasr.header.append(btnGroup);
+			if (menuUl.children().length > 1) yasr.header.append(menuUl);
 		};
 		var drawDownloadIcon = function() {
 			var stringToUrl = function(string, contentType) {
@@ -52308,7 +52310,7 @@ var root = module.exports = function(yasr) {
 		$(yasr.resultsContainer).find('.JCLRgrip').height(table.find('thead').outerHeight());
 		
 		//move the table upward, so the table options nicely aligns with the yasr header
-		var headerHeight = yasr.header.outerHeight() - 5; //add some space of 5 px between table and yasr header
+		var headerHeight = yasr.header.outerHeight(); //do not add some space of 5 px between table and yasr header
 		if (headerHeight > 0) {
 			yasr.resultsContainer.find(".dataTables_wrapper")
 				.css("position", "relative")

@@ -123,7 +123,7 @@ var root = module.exports = function(yasr) {
 		$(yasr.resultsContainer).find('.JCLRgrip').height(table.find('thead').outerHeight());
 		
 		//move the table upward, so the table options nicely aligns with the yasr header
-		var headerHeight = yasr.header.outerHeight() - 5; //add some space of 5 px between table and yasr header
+		var headerHeight = yasr.header.outerHeight(); //do not add some space of 5 px between table and yasr header
 		if (headerHeight > 0) {
 			yasr.resultsContainer.find(".dataTables_wrapper")
 				.css("position", "relative")

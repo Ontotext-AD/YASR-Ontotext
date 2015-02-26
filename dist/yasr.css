@@ -715,13 +715,6 @@
       display: inline-block; }
     .yasr.yasr_fullscreen .btn_fullscreen {
       display: none; }
-  .yasr a {
-    color: #428bca;
-    text-decoration: none; }
-    .yasr a:hover, .yasr a:active {
-      outline: 0;
-      color: #2a6496;
-      text-decoration: underline; }
   .yasr th {
     text-align: left; }
   .yasr .yasr_header * {

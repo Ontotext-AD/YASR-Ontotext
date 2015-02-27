@@ -166,6 +166,18 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	var getOriginalResponse = function() {
 		return origResponse;
 	};
+	var getShortOriginalResponse = function(limit) {
+		if (type == "json") {
+			if (json.results && json.results.bindings && json.results.bindings.length > limit) {
+					var shortJson = jQuery.extend(true, {}, json);
+					shortJson.results.bindings = json.results.bindings.slice(0, limit);				
+					return JSON.stringify(shortJson, undefined, 2);
+				} else {
+					return getOriginalResponseAsString();
+				}
+		}
+		return getOriginalResponseAsString().slice(0, limit);
+	};
 	var getOriginalResponseAsString = function() {
 		var responseString = "";
 		if (typeof origResponse == "string") {
@@ -218,6 +230,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		getAsStoreObject: getAsStoreObject,
 		getAsJson: getAsJson,
 		getOriginalResponse: getOriginalResponse,
+		getShortOriginalResponse: getShortOriginalResponse,
 		getOriginalResponseAsString: getOriginalResponseAsString,
 		getOriginalContentType: function(){return contentType;},
 		getVariables: getVariables,

@@ -376,6 +376,7 @@ root.defaults = {
 	 * @type object
 	 */
 	datatable: {
+		"paginate": false,
 		"autoWidth": false,
 		"order": [],//disable initial sorting
 		"pageLength": 50,//default page length

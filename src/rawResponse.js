@@ -17,7 +17,10 @@ var root = module.exports = function(yasr) {
 	var cm = null;
 	var draw = function() {
 		var cmOptions = options.CodeMirror;
-		cmOptions.value = yasr.results.getOriginalResponseAsString();
+		cmOptions.value = yasr.results.getShortOriginalResponse(options.limit);
+		if (cmOptions.value.length < yasr.results.getOriginalResponseAsString().length) {
+			yasr.resultsContainer.prepend('<div class="alert alert-info">Raw response limited to first ' + options.limit + ' results. Get all through "Save all as" in table view.</div>');
+		}
 		
 		var mode = yasr.results.getType();
 		if (mode) {
@@ -78,7 +81,8 @@ root.defaults = {
 	    lineWrapping: true,
 	    foldGutter: true,
 	    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
-	}
+	},
+	limit: 100
 };
 
 root.version = {

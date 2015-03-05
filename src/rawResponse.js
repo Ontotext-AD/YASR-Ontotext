@@ -18,8 +18,8 @@ var root = module.exports = function(yasr) {
 	var draw = function() {
 		var cmOptions = options.CodeMirror;
 		cmOptions.value = yasr.results.getShortOriginalResponse(options.limit);
-		if (cmOptions.value.length < yasr.results.getOriginalResponseAsString().length) {
-			yasr.resultsContainer.prepend('<div class="alert alert-info">Raw response limited to first ' + options.limit + ' results. Get all through "Save all as" in table view.</div>');
+		if (yasr.resultsCount > options.limit) {
+			yasr.resultsInfo.find('.res-count').text(options.limit);
 		}
 		
 		var mode = yasr.results.getType();

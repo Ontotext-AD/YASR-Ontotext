@@ -51026,9 +51026,9 @@ var root = module.exports = function(parent, options, queryResults) {
 	
 	var yasr = {};
 	yasr.options = $.extend(true, {}, root.defaults, options);
-	
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span> of <span class='all-count'></span></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
 	
@@ -51107,10 +51107,10 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 	};
 	yasr.draw = function(output) {
+		yasr.updateResultsInfo();
 		if (!yasr.results) return false;
 		if (!output) output = yasr.options.output;
-		
-		
+
 		//ah, our default output does not take our current results. Try to autodetect
 		var selectedOutput = null;
 		var selectedOutputPriority = -1;
@@ -51155,24 +51155,63 @@ var root = module.exports = function(parent, options, queryResults) {
 		return !yasr.resultsContainer.is(":empty");
 	};
 
+	yasr.resetResults = function() {
+		yasr.resultsInfo.hide();
+		yasr.resultsCount = undefined;
+		yasr.allCount = undefined;
+	}
+
+	yasr.updateResultsInfo = function() {
+		if (yasr.resultsCount == undefined && yasr.allCount == undefined) {
+			return;
+		}
+		if (yasr.resultsCount == undefined) {
+			yasr.resultsInfo.find('.res-count').text('loading..');
+		} else {
+			yasr.resultsInfo.find('.res-count').text(yasr.resultsCount);
+		}
+		if (yasr.allCount == undefined) {
+			yasr.resultsInfo.find('.all-count').text('loading..');
+		} else {
+			yasr.resultsInfo.find('.all-count').text(yasr.allCount);
+		}
+		yasr.resultsInfo.show();
+	}
+
+	yasr.setResultsCount = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
+		var result = dataOrJqXhr.responseJSON.results.bindings[0];
+		var vars = dataOrJqXhr.responseJSON.head.vars;
+		var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
+		if (bindingVars.length > 0) {
+			yasr.allCount = result[bindingVars[0]].value;
+		} 
+		yasr.updateResultsInfo();
+	}
+
 	yasr.setResponse = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
 		try {
 			yasr.results = require("./parsers/wrapper.js")(dataOrJqXhr, textStatus, jqXhrOrErrorString);
 		} catch(exception) {
 			yasr.results = {getException: function(){return exception}};
 		}
+		
+		yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
+		yasr.updateResultsInfo();
 		yasr.draw();
 		
 		//store if needed
-		var resultsId = yasr.getPersistencyId(yasr.options.persistency.results.key);
-		if (resultsId) {
-			if (yasr.results.getOriginalResponseAsString && yasr.results.getOriginalResponseAsString().length < yasr.options.persistency.results.maxSize) {
-				utils.storage.set(resultsId, yasr.results.getAsStoreObject(), "month");
-			} else {
-				//remove old string
-				utils.storage.remove(resultsId);
+		if (yasr.options.persistency) {
+			var resultsId = yasr.getPersistencyId(yasr.options.persistency.results.key);
+			if (resultsId) {
+				if (yasr.results.getOriginalResponseAsString && yasr.results.getOriginalResponseAsString().length < yasr.options.persistency.results.maxSize) {
+					utils.storage.set(resultsId, yasr.results.getAsStoreObject(), "month");
+				} else {
+					//remove old string
+					utils.storage.remove(resultsId);
+				}
 			}
 		}
+
 	};
 	var $toggableWarning = null;
 	var $toggableWarningClose = null;
@@ -51336,7 +51375,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		// drawFullscreenButton();drawSmallscreenButton();
 		if (yasr.options.drawOutputSelector) drawOutputSelector();
 		if (yasr.options.drawDownloadIcon && checkBlobDownloadSupported()) drawDownloadIcon();//only draw when it's supported
-		drawEmbedButton();
+		// drawEmbedButton();
+		yasr.resultsInfo.hide();
 	};
 	
 	
@@ -52129,8 +52169,8 @@ var root = module.exports = function(yasr) {
 	var draw = function() {
 		var cmOptions = options.CodeMirror;
 		cmOptions.value = yasr.results.getShortOriginalResponse(options.limit);
-		if (cmOptions.value.length < yasr.results.getOriginalResponseAsString().length) {
-			yasr.resultsContainer.prepend('<div class="alert alert-info">Raw response limited to first ' + options.limit + ' results. Get all through "Save all as" in table view.</div>');
+		if (yasr.resultsCount > options.limit) {
+			yasr.resultsInfo.find('.res-count').text(options.limit);
 		}
 		
 		var mode = yasr.results.getType();

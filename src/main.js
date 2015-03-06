@@ -22,7 +22,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
-	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span> of <span class='all-count'></span></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
 	
@@ -166,6 +166,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		if (yasr.allCount == undefined) {
 			yasr.resultsInfo.find('.all-count').text('loading..');
+		} else if (yasr.allCount == -1) {
+			yasr.resultsInfo.find('.all-info').hide();
 		} else {
 			yasr.resultsInfo.find('.all-count').text(yasr.allCount);
 		}
@@ -173,12 +175,19 @@ var root = module.exports = function(parent, options, queryResults) {
 	}
 
 	yasr.setResultsCount = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
-		var result = dataOrJqXhr.responseJSON.results.bindings[0];
-		var vars = dataOrJqXhr.responseJSON.head.vars;
-		var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
-		if (bindingVars.length > 0) {
-			yasr.allCount = result[bindingVars[0]].value;
+		yasr.allCount = -1;
+		if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
+			yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;
 		} 
+		if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
+			var result = dataOrJqXhr.responseJSON.results.bindings[0];
+			var vars = dataOrJqXhr.responseJSON.head.vars;
+			var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
+			if (bindingVars.length > 0) {
+				yasr.allCount = result[bindingVars[0]].value;
+			} 
+		}
+
 		yasr.updateResultsInfo();
 	}
 

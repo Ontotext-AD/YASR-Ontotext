@@ -18,10 +18,12 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		xml: require("./xml.js"),
 		json: require("./json.js"),
 		tsv: require("./tsv.js"),
-		csv: require("./csv.js")
+		csv: require("./csv.js"),
+		graphJson: require("./graphJson.js"),
 	};
 	var contentType = null;
 	var origResponse = null;
+	var rawJson = null;
 	var json = null;
 	var type = null;//json, xml, csv, or tsv
 	var exception = null;
@@ -77,6 +79,10 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		}
 	};
 
+	var getRawJson = function() {
+		return rawJson;
+	} 
+
 	var getAsJson = function() {
 		if (json) return json;
 		if (json === false || exception) return false;//already tried parsing this, and failed. do not try again... 
@@ -84,7 +90,11 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 			if (contentType) {
 				if (contentType.indexOf("json") > -1) {
 					try {
-						json = parsers.json(origResponse);
+						json = parsers.json(origResponse, window.editor.getQueryType());
+						rawJson = json;
+						if ("CONSTRUCT" == window.editor.getQueryType()) {
+							json = parsers.graphJson(rawJson);
+						}
 					} catch (e) {
 						exception = e;
 					}
@@ -168,13 +178,15 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	};
 	var getShortOriginalResponse = function(limit) {
 		if (type == "json") {
-			if (json.results && json.results.bindings && json.results.bindings.length > limit) {
-					var shortJson = jQuery.extend(true, {}, json);
-					shortJson.results.bindings = json.results.bindings.slice(0, limit);				
-					return JSON.stringify(shortJson, undefined, 2);
-				} else {
-					return getOriginalResponseAsString();
-				}
+			if (rawJson.results && rawJson.results.bindings && rawJson.results.bindings.length > limit) {
+					var shortJson = jQuery.extend(true, {}, rawJson);
+					shortJson.results.bindings = rawJson.results.bindings.slice(0, limit);				
+			}
+			else {
+				var keys = _.keys(rawJson).slice(0, limit);
+				shortJson = _.filter(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
+			}
+			return JSON.stringify(shortJson, undefined, 2);
 		}
 		return getOriginalResponseAsString().slice(0, limit);
 	};
@@ -228,6 +240,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	
 	return {
 		getAsStoreObject: getAsStoreObject,
+		getRawJson: getRawJson,
 		getAsJson: getAsJson,
 		getOriginalResponse: getOriginalResponse,
 		getShortOriginalResponse: getShortOriginalResponse,

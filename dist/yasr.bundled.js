@@ -50888,7 +50888,7 @@ function deepEq$(x, y, type){
 }
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./exceptions.js":33,"./gChartLoader.js":35,"./utils.js":50,"jquery":19,"yasgui-utils":25}],37:[function(require,module,exports){
+},{"./exceptions.js":33,"./gChartLoader.js":35,"./utils.js":51,"jquery":19,"yasgui-utils":25}],37:[function(require,module,exports){
 'use strict';
 module.exports = {
 	cross: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve"><g>	<path d="M83.288,88.13c-2.114,2.112-5.575,2.112-7.689,0L53.659,66.188c-2.114-2.112-5.573-2.112-7.687,0L24.251,87.907   c-2.113,2.114-5.571,2.114-7.686,0l-4.693-4.691c-2.114-2.114-2.114-5.573,0-7.688l21.719-21.721c2.113-2.114,2.113-5.573,0-7.686   L11.872,24.4c-2.114-2.113-2.114-5.571,0-7.686l4.842-4.842c2.113-2.114,5.571-2.114,7.686,0L46.12,33.591   c2.114,2.114,5.572,2.114,7.688,0l21.721-21.719c2.114-2.114,5.573-2.114,7.687,0l4.695,4.695c2.111,2.113,2.111,5.571-0.003,7.686   L66.188,45.973c-2.112,2.114-2.112,5.573,0,7.686L88.13,75.602c2.112,2.111,2.112,5.572,0,7.687L83.288,88.13z"/></g></svg>',
@@ -51028,7 +51028,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
-	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span> of <span class='all-count'></span></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
 	
@@ -51172,6 +51172,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		if (yasr.allCount == undefined) {
 			yasr.resultsInfo.find('.all-count').text('loading..');
+		} else if (yasr.allCount == -1) {
+			yasr.resultsInfo.find('.all-info').hide();
 		} else {
 			yasr.resultsInfo.find('.all-count').text(yasr.allCount);
 		}
@@ -51179,12 +51181,19 @@ var root = module.exports = function(parent, options, queryResults) {
 	}
 
 	yasr.setResultsCount = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
-		var result = dataOrJqXhr.responseJSON.results.bindings[0];
-		var vars = dataOrJqXhr.responseJSON.head.vars;
-		var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
-		if (bindingVars.length > 0) {
-			yasr.allCount = result[bindingVars[0]].value;
+		yasr.allCount = -1;
+		if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
+			yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;
 		} 
+		if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
+			var result = dataOrJqXhr.responseJSON.results.bindings[0];
+			var vars = dataOrJqXhr.responseJSON.head.vars;
+			var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
+			if (bindingVars.length > 0) {
+				yasr.allCount = result[bindingVars[0]].value;
+			} 
+		}
+
 		yasr.updateResultsInfo();
 	}
 
@@ -51460,7 +51469,7 @@ try {root.registerOutput('rawResponse', require("./rawResponse.js"))} catch(e){}
 try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};
-},{"../package.json":28,"./boolean.js":30,"./defaults.js":31,"./error.js":32,"./extensions.js":34,"./gChartLoader.js":35,"./gchart.js":36,"./imgs.js":37,"./jquery/extendJquery.js":38,"./parsers/wrapper.js":45,"./pivot.js":47,"./rawResponse.js":48,"./table.js":49,"./utils.js":50,"jquery":19,"yasgui-utils":25}],41:[function(require,module,exports){
+},{"../package.json":28,"./boolean.js":30,"./defaults.js":31,"./error.js":32,"./extensions.js":34,"./gChartLoader.js":35,"./gchart.js":36,"./imgs.js":37,"./jquery/extendJquery.js":38,"./parsers/wrapper.js":46,"./pivot.js":48,"./rawResponse.js":49,"./table.js":50,"./utils.js":51,"jquery":19,"yasgui-utils":25}],41:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
@@ -51531,8 +51540,61 @@ var root = module.exports = function(queryResponse, separator) {
 },{"../../lib/jquery.csv-0.71.js":4,"jquery":19}],43:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
-var root = module.exports = function(queryResponse) {
+
+var getAsObject = function(entity) {
+	if (typeof entity == "object") {
+		if ("bnode" == entity.type) {
+			entity.value = entity.value.slice(2);
+		}
+		return entity;
+	}
+	if (entity.indexOf("_:") == 0) {
+		return {
+			type: "bnode",
+			value: entity.slice(2)
+		}
+	}
+	return {
+			type: "uri",
+			value: entity
+		}
+}
+var root = module.exports = function(responseJson) {
+	if (responseJson) {
+		var mapped = _.map(responseJson, function(value, subject) { 
+			return _.map(value, function (value1, predicate) {
+				return _.map(value1, function(object) {
+					return [
+						getAsObject(subject),
+						getAsObject(predicate),
+						getAsObject(object),
+					] 
+				})
+			})
+		});
+		var reduced = _.reduce(mapped, function(memo, el) {return memo.concat(el)}, []);
+		reduced = _.reduce(reduced, function(memo, el) {return memo.concat(el)}, []);
+		var bindings = reduced.map(function(triple) {return {subject : triple[0], predicate: triple[1], object: triple[2]}});
+
+		return {
+			"head" : {
+				"vars" : [ "subject", "predicate", "object" ]
+				},
+				"results" : {
+					"bindings": bindings
+				}
+			};
+
+	}
+	return false;
 	
+};
+},{"jquery":19}],44:[function(require,module,exports){
+'use strict';
+var $ = require("jquery");
+
+var root = module.exports = function(queryResponse) {
+	var responseJson;
 	if (typeof queryResponse == "string") {
 		try {
 			return JSON.parse(queryResponse);
@@ -51546,13 +51608,13 @@ var root = module.exports = function(queryResponse) {
 	return false;
 	
 };
-},{"jquery":19}],44:[function(require,module,exports){
+},{"jquery":19}],45:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, "\t");
 };
-},{"./dlv.js":42,"jquery":19}],45:[function(require,module,exports){
+},{"./dlv.js":42,"jquery":19}],46:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 
@@ -51573,10 +51635,12 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		xml: require("./xml.js"),
 		json: require("./json.js"),
 		tsv: require("./tsv.js"),
-		csv: require("./csv.js")
+		csv: require("./csv.js"),
+		graphJson: require("./graphJson.js"),
 	};
 	var contentType = null;
 	var origResponse = null;
+	var rawJson = null;
 	var json = null;
 	var type = null;//json, xml, csv, or tsv
 	var exception = null;
@@ -51632,6 +51696,10 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		}
 	};
 
+	var getRawJson = function() {
+		return rawJson;
+	} 
+
 	var getAsJson = function() {
 		if (json) return json;
 		if (json === false || exception) return false;//already tried parsing this, and failed. do not try again... 
@@ -51639,7 +51707,11 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 			if (contentType) {
 				if (contentType.indexOf("json") > -1) {
 					try {
-						json = parsers.json(origResponse);
+						json = parsers.json(origResponse, window.editor.getQueryType());
+						rawJson = json;
+						if ("CONSTRUCT" == window.editor.getQueryType()) {
+							json = parsers.graphJson(rawJson);
+						}
 					} catch (e) {
 						exception = e;
 					}
@@ -51723,13 +51795,15 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	};
 	var getShortOriginalResponse = function(limit) {
 		if (type == "json") {
-			if (json.results && json.results.bindings && json.results.bindings.length > limit) {
-					var shortJson = jQuery.extend(true, {}, json);
-					shortJson.results.bindings = json.results.bindings.slice(0, limit);				
-					return JSON.stringify(shortJson, undefined, 2);
-				} else {
-					return getOriginalResponseAsString();
-				}
+			if (rawJson.results && rawJson.results.bindings && rawJson.results.bindings.length > limit) {
+					var shortJson = jQuery.extend(true, {}, rawJson);
+					shortJson.results.bindings = rawJson.results.bindings.slice(0, limit);				
+			}
+			else {
+				var keys = _.keys(rawJson).slice(0, limit);
+				shortJson = _.filter(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
+			}
+			return JSON.stringify(shortJson, undefined, 2);
 		}
 		return getOriginalResponseAsString().slice(0, limit);
 	};
@@ -51783,6 +51857,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	
 	return {
 		getAsStoreObject: getAsStoreObject,
+		getRawJson: getRawJson,
 		getAsJson: getAsJson,
 		getOriginalResponse: getOriginalResponse,
 		getShortOriginalResponse: getShortOriginalResponse,
@@ -51799,7 +51874,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 
 
 
-},{"./csv.js":41,"./json.js":43,"./tsv.js":44,"./xml.js":46,"jquery":19}],46:[function(require,module,exports){
+},{"./csv.js":41,"./graphJson.js":43,"./json.js":44,"./tsv.js":45,"./xml.js":47,"jquery":19}],47:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(xml) {
@@ -51885,7 +51960,7 @@ var root = module.exports = function(xml) {
 	return json;
 };
 
-},{"jquery":19}],47:[function(require,module,exports){
+},{"jquery":19}],48:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	utils = require('./utils.js'),
@@ -52148,7 +52223,7 @@ root.version = {
 	"YASR-rawResponse" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 };
-},{"../node_modules/pivottable/dist/d3_renderers.js":20,"../node_modules/pivottable/dist/gchart_renderers.js":21,"../package.json":28,"./gChartLoader.js":35,"./imgs.js":37,"./utils.js":50,"d3":14,"jquery":19,"jquery-ui/sortable":17,"pivottable":22,"yasgui-utils":25}],48:[function(require,module,exports){
+},{"../node_modules/pivottable/dist/d3_renderers.js":20,"../node_modules/pivottable/dist/gchart_renderers.js":21,"../package.json":28,"./gChartLoader.js":35,"./imgs.js":37,"./utils.js":51,"d3":14,"jquery":19,"jquery-ui/sortable":17,"pivottable":22,"yasgui-utils":25}],49:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	CodeMirror = require("codemirror");
@@ -52241,7 +52316,7 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"CodeMirror" : CodeMirror.version
 };
-},{"../package.json":28,"codemirror":11,"codemirror/addon/edit/matchbrackets.js":6,"codemirror/addon/fold/brace-fold.js":7,"codemirror/addon/fold/foldcode.js":8,"codemirror/addon/fold/foldgutter.js":9,"codemirror/addon/fold/xml-fold.js":10,"codemirror/mode/javascript/javascript.js":12,"codemirror/mode/xml/xml.js":13,"jquery":19}],49:[function(require,module,exports){
+},{"../package.json":28,"codemirror":11,"codemirror/addon/edit/matchbrackets.js":6,"codemirror/addon/fold/brace-fold.js":7,"codemirror/addon/fold/foldcode.js":8,"codemirror/addon/fold/foldgutter.js":9,"codemirror/addon/fold/xml-fold.js":10,"codemirror/mode/javascript/javascript.js":12,"codemirror/mode/xml/xml.js":13,"jquery":19}],50:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	yutils = require("yasgui-utils"),
@@ -52621,12 +52696,12 @@ root.defaults = {
 	 */
 	datatable: {
 		"paginate": false,
+		"info": false,
 		"autoWidth": false,
 		"order": [],//disable initial sorting
 		"pageLength": 50,//default page length
     	"lengthMenu": [[10, 50, 100, 1000, -1], [10, 50, 100, 1000, "All"]],//possible page lengths
     	"lengthChange": true,//allow changing page length
-    	"pagingType": "full_numbers",//how to show the pagination options
         "drawCallback": function ( oSettings ) {
         	//trick to show row numbers
         	for ( var i = 0; i < oSettings.aiDisplay.length; i++) {
@@ -52658,7 +52733,7 @@ root.version = {
 };
 
 
-},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":28,"./bindingsToCsv.js":29,"./imgs.js":37,"./utils.js":50,"jquery":19,"yasgui-utils":25}],50:[function(require,module,exports){
+},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":28,"./bindingsToCsv.js":29,"./imgs.js":37,"./utils.js":51,"jquery":19,"yasgui-utils":25}],51:[function(require,module,exports){
 'use strict';
 var $ = require('jquery'),
 	GoogleTypeException = require('./exceptions.js').GoogleTypeException;

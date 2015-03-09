@@ -4251,9 +4251,9 @@ module.exports = {
 },{}],25:[function(require,module,exports){
 'use strict';
 module.exports = {
-	saveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
+	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
                                 '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Save all as &nbsp;<span class="caret"></span>' + 
+                                    'Download as &nbsp;<span class="caret"></span>' + 
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
@@ -4268,8 +4268,48 @@ module.exports = {
                                     '<li>' + 
                                         '<a class="format" data-accepts="text/tab-separated-values" href="javascript:;">TSV</a>' +
                                     '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/x-binary-rdf-results-table" href="javascript:;">Binary RDF Results</a>' +
+                                    '</li>' + 
                                 '</ul>' + 
-                            '</div>'
+                            '</div>',
+    graphSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
+                                '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
+                                    'Download as &nbsp;<span class="caret"></span>' + 
+                                '</button>' + 
+                                '<ul class="dropdown-menu" role="menu">' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/rdf+json" href="javascript:;">JSON</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/ld+json" href="javascript:;">JSON-LD</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/rdf+xml" href="javascript:;">RDF-XML</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="text/rdf+n3" href="javascript:;">N3</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="text/plain" href="javascript:;">N-Triples</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="text/x-nquads" href="javascript:;">N-Quads</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="text/turtle" href="javascript:;">Turtle</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/trix" href="javascript:;">TriX</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/x-trig" href="javascript:;">TriG</a>' +
+                                    '</li>' +   
+                                    '<li>' + 
+                                        '<a class="format" data-accepts="application/x-binary-rdf" href="javascript:;">Binary RDF</a>' +
+                                    '</li>' +                                   
+                                '</ul>' + 
+                            '</div>',
 };
 
 },{}],26:[function(require,module,exports){
@@ -4960,6 +5000,25 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.allCount = undefined;
 	}
 
+	yasr.updateDownloadDropdown = function() {
+		var saveAsDropDown;
+		yasr.header.find('.saveAsDropDown').remove();
+		var qType = window.editor.getQueryType();
+		if ('SELECT' == qType) {
+			saveAsDropDown = $(require('./extensions.js').selectSaveAsDropDown);
+		}
+		if ('CONSTRUCT' == qType || 'DESCRIBE' == qType) {
+			saveAsDropDown = $(require('./extensions.js').graphSaveAsDropDown);
+		}
+		if (saveAsDropDown) {
+			saveAsDropDown.find(".format").click(function () {
+				yasr.getQueryResultsAsFormat($(this).data("accepts"));
+			});
+		
+			yasr.header.append(saveAsDropDown);
+		}
+	}
+
 	yasr.updateResultsInfo = function() {
 		if (yasr.resultsCount == undefined && yasr.allCount == undefined) {
 			return;
@@ -5004,6 +5063,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		
 		yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
+		yasr.updateDownloadDropdown();
 		yasr.updateResultsInfo();
 		yasr.draw();
 		
@@ -5115,12 +5175,7 @@ var root = module.exports = function(parent, options, queryResults) {
 //						downloadMockLink[0].click();
 					}
 				});
-			var saveAsDropDown = $(require('./extensions.js').saveAsDropDown);
-			saveAsDropDown.find(".format").click(function () {
-				yasr.getQueryResultsAsFormat($(this).data("accepts"));
-			});
 			yasr.header.append(button);
-			yasr.header.append(saveAsDropDown);
 		};
 		var drawFullscreenButton = function() {
 			var button = $("<button class='yasr_btn btn_fullscreen btn_icon'></button>")
@@ -5508,7 +5563,8 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 					try {
 						json = parsers.json(origResponse, window.editor.getQueryType());
 						rawJson = json;
-						if ("CONSTRUCT" == window.editor.getQueryType()) {
+						var qType = window.editor.getQueryType();
+						if (qType == "DESCRIBE" || qType == "CONSTRUCT") {
 							json = parsers.graphJson(rawJson);
 						}
 					} catch (e) {
@@ -5600,7 +5656,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 			}
 			else {
 				var keys = _.keys(rawJson).slice(0, limit);
-				shortJson = _.filter(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
+				shortJson = _.pick(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
 			}
 			return JSON.stringify(shortJson, undefined, 2);
 		}

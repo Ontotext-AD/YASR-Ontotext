@@ -155,6 +155,25 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.allCount = undefined;
 	}
 
+	yasr.updateDownloadDropdown = function() {
+		var saveAsDropDown;
+		yasr.header.find('.saveAsDropDown').remove();
+		var qType = window.editor.getQueryType();
+		if ('SELECT' == qType) {
+			saveAsDropDown = $(require('./extensions.js').selectSaveAsDropDown);
+		}
+		if ('CONSTRUCT' == qType || 'DESCRIBE' == qType) {
+			saveAsDropDown = $(require('./extensions.js').graphSaveAsDropDown);
+		}
+		if (saveAsDropDown) {
+			saveAsDropDown.find(".format").click(function () {
+				yasr.getQueryResultsAsFormat($(this).data("accepts"));
+			});
+		
+			yasr.header.append(saveAsDropDown);
+		}
+	}
+
 	yasr.updateResultsInfo = function() {
 		if (yasr.resultsCount == undefined && yasr.allCount == undefined) {
 			return;
@@ -199,6 +218,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		
 		yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
+		yasr.updateDownloadDropdown();
 		yasr.updateResultsInfo();
 		yasr.draw();
 		
@@ -310,12 +330,7 @@ var root = module.exports = function(parent, options, queryResults) {
 //						downloadMockLink[0].click();
 					}
 				});
-			var saveAsDropDown = $(require('./extensions.js').saveAsDropDown);
-			saveAsDropDown.find(".format").click(function () {
-				yasr.getQueryResultsAsFormat($(this).data("accepts"));
-			});
 			yasr.header.append(button);
-			yasr.header.append(saveAsDropDown);
 		};
 		var drawFullscreenButton = function() {
 			var button = $("<button class='yasr_btn btn_fullscreen btn_icon'></button>")

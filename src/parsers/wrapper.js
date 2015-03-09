@@ -92,7 +92,8 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 					try {
 						json = parsers.json(origResponse, window.editor.getQueryType());
 						rawJson = json;
-						if ("CONSTRUCT" == window.editor.getQueryType()) {
+						var qType = window.editor.getQueryType();
+						if (qType == "DESCRIBE" || qType == "CONSTRUCT") {
 							json = parsers.graphJson(rawJson);
 						}
 					} catch (e) {
@@ -184,7 +185,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 			}
 			else {
 				var keys = _.keys(rawJson).slice(0, limit);
-				shortJson = _.filter(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
+				shortJson = _.pick(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
 			}
 			return JSON.stringify(shortJson, undefined, 2);
 		}

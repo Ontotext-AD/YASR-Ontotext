@@ -50227,7 +50227,7 @@ var root = module.exports = function(yasr) {
 		name: null,//don't need to set this: we don't show it in the selection widget anyway, so don't need a human-friendly name
 		draw: draw,
 		hideFromSelection: true,
-		getPriority: 10,
+		getPriority: 1,
 		canHandleResults: canHandleResults
 	}
 };
@@ -51175,6 +51175,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		} else if (selectedOutput) {
 			$(yasr.resultsContainer).empty();
 			yasr.plugins[selectedOutput].draw();
+			yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
 			return true;
 		}
 		return false;
@@ -51182,12 +51183,12 @@ var root = module.exports = function(parent, options, queryResults) {
 	
 	var disableOutputs = function(outputs) {
 		//first enable everything.
-		yasr.header.find('.yasr_btnGroup .yasr_btn').removeClass('disabled');
+		yasr.header.find('.yasr_btnGroup li').removeClass('disabled');
 		
 		
 		//now disable the outputs passed as param
 		outputs.forEach(function(outputName) {
-			yasr.header.find('.yasr_btnGroup .select_' + outputName).addClass('disabled');
+			yasr.header.find('.yasr_btnGroup .select_' + outputName).parent().addClass('disabled');
 		});
 		
 	};
@@ -51221,6 +51222,10 @@ var root = module.exports = function(parent, options, queryResults) {
 	}
 
 	yasr.updateResultsInfo = function() {
+		if ('ASK' == window.editor.getQueryType()) {
+			yasr.resultsInfo.hide();
+			return;
+		}
 		if (yasr.resultsCount == undefined && yasr.allCount == undefined) {
 			return;
 		}
@@ -51262,8 +51267,10 @@ var root = module.exports = function(parent, options, queryResults) {
 		} catch(exception) {
 			yasr.results = {getException: function(){return exception}};
 		}
+		if (yasr.results.getAsJson().results) {
+			yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
+		}
 		
-		yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
 		yasr.updateDownloadDropdown();
 		yasr.updateResultsInfo();
 		yasr.draw();
@@ -51326,6 +51333,9 @@ var root = module.exports = function(parent, options, queryResults) {
 				.text(name)
 				.addClass("select_" + pluginName)
 				.click(function() {
+					if ($(this).parent().hasClass('disabled')) {
+						return;
+					}
 					//update buttons
 					menuUl.find("li.active").removeClass("active");
 					li.addClass("active");

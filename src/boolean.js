@@ -45,7 +45,7 @@ var root = module.exports = function(yasr) {
 		name: null,//don't need to set this: we don't show it in the selection widget anyway, so don't need a human-friendly name
 		draw: draw,
 		hideFromSelection: true,
-		getPriority: 10,
+		getPriority: 1,
 		canHandleResults: canHandleResults
 	}
 };

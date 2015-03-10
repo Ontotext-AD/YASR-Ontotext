@@ -51069,6 +51069,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
 	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span></div>").appendTo(yasr.container);
+	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
 	
@@ -51198,6 +51199,7 @@ var root = module.exports = function(parent, options, queryResults) {
 
 	yasr.resetResults = function() {
 		yasr.resultsInfo.hide();
+		yasr.insertResultsInfo.hide();
 		yasr.resultsCount = undefined;
 		yasr.allCount = undefined;
 	}
@@ -51244,21 +51246,33 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.resultsInfo.show();
 	}
 
-	yasr.setResultsCount = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
-		yasr.allCount = -1;
-		if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
-			yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;
-		} 
-		if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
-			var result = dataOrJqXhr.responseJSON.results.bindings[0];
-			var vars = dataOrJqXhr.responseJSON.head.vars;
-			var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
-			if (bindingVars.length > 0) {
-				yasr.allCount = result[bindingVars[0]].value;
-			} 
-		}
 
-		yasr.updateResultsInfo();
+	yasr.setResultsCount = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
+		if (dataOrJqXhr.responseJSON) {
+			yasr.allCount = -1;
+			if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
+				yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;
+			} 
+			if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
+				var result = dataOrJqXhr.responseJSON.results.bindings[0];
+				var vars = dataOrJqXhr.responseJSON.head.vars;
+				var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
+				if (bindingVars.length > 0) {
+					yasr.allCount = result[bindingVars[0]].value;
+				} 
+			}
+			yasr.updateResultsInfo();
+		}
+	}
+
+	yasr.setUpdatesCount = function(statementsDiff) {
+		if (statementsDiff < 0) {
+			yasr.insertResultsInfo.text('Update operation removed ' + Math.abs(statementsDiff) + ' statements.');
+		} else {
+			yasr.insertResultsInfo.text('Update operation added ' + statementsDiff + ' statements.');
+		}
+		
+		yasr.insertResultsInfo.show();
 	}
 
 	yasr.setResponse = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
@@ -51451,6 +51465,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (yasr.options.drawDownloadIcon && checkBlobDownloadSupported()) drawDownloadIcon();//only draw when it's supported
 		// drawEmbedButton();
 		yasr.resultsInfo.hide();
+		yasr.insertResultsInfo.hide();
 	};
 	
 	

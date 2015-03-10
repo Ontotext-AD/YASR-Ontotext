@@ -51068,7 +51068,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
-	yasr.resultsInfo = $("<div class='alert alert-info results-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span>. </span></span><span class='time-took'></span></div>").appendTo(yasr.container);
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
@@ -51199,6 +51199,7 @@ var root = module.exports = function(parent, options, queryResults) {
 
 	yasr.resetResults = function() {
 		yasr.resultsInfo.hide();
+		yasr.resultsInfo.find('.time-took').text('');
 		yasr.insertResultsInfo.hide();
 		yasr.resultsCount = undefined;
 		yasr.allCount = undefined;
@@ -51223,11 +51224,16 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 	}
 
-	yasr.updateResultsInfo = function() {
+	yasr.updateResultsInfo = function(timeTook) {
 		if ('ASK' == window.editor.getQueryType()) {
-			yasr.resultsInfo.hide();
+			if (timeTook != undefined) {
+				yasr.resultsInfo.find('.count-info').hide();
+				yasr.resultsInfo.find('.time-took').text('Query took ' + timeTook + ' seconds.')
+				yasr.resultsInfo.show();
+			}
 			return;
 		}
+		yasr.resultsInfo.find('.count-info').show();
 		if (yasr.resultsCount == undefined && yasr.allCount == undefined) {
 			return;
 		}
@@ -51235,6 +51241,9 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.resultsInfo.find('.res-count').text('loading..');
 		} else {
 			yasr.resultsInfo.find('.res-count').text(yasr.resultsCount);
+			if (timeTook) {
+				yasr.resultsInfo.find('.time-took').text('Query took ' + timeTook + ' seconds.')
+			}
 		}
 		if (yasr.allCount == undefined) {
 			yasr.resultsInfo.find('.all-count').text('loading..');
@@ -51265,17 +51274,17 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 	}
 
-	yasr.setUpdatesCount = function(statementsDiff) {
+	yasr.setUpdatesCount = function(statementsDiff, timeTook) {
 		if (statementsDiff < 0) {
-			yasr.insertResultsInfo.text('Update operation removed ' + Math.abs(statementsDiff) + ' statements.');
+			yasr.insertResultsInfo.text('Update operation removed ' + Math.abs(statementsDiff) + ' statements and took ' + timeTook + ' seconds.');
 		} else {
-			yasr.insertResultsInfo.text('Update operation added ' + statementsDiff + ' statements.');
+			yasr.insertResultsInfo.text('Update operation added ' + statementsDiff + ' statements and took ' + timeTook + ' seconds.');
 		}
 		
 		yasr.insertResultsInfo.show();
 	}
 
-	yasr.setResponse = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
+	yasr.setResponse = function(dataOrJqXhr, textStatus, jqXhrOrErrorString, timeTook) {
 		try {
 			yasr.results = require("./parsers/wrapper.js")(dataOrJqXhr, textStatus, jqXhrOrErrorString);
 		} catch(exception) {
@@ -51286,7 +51295,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		
 		yasr.updateDownloadDropdown();
-		yasr.updateResultsInfo();
+		yasr.updateResultsInfo(timeTook);
 		yasr.draw();
 		
 		//store if needed

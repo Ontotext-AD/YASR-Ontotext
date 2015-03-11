@@ -4253,7 +4253,7 @@ module.exports = {
 module.exports = {
 	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
                                 '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Download as &nbsp;<span class="caret"></span>' + 
+                                    'Download as &nbsp;<span class="icon-caret-right"></span>' + 
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
@@ -4275,7 +4275,7 @@ module.exports = {
                             '</div>',
     graphSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
                                 '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Download as &nbsp;<span class="caret"></span>' + 
+                                    'Download as &nbsp;<span class="icon-caret-right"></span>' + 
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
@@ -4867,7 +4867,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
-	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span>. </span></span><span class='time-took'></span></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span></span>. <span class='time-took'></span></div>").appendTo(yasr.container);
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
@@ -5002,6 +5002,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.insertResultsInfo.hide();
 		yasr.resultsCount = undefined;
 		yasr.allCount = undefined;
+		yasr.resultsContainer.empty();
+		yasr.header.hide();
 	}
 
 	yasr.updateDownloadDropdown = function() {
@@ -5092,7 +5094,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (yasr.results.getAsJson().results) {
 			yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
 		}
-		
+		yasr.header.show();
 		yasr.updateDownloadDropdown();
 		yasr.updateResultsInfo(timeTook);
 		yasr.draw();
@@ -6459,6 +6461,60 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 		value = "<span class='nonUri'>" + formatLiteral(yasr, plugin, binding) + "</span>";
 	}
 	return "<div>" + value + "</div>";
+};
+
+// Custom getCellContent
+var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
+	var binding = bindings[sparqlVar];
+	var value = null;
+	if (binding.type == "uri") {
+		var title = null;
+		var href = binding.value;
+		var localHref;
+		var visibleString = href;
+		if (context.usedPrefixes) {
+			var invertPrefixes = _.invert(context.usedPrefixes);
+			var foundPrefixes = Object.keys(invertPrefixes).filter(function (key) { return visibleString.indexOf(key) == 0});
+			if (foundPrefixes.length > 0) {
+				var prefixVal = foundPrefixes[0];
+				var prefix = invertPrefixes[prefixVal];
+				var localName = href.substring(prefixVal.length);
+				visibleString = prefix + ':' + localName;
+				if (prefix != "") {
+					localHref = ctx + "/resource/" + encodeURIComponent(prefix) + "/" + encodeURIComponent(localName);
+				}
+			}
+		}
+		if (undefined == localHref) {
+			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
+		}
+		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a>" +
+		"<a class='icon-copy' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
+	} else {
+		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";
+	}
+	return "<div>" + value + "</div>";
+};
+
+var formatLiteralCustom = function(yasr, plugin, literalBinding) {
+	var stringRepresentation = YASR.utils.escapeHtmlEntities(literalBinding.value);
+	if (literalBinding.type == "bnode") {
+		return "_:" + stringRepresentation;
+	}
+	else if (literalBinding["xml:lang"]) {
+		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["xml:lang"] + '</sup>';
+	} else if (literalBinding.datatype) {
+		var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
+		var dataType = literalBinding.datatype;
+		if (dataType.indexOf(xmlSchemaNs) === 0) {
+			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
+		} else {
+			dataType = "&lt;" + dataType + "&gt;";
+		}
+
+		stringRepresentation = '"' + stringRepresentation + '"<sup>^^' + dataType + '</sup>';
+	}
+	return stringRepresentation;
 };
 
 

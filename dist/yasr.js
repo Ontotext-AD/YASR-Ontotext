@@ -5087,8 +5087,10 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.insertResultsInfo.text('Update operation took ' + timeTook + ' seconds.');
 		} else if (statementsDiff < 0) {
 			yasr.insertResultsInfo.text('Update operation removed ' + Math.abs(statementsDiff) + ' statements and took ' + timeTook + ' seconds.');
-		} else {
+		} else if (statementsDiff > 0){
 			yasr.insertResultsInfo.text('Update operation added ' + statementsDiff + ' statements and took ' + timeTook + ' seconds.');
+		} else {
+			yasr.insertResultsInfo.text('Update operation changed 0 statements and took ' + timeTook + ' seconds.');
 		}
 		
 		yasr.insertResultsInfo.show();

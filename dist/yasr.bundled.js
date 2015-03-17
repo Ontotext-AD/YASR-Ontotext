@@ -51205,6 +51205,13 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.allCount = undefined;
 		yasr.resultsContainer.empty();
 		yasr.header.hide();
+		var qType = window.editor.getQueryType();
+		if ('SELECT' == qType || 'CONSTRUCT' == qType || 'DESCRIBE' == qType) {
+			var spinWrapper = $('<div class="spinWrapper"></div>');
+        	yasr.resultsContainer.append(spinWrapper);
+			var spinner = new Spinner().spin(spinWrapper.get(0));
+		}
+
 	}
 
 	yasr.updateDownloadDropdown = function() {
@@ -51277,7 +51284,9 @@ var root = module.exports = function(parent, options, queryResults) {
 	}
 
 	yasr.setUpdatesCount = function(statementsDiff, timeTook) {
-		if (statementsDiff < 0) {
+		if (statementsDiff == undefined) {
+			yasr.insertResultsInfo.text('Update operation took ' + timeTook + ' seconds.');
+		} else if (statementsDiff < 0) {
 			yasr.insertResultsInfo.text('Update operation removed ' + Math.abs(statementsDiff) + ' statements and took ' + timeTook + ' seconds.');
 		} else {
 			yasr.insertResultsInfo.text('Update operation added ' + statementsDiff + ' statements and took ' + timeTook + ' seconds.');
@@ -52689,7 +52698,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		if (undefined == localHref) {
 			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
 		}
-		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a>" +
+		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a> " +
 		"<a class='icon-copy' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 	} else {
 		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";

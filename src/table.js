@@ -278,7 +278,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		if (undefined == localHref) {
 			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
 		}
-		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a>" +
+		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a> " +
 		"<a class='icon-copy' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 	} else {
 		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";

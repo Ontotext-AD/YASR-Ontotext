@@ -5105,8 +5105,10 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (yasr.results.getAsJson().results) {
 			yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
 		}
-		yasr.header.show();
-		yasr.updateDownloadDropdown();
+		if (yasr.results.getAsJson()) {
+			yasr.header.show();
+			yasr.updateDownloadDropdown();
+		}
 		yasr.updateResultsInfo(timeTook);
 		yasr.draw();
 		

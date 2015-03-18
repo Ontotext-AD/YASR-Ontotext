@@ -52479,6 +52479,12 @@ var root = module.exports = function(yasr) {
 	};
 	
 	var eventId = yasr.getPersistencyId('eventId') || "yasr_" + $(yasr.container).closest('[id]').attr('id');
+	var addAdditionalEvents = function() {
+        var client = new ZeroClipboard( $('td div .icon-link') );
+        client.on( "ready", function( readyEvent ) {
+            client.on( "aftercopy", yasr.afterCopy);
+        });
+	}
 	var addEvents = function() {
 		table.on( 'order.dt', function () {
 		    drawSvgIcons();
@@ -52512,9 +52518,10 @@ var root = module.exports = function(yasr) {
 		});
 		
 		
-		$(window).off('resize.' + eventId);//remove previously attached handlers
-		$(window).on('resize.' + eventId, hideOrShowDatatablesControls);
-		hideOrShowDatatablesControls();
+		// $(window).off('resize.' + eventId);//remove previously attached handlers
+		// $(window).on('resize.' + eventId, hideOrShowDatatablesControls);
+		// hideOrShowDatatablesControls();
+		addAdditionalEvents();
 	};
 	
 	plugin.draw = function() {
@@ -52679,6 +52686,7 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
 	var value = null;
+	var divClass = ""
 	if (binding.type == "uri") {
 		var title = null;
 		var href = binding.value;
@@ -52701,11 +52709,12 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a> " +
-		"<a class='icon-copy' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
+		"<a class='icon-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
+		divClass = " class = 'uri-cell'"
 	} else {
 		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";
 	}
-	return "<div>" + value + "</div>";
+	return "<div" + divClass +  ">" + value + "</div>";
 };
 
 var formatLiteralCustom = function(yasr, plugin, literalBinding) {

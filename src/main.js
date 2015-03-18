@@ -22,7 +22,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
-	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span></span>. <span class='time-took'></span></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span>. </span><span class='time-took'></span></div>").appendTo(yasr.container);
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
@@ -102,6 +102,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 	};
 	yasr.draw = function(output) {
+		yasr.updateHeader();
 		yasr.updateResultsInfo();
 		if (!yasr.results) return false;
 		if (!output) output = yasr.options.output;

@@ -4548,6 +4548,11 @@ var root = module.exports = function(yasr){
 			var doDraw = function () {
 				//clear previous results (if any)
 				yasr.resultsContainer.empty();
+				// workaround for OWLIM-1970
+				if (yasr.options.output != root.defaults.persistencyId) {
+					return;
+				}
+
 				var wrapperId = id + '_gchartWrapper';
 				var wrapper = null;
 
@@ -4949,6 +4954,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.draw = function(output) {
 		yasr.updateHeader();
 		yasr.updateResultsInfo();
+
 		if (!yasr.results) return false;
 		if (!output) output = yasr.options.output;
 
@@ -5110,8 +5116,15 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.header.show();
 			yasr.updateDownloadDropdown();
 		}
-		yasr.updateResultsInfo(timeTook);
+		if (403 == dataOrJqXhr.status) {
+			yasr.results.getException = function() {
+				return {status: 403, statusText: "Forbidden", responseText: "You don't have permission to execute this query. Ask your admin for support."};
+			}
+		} else {
+			yasr.updateResultsInfo(timeTook);
+		}
 		yasr.draw();
+
 		
 		//store if needed
 		if (yasr.options.persistency) {

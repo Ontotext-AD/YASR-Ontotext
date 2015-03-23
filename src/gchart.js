@@ -120,6 +120,11 @@ var root = module.exports = function(yasr){
 			var doDraw = function () {
 				//clear previous results (if any)
 				yasr.resultsContainer.empty();
+				// workaround for OWLIM-1970
+				if (yasr.options.output != root.defaults.persistencyId) {
+					return;
+				}
+
 				var wrapperId = id + '_gchartWrapper';
 				var wrapper = null;
 

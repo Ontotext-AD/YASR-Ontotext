@@ -86129,7 +86129,12 @@ var constructGraph = function(response) {
 	var nodeIds = {};
 	var graph = {};
 
-	var so = _.slice(_.uniq(_.flatten(_.map(response, function(key) {return [key.subject.value, key.object.value]}))), 0, 20);
+	var so = _.slice(_.uniq(_.flatten(_.map(response, function(key) {
+		if ("uri" == key.object.type) {
+			return [key.subject.value, key.object.value]
+		}
+		return key.subject.value;
+	}))), 0, 20);
 
 	graph.nodes = _.map(so, function(key, index) {
 		nodeIds[key] = index.toString();
@@ -86179,21 +86184,7 @@ var draw = function() {
 	        'text-valign': 'center',
 	        'color': 'black',
 		})    
-	    .selector('.edgefrom')
-	    	.css({
-		        'background-color': '#f2836b',
-		        'line-color': '#f2836b',
-		        'target-arrow-color': '#f2836b',
-		        'source-arrow-color': '#f2836b',
-	      })
-	      .selector('.edgeto')
-	      	.css({
-		        'background-color': '#46A2D0',
-		        'line-color': '#46A2D0',
-		        'target-arrow-color': '#46A2D0',
-		        'source-arrow-color': '#46A2D0',
-	      })
-	      .selector('.from')
+       .selector('.from')
 	      	.css({
 	       		'background-color': '#f2836b',
 	      })
@@ -86217,8 +86208,11 @@ var draw = function() {
 	var describeEntity = function(entity, cb) {
 		var data = {
 			query : "describe <" + entity + ">",
-			infer: false
+			infer : yasr.currentQuery.infer
 		};
+		if (yasr.currentQuery.sameAs) {
+			data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
+		}
 		var url = ctx + '/repositories/' + backendRepositoryID;
 		$.ajax({
 			url: url,
@@ -86229,7 +86223,7 @@ var draw = function() {
 			var molecule = constructGraph(parsers.graphJson(result).results.bindings);
 			cy.load(molecule, cb);
 		}).fail(function(xhr, textStatus, errorThrown) {
-			toastr.warning('Cannot browse entity: ' + entity + '; ' + xhr.responseText);
+			console.log('Cannot browse entity: ' + entity + '; ' + xhr.responseText);
 		});
 	}
 	

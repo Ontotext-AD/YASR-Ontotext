@@ -37,7 +37,12 @@ var constructGraph = function(response) {
 	var nodeIds = {};
 	var graph = {};
 
-	var so = _.slice(_.uniq(_.flatten(_.map(response, function(key) {return [key.subject.value, key.object.value]}))), 0, 20);
+	var so = _.slice(_.uniq(_.flatten(_.map(response, function(key) {
+		if ("uri" == key.object.type) {
+			return [key.subject.value, key.object.value]
+		}
+		return key.subject.value;
+	}))), 0, 20);
 
 	graph.nodes = _.map(so, function(key, index) {
 		nodeIds[key] = index.toString();
@@ -111,8 +116,11 @@ var draw = function() {
 	var describeEntity = function(entity, cb) {
 		var data = {
 			query : "describe <" + entity + ">",
-			infer: false
+			infer : yasr.currentQuery.infer
 		};
+		if (yasr.currentQuery.sameAs) {
+			data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
+		}
 		var url = ctx + '/repositories/' + backendRepositoryID;
 		$.ajax({
 			url: url,

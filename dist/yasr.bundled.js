@@ -86098,146 +86098,159 @@ require("cytoscape");
 
 var root = module.exports = function(yasr) {
 
-var parsers = {
-	graphJson: require("./parsers/graphJson.js"),
-};
+	var parsers = {
+		graphJson: require("./parsers/graphJson.js"),
+	};
 
-var invertedPrefixes = function() {
-	if (yasr.options.getUsedPrefixes) {
-		return _.invert(typeof yasr.options.getUsedPrefixes == "function"? yasr.options.getUsedPrefixes(yasr):  yasr.options.getUsedPrefixes);
+	var invertedPrefixes = function() {
+		if (yasr.options.getUsedPrefixes) {
+			return _.invert(typeof yasr.options.getUsedPrefixes == "function"? yasr.options.getUsedPrefixes(yasr):  yasr.options.getUsedPrefixes);
+		}
+		return null;
+	}();
+
+
+	var getNodeName = function(key) {
+		if (invertedPrefixes) {
+			var shortKey = utils.uriToPrefixWithLocalName(invertedPrefixes, key);
+			if (shortKey) {
+				return shortKey.prefix + ":" + shortKey.localName;
+			}
+		}
+
+		return key;
 	}
-	return null;
-}();
 
-
-var getNodeName = function(key) {
-	if (invertedPrefixes) {
-		var shortKey = utils.uriToPrefixWithLocalName(invertedPrefixes, key);
-		if (shortKey) {
-			return shortKey.prefix + ":" + shortKey.localName;
-		}
+	var nodeObject = function(key, index) {
+		return { data: { id: index.toString(), name: getNodeName(key), uri: key, size: 70}}
 	}
 
-	return key;
-}
+	var constructGraph = function(response) {
+		var nodeLimit = 20;
+		var edgeLimit = 50;
 
-var nodeObject = function(key, index) {
-	return { data: { id: index.toString(), name: getNodeName(key), uri: key, size: 70}}
-}
+		var nodeIds = {};
+		var graph = {};
+		var allNodes = _.uniq(_.flatten(_.map(response, function(key) {
+			if ("uri" == key.object.type) {
+				return [key.subject.value, key.object.value]
+			}
+			return key.subject.value;
+		})));
 
-var constructGraph = function(response) {
-	var nodeIds = {};
-	var graph = {};
+		var allNodeCount = allNodes.length;
+		var so = _.slice(allNodes, 0, nodeLimit);
 
-	var so = _.slice(_.uniq(_.flatten(_.map(response, function(key) {
-		if ("uri" == key.object.type) {
-			return [key.subject.value, key.object.value]
+		graph.nodes = _.map(so, function(key, index) {
+			nodeIds[key] = index.toString();
+			return nodeObject(key, index);
+		});
+		var allEdgeCount = _.filter(response, function(key) {
+			return "uri" == key.object.type;
+		}).length;
+
+		var filterEgdes = _.slice(_.filter(response, function(key) {
+			return nodeIds[key.subject.value] && nodeIds[key.object.value];
+		}), 0, edgeLimit);
+
+		graph.edges = _.map(filterEgdes, function(key, index) {
+			var s = nodeIds[key.subject.value];
+			var t = nodeIds[key.object.value];
+			var p = utils.uriToPrefixWithLocalName(invertedPrefixes, key.predicate.value)
+			return { data: { id: 'e' + index.toString(), name: p.prefix + ":" + p.localName, source: s, target: t} };
+		});
+		addNodeEdgesInfo(graph.nodes.length, allNodeCount, graph.edges.length, allEdgeCount);
+		return graph;
+	};
+
+	var addNodeEdgesInfo = function(nodes, allNodes, edges, allEdges) {
+		yasr.resultsContainer.find(".graph-info>.graph-counts").text('Showing ' + nodes + ' of ' + allNodes + ' nodes, ' + edges + ' of ' + allEdges + ' edges.');
+	}
+
+
+	var draw = function() {
+		yasr.resultsContainer.empty();
+		yasr.resultsContainer.append('<div class="graph-info"><div class="graph-counts"></div></div>');
+		yasr.resultsContainer.append('<div id="cy"></div>');
+		var graph = constructGraph(yasr.results.getAsJson().results.bindings);
+		var cy = cytoscape({
+		  container: document.getElementById('cy'),
+
+		  style: cytoscape.stylesheet()
+		    .selector('node')
+		      .css({
+		        'content': 'data(name)',
+		        'text-valign': 'center',
+		        'color': 'white',
+		        'text-outline-width': 2,
+		        'text-outline-color': '#888',
+		        'width': 'data(size)',
+		        'height': 'data(size)'
+		      })
+		    .selector('edge')
+		      .css({
+		        'target-arrow-shape': 'triangle',
+		        'width': 'mapData(weight, 0, 10, 3, 9)',
+		        'line-color': '#ddd',
+		        'target-arrow-color': '#ddd',
+		        'content': 'data(name)',
+		        'text-opacity': 1,
+		        'text-valign': 'center',
+		        'color': 'black',
+			})    
+	       .selector('.from')
+		      	.css({
+		       		'background-color': '#f2836b',
+		      })
+		      .selector('.to')
+		      	.css({
+		       		'background-color': '#46A2D0',
+		      }),
+		  
+		  elements: {
+		      nodes: graph.nodes, 
+		      edges: graph.edges
+		    },
+		  
+		  layout: {
+		    name: 'circle',
+		    padding: 10
+		  },
+		  boxSelectionEnabled: true
+		});
+
+		var describeEntity = function(entity, cb) {
+			var data = {
+				query : "describe <" + entity + ">",
+				infer : yasr.currentQuery.infer
+			};
+			if (yasr.currentQuery.sameAs) {
+				data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
+			}
+			var url = ctx + '/repositories/' + backendRepositoryID;
+			$.ajax({
+				url: url,
+				type: "POST",
+				data: data,
+				headers: {Accept: "application/rdf+json"}
+			}).done(function(result){
+				var molecule = constructGraph(parsers.graphJson(result).results.bindings);
+				cy.load(molecule, cb);
+			}).fail(function(xhr, textStatus, errorThrown) {
+				console.log('Cannot browse entity: ' + entity + '; ' + xhr.responseText);
+			});
 		}
-		return key.subject.value;
-	}))), 0, 20);
-
-	graph.nodes = _.map(so, function(key, index) {
-		nodeIds[key] = index.toString();
-		return nodeObject(key, index);
-	});
-
-	var filterEgdes = _.slice(_.filter(response, function(key) {
-		return nodeIds[key.subject.value] && nodeIds[key.object.value];
-	}), 0, 50);
-
-	graph.edges = _.map(filterEgdes, function(key, index) {
-		var s = nodeIds[key.subject.value];
-		var t = nodeIds[key.object.value];
-		var p = utils.uriToPrefixWithLocalName(invertedPrefixes, key.predicate.value)
-		return { data: { id: 'e' + index.toString(), name: p.prefix + ":" + p.localName, source: s, target: t} };
-	});
-	return graph;
-};
-
-
-var draw = function() {
-	yasr.resultsContainer.empty();
-	yasr.resultsContainer.append('<div id="cy"></div>');
-	var graph = constructGraph(yasr.results.getAsJson().results.bindings);
-	var cy = cytoscape({
-	  container: document.getElementById('cy'),
-
-	  style: cytoscape.stylesheet()
-	    .selector('node')
-	      .css({
-	        'content': 'data(name)',
-	        'text-valign': 'center',
-	        'color': 'white',
-	        'text-outline-width': 2,
-	        'text-outline-color': '#888',
-	        'width': 'data(size)',
-	        'height': 'data(size)'
-	      })
-	    .selector('edge')
-	      .css({
-	        'target-arrow-shape': 'triangle',
-	        'width': 'mapData(weight, 0, 10, 3, 9)',
-	        'line-color': '#ddd',
-	        'target-arrow-color': '#ddd',
-	        'content': 'data(name)',
-	        'text-opacity': 1,
-	        'text-valign': 'center',
-	        'color': 'black',
-		})    
-       .selector('.from')
-	      	.css({
-	       		'background-color': '#f2836b',
-	      })
-	      .selector('.to')
-	      	.css({
-	       		'background-color': '#46A2D0',
-	      }),
-	  
-	  elements: {
-	      nodes: graph.nodes, 
-	      edges: graph.edges
-	    },
-	  
-	  layout: {
-	    name: 'circle',
-	    padding: 10
-	  },
-	  boxSelectionEnabled: true
-	});
-
-	var describeEntity = function(entity, cb) {
-		var data = {
-			query : "describe <" + entity + ">",
-			infer : yasr.currentQuery.infer
-		};
-		if (yasr.currentQuery.sameAs) {
-			data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
-		}
-		var url = ctx + '/repositories/' + backendRepositoryID;
-		$.ajax({
-			url: url,
-			type: "POST",
-			data: data,
-			headers: {Accept: "application/rdf+json"}
-		}).done(function(result){
-			var molecule = constructGraph(parsers.graphJson(result).results.bindings);
-			cy.load(molecule, cb);
-		}).fail(function(xhr, textStatus, errorThrown) {
-			console.log('Cannot browse entity: ' + entity + '; ' + xhr.responseText);
+		
+		cy.on('tap', 'node', function(n) {
+			var node = n.cyTarget;
+			var uri = node.data()["uri"];
+			describeEntity(uri, function() {
+				var mainNode = cy.nodes("[uri='" + uri +"']");
+				cy.nodes().addClass('to');
+				mainNode.removeClass('to').addClass('from');
+			});
 		});
 	}
-	
-	cy.on('tap', 'node', function(n) {
-		var node = n.cyTarget;
-		var uri = node.data()["uri"];
-		describeEntity(uri, function() {
-			var mainNode = cy.nodes("[uri='" + uri +"']");
-			cy.nodes().addClass('to');
-			mainNode.removeClass('to').addClass('from');
-		});
-	});
-
-}
 
 	var canHandleResults = function() {
 		return "CONSTRUCT" == window.editor.getQueryType() || "DESCRIBE" == window.editor.getQueryType();
@@ -86250,8 +86263,6 @@ var draw = function() {
 		hideFromSelection: false,
 		canHandleResults: canHandleResults,
 	}
-
-
 }
 },{"./parsers/graphJson.js":46,"./utils.js":54,"cytoscape":14,"jquery":20,"lodash":21}],40:[function(require,module,exports){
 'use strict';

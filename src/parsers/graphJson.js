@@ -1,5 +1,6 @@
 'use strict';
 var $ = require("jquery");
+var _ = require('lodash');
 
 var getAsObject = function(entity) {
 	if (typeof entity == "object") {

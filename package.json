@@ -68,7 +68,9 @@
     "yasgui-utils": "^1.4.1",
     "pivottable": "^1.2.2",
     "jquery-ui": "^1.10.5",
-    "d3": "^3.4.13"
+    "d3": "^3.4.13",
+    "cytoscape": "^2.3.11",
+    "lodash": "^3.6.0"
   },
   "browserify-shim": {
     "google": "global:google"

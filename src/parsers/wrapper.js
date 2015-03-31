@@ -1,5 +1,6 @@
 'use strict';
-var $ = require("jquery");
+var $ = require("jquery"),
+	_ = require('lodash');
 
 /**
  * arg1 can be:
@@ -179,18 +180,24 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	};
 	var getShortOriginalResponse = function(limit) {
 		if (type == "json") {
-			if (rawJson.results && rawJson.results.bindings && rawJson.results.bindings.length > limit) {
-					var shortJson = jQuery.extend(true, {}, rawJson);
-					shortJson.results.bindings = rawJson.results.bindings.slice(0, limit);				
-			}
-			else {
-				var keys = _.keys(rawJson).slice(0, limit);
-				shortJson = _.pick(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
-			}
+			var shortJson = getShortOriginalResponseAsJSON(limit);
 			return JSON.stringify(shortJson, undefined, 2);
 		}
 		return getOriginalResponseAsString().slice(0, limit);
 	};
+
+	var getShortOriginalResponseAsJSON = function(limit) {
+		if (rawJson.results && rawJson.results.bindings && rawJson.results.bindings.length > limit) {
+				var shortJson = jQuery.extend(true, {}, rawJson);
+				shortJson.results.bindings = rawJson.results.bindings.slice(0, limit);				
+		}
+		else {
+			var keys = _.keys(rawJson).slice(0, limit);
+			shortJson = _.pick(rawJson, function(value, key) {return keys.indexOf(key) >= 0});
+		}
+		return shortJson;
+	}
+
 	var getOriginalResponseAsString = function() {
 		var responseString = "";
 		if (typeof origResponse == "string") {
@@ -245,6 +252,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		getAsJson: getAsJson,
 		getOriginalResponse: getOriginalResponse,
 		getShortOriginalResponse: getShortOriginalResponse,
+		getShortOriginalResponseAsJSON: getShortOriginalResponseAsJSON,
 		getOriginalResponseAsString: getOriginalResponseAsString,
 		getOriginalContentType: function(){return contentType;},
 		getVariables: getVariables,

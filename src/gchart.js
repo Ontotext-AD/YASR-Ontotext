@@ -52,6 +52,9 @@ var root = module.exports = function(yasr){
 				
 				yUtils.storage.set(persistencyIdChartConfig, yasr.options.gchart.chartConfig);
 				chartWrapper.setDataTable(tmp);
+				// Fix for OWLIM-1971
+				chartWrapper.setOption("width", options.width);
+				chartWrapper.setOption("height", options.height);
 				chartWrapper.draw();
 				yasr.updateHeader();
 			});

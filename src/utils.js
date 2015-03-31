@@ -1,5 +1,6 @@
 'use strict';
 var $ = require('jquery'),
+	_ = require('lodash'),
 	GoogleTypeException = require('./exceptions.js').GoogleTypeException;
 
 module.exports = {
@@ -17,6 +18,16 @@ module.exports = {
 			}
 		}
 		return uri;
+	},
+	uriToPrefixWithLocalName: function(invertPrefixes, visibleString) {
+		var foundPrefixes = Object.keys(invertPrefixes).filter(function (key) { return visibleString.indexOf(key) == 0});
+		if (foundPrefixes.length > 0) {
+			var prefixVal = foundPrefixes[0];
+			var prefix = invertPrefixes[prefixVal];
+			var localName = visibleString.substring(prefixVal.length);
+			return {prefix: prefix, localName: localName};
+		}
+		return null;
 	},
 	getGoogleTypeForBinding: function(binding) {
 		if (binding == null) return null;

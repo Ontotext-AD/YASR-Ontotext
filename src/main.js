@@ -536,3 +536,4 @@ try {root.registerOutput('rawResponse', require("./rawResponse.js"))} catch(e){}
 try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};
+try {root.registerOutput('graph', require("./graph.js"))} catch(e){};

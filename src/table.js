@@ -2,7 +2,8 @@
 var $ = require("jquery"),
 	yutils = require("yasgui-utils"),
 	utils = require('./utils.js'),
-	imgs = require('./imgs.js');
+	imgs = require('./imgs.js'),
+	_ = require('lodash');
 require("../lib/DataTables/media/js/jquery.dataTables.js");
 require("../lib/colResizable-1.4.js");
 
@@ -35,6 +36,7 @@ var root = module.exports = function(yasr) {
 		if (yasr.options.getUsedPrefixes) {
 			usedPrefixes = (typeof yasr.options.getUsedPrefixes == "function"? yasr.options.getUsedPrefixes(yasr):  yasr.options.getUsedPrefixes);
 		}
+		usedPrefixes = _.invert(usedPrefixes);
 		for (var rowId = 0; rowId < bindings.length; rowId++) {
 			var row = [];
 			row.push("");//row numbers
@@ -271,15 +273,11 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		var localHref;
 		var visibleString = href;
 		if (context.usedPrefixes) {
-			var invertPrefixes = _.invert(context.usedPrefixes);
-			var foundPrefixes = Object.keys(invertPrefixes).filter(function (key) { return visibleString.indexOf(key) == 0});
-			if (foundPrefixes.length > 0) {
-				var prefixVal = foundPrefixes[0];
-				var prefix = invertPrefixes[prefixVal];
-				var localName = href.substring(prefixVal.length);
-				visibleString = prefix + ':' + localName;
-				if (prefix != "") {
-					localHref = ctx + "/resource/" + encodeURIComponent(prefix) + "/" + encodeURIComponent(localName);
+			var prefixWithLocal = utils.uriToPrefixWithLocalName(context.usedPrefixes, visibleString);
+			if (prefixWithLocal) {
+				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
+				if (prefixWithLocal.prefix != "") {
+					localHref = ctx + "/resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
 				}
 			}
 		}

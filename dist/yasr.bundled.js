@@ -86095,6 +86095,8 @@ var $ = require("jquery"),
 	utils = require("./utils.js"),
 	_ = require('lodash');
 require("cytoscape");
+require("../lib/DataTables/media/js/jquery.dataTables.js");
+
 
 var root = module.exports = function(yasr) {
 
@@ -86125,17 +86127,48 @@ var root = module.exports = function(yasr) {
 		return { data: { id: index.toString(), name: getNodeName(key), uri: key, size: 70}}
 	}
 
-	var constructGraph = function(response) {
+	var addDataTypes = function(data) {
+		var table = $('<table cellpadding="0" cellspacing="0" border="0" class="dataPropsTable table table-striped table-bordered fixedCellWidth"></table>');
+		yasr.resultsContainer.find('table').remove();
+		yasr.resultsContainer.find(".graph-info").append(table);
+		
+		var tableData = _.map(data, function(key) {
+			return {
+				property: getNodeName(key.predicate.value),
+				value: getNodeName(key.object.value)
+			}
+		});
+		
+		table.DataTable({
+			data: tableData,
+			columns: [
+				{data: "property"},
+				{data: "value"}
+			],
+			paging: false,
+			ordering: false,
+			searching: false,
+			info: false,
+		});
+		table.find("th").hide();
+	}
+
+	var constructGraph = function(response, isDescribe) {
 		var nodeLimit = 20;
 		var edgeLimit = 50;
 
 		var nodeIds = {};
 		var graph = {};
+		// prefer triples where entity is subject
+		response = _.sortBy(response, function(key) {
+			return ("uri" == key.subject.type)? 0 : 1;
+		});
 		var allNodes = _.uniq(_.flatten(_.map(response, function(key) {
-			if ("uri" == key.object.type) {
+			var so = [];
+			if ("literal" != key.object.type) {
 				return [key.subject.value, key.object.value]
 			}
-			return key.subject.value;
+			return [key.subject.value];
 		})));
 
 		var allNodeCount = allNodes.length;
@@ -86149,6 +86182,14 @@ var root = module.exports = function(yasr) {
 			return "uri" == key.object.type;
 		}).length;
 
+		if (isDescribe) {
+			var dataProps = _.filter(response, function(key) {
+				return "literal" == key.object.type
+			});
+			addDataTypes(dataProps);
+			
+		}
+
 		var filterEgdes = _.slice(_.filter(response, function(key) {
 			return nodeIds[key.subject.value] && nodeIds[key.object.value];
 		}), 0, edgeLimit);
@@ -86156,8 +86197,9 @@ var root = module.exports = function(yasr) {
 		graph.edges = _.map(filterEgdes, function(key, index) {
 			var s = nodeIds[key.subject.value];
 			var t = nodeIds[key.object.value];
-			var p = utils.uriToPrefixWithLocalName(invertedPrefixes, key.predicate.value)
-			return { data: { id: 'e' + index.toString(), name: p.prefix + ":" + p.localName, source: s, target: t} };
+			var p = utils.uriToPrefixWithLocalName(invertedPrefixes, key.predicate.value);
+			var name = p ? p.prefix + ":" + p.localName : key.predicate.value;
+			return { data: { id: 'e' + index.toString(), name: name, source: s, target: t} };
 		});
 		addNodeEdgesInfo(graph.nodes.length, allNodeCount, graph.edges.length, allEdgeCount);
 		return graph;
@@ -86221,8 +86263,8 @@ var root = module.exports = function(yasr) {
 
 		var describeEntity = function(entity, cb) {
 			var data = {
-				query : "describe <" + entity + ">",
-				infer : yasr.currentQuery.infer
+				query : "describe <" + entity + "> limit 1000",
+				infer : yasr.currentQuery.inference ? true : false
 			};
 			if (yasr.currentQuery.sameAs) {
 				data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
@@ -86234,7 +86276,7 @@ var root = module.exports = function(yasr) {
 				data: data,
 				headers: {Accept: "application/rdf+json"}
 			}).done(function(result){
-				var molecule = constructGraph(parsers.graphJson(result).results.bindings);
+				var molecule = constructGraph(parsers.graphJson(result).results.bindings, true);
 				cy.load(molecule, cb);
 			}).fail(function(xhr, textStatus, errorThrown) {
 				console.log('Cannot browse entity: ' + entity + '; ' + xhr.responseText);
@@ -86264,7 +86306,7 @@ var root = module.exports = function(yasr) {
 		canHandleResults: canHandleResults,
 	}
 }
-},{"./parsers/graphJson.js":46,"./utils.js":54,"cytoscape":14,"jquery":20,"lodash":21}],40:[function(require,module,exports){
+},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"./parsers/graphJson.js":46,"./utils.js":54,"cytoscape":14,"jquery":20,"lodash":21}],40:[function(require,module,exports){
 'use strict';
 module.exports = {
 	cross: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve"><g>	<path d="M83.288,88.13c-2.114,2.112-5.575,2.112-7.689,0L53.659,66.188c-2.114-2.112-5.573-2.112-7.687,0L24.251,87.907   c-2.113,2.114-5.571,2.114-7.686,0l-4.693-4.691c-2.114-2.114-2.114-5.573,0-7.688l21.719-21.721c2.113-2.114,2.113-5.573,0-7.686   L11.872,24.4c-2.114-2.113-2.114-5.571,0-7.686l4.842-4.842c2.113-2.114,5.571-2.114,7.686,0L46.12,33.591   c2.114,2.114,5.572,2.114,7.688,0l21.721-21.719c2.114-2.114,5.573-2.114,7.687,0l4.695,4.695c2.111,2.113,2.111,5.571-0.003,7.686   L66.188,45.973c-2.112,2.114-2.112,5.573,0,7.686L88.13,75.602c2.112,2.111,2.112,5.572,0,7.687L83.288,88.13z"/></g></svg>',

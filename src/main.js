@@ -22,7 +22,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
-	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span>. </span><span class='time-took'></span></div>").appendTo(yasr.container);
+	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span>. </span><span class='view-info'></span><span class='time-took'></span></div>").appendTo(yasr.container);
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
@@ -190,6 +190,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	}
 
 	yasr.updateResultsInfo = function(timeTook) {
+		yasr.resultsInfo.find('.view-info').hide();
 		if ('ASK' == window.editor.getQueryType()) {
 			if (timeTook != undefined) {
 				yasr.resultsInfo.find('.count-info').hide();
@@ -198,7 +199,9 @@ var root = module.exports = function(parent, options, queryResults) {
 			}
 			return;
 		}
+		// TODO this should happens smarter
 		yasr.resultsInfo.find('.count-info').show();
+		yasr.resultsInfo.find('.time-took').show();
 		if (yasr.resultsCount == undefined && yasr.allCount == undefined) {
 			return;
 		}

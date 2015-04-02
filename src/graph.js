@@ -79,6 +79,10 @@ var root = module.exports = function(yasr) {
 			return [key.subject.value];
 		})));
 
+		var allEdgeCount = _.filter(response, function(key) {
+			return "literal" != key.object.type;
+		}).length;
+
 		var allNodeCount = allNodes.length;
 		var so = _.slice(allNodes, 0, nodeLimit);
 
@@ -86,9 +90,7 @@ var root = module.exports = function(yasr) {
 			nodeIds[key] = index.toString();
 			return nodeObject(key, index);
 		});
-		var allEdgeCount = _.filter(response, function(key) {
-			return "uri" == key.object.type;
-		}).length;
+
 
 		if (isDescribe) {
 			var dataProps = _.filter(response, function(key) {
@@ -114,14 +116,17 @@ var root = module.exports = function(yasr) {
 	};
 
 	var addNodeEdgesInfo = function(nodes, allNodes, edges, allEdges) {
-		yasr.resultsContainer.find(".graph-info>.graph-counts").text('Showing ' + nodes + ' of ' + allNodes + ' nodes, ' + edges + ' of ' + allEdges + ' edges.');
+		yasr.resultsInfo.find(".view-info").text('Showing ' + nodes + ' of ' + allNodes + ' nodes, ' + edges + ' of ' + allEdges + ' edges.').show();
 	}
 
 
 	var draw = function() {
 		yasr.resultsContainer.empty();
-		yasr.resultsContainer.append('<div class="graph-info"><div class="graph-counts"></div></div>');
-		yasr.resultsContainer.append('<div id="cy"></div>');
+		yasr.resultsContainer.append('<div class="graph-info"></div><div id="cy"></div>');
+		
+		yasr.resultsInfo.find('.count-info').hide();
+		yasr.resultsInfo.find('.time-took').hide();
+
 		var graph = constructGraph(yasr.results.getAsJson().results.bindings);
 		var cy = cytoscape({
 		  container: document.getElementById('cy'),

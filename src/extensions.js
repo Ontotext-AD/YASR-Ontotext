@@ -2,7 +2,7 @@
 module.exports = {
 	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
                                 '<button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Download as &nbsp;<span class="icon-caret-right"></span>' + 
+                                    'Download as &nbsp;<span class="fa fa-caret-right"></span>' + 
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 

@@ -60,7 +60,7 @@ var root = module.exports = function(yasr) {
 	
 	var eventId = yasr.getPersistencyId('eventId') || "yasr_" + $(yasr.container).closest('[id]').attr('id');
 	var addAdditionalEvents = function() {
-        var client = new ZeroClipboard( $('td div .icon-link') );
+        var client = new ZeroClipboard( $('td div .fa-link') );
         client.on( "ready", function( readyEvent ) {
             client.on( "aftercopy", yasr.afterCopy);
         });
@@ -158,11 +158,11 @@ var root = module.exports = function(yasr) {
 		for (var sorting in sortings) {
 			var sortIconsDiv = $("<div class='sortIcons'></div>");
 			if (sorting == "sorting") {
-				sortIconsDiv.append("<a class='icon-sort'></a>");
+				sortIconsDiv.append("<a class='fa fa-sort'></a>");
 			} else if (sorting == "sorting_asc") {
-				sortIconsDiv.append("<a class='icon-sort-by-alphabet'></a>");
+				sortIconsDiv.append("<a class='fa fa-sort-alpha-asc'></a>");
 			} else if (sorting == "sorting_desc") {
-				sortIconsDiv.append("<a class='icon-sort-by-alphabet-alt'></a>");
+				sortIconsDiv.append("<a class='fa fa-sort-alpha-desc'></a>");
 			}
 
 			table.find("th." + sorting).append(sortIconsDiv);
@@ -285,7 +285,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a> " +
-		"<a class='icon-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
+		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'"
 	} else {
 		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";

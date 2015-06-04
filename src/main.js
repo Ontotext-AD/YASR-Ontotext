@@ -23,7 +23,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
 	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span>. </span><span class='view-info'></span><span class='time-took'></span></div>").appendTo(yasr.container);
-	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
+	yasr.insertResultsInfo = $("<div class='alert alert-info results-info' style='display:none'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
 	
@@ -162,16 +162,20 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.resultsContainer.empty();
 		yasr.header.hide();
 		var qType = window.editor.getQueryType();
-		if ('SELECT' == qType || 'CONSTRUCT' == qType || 'DESCRIBE' == qType) {
-			var spinWrapper = $('<div class="spinWrapper"></div>');
-        	yasr.resultsContainer.append(spinWrapper);
-			var spinner = new Spinner().spin(spinWrapper.get(0));
-		}
+		var spinWrapper = $('<div class="spinWrapper"></div>');
+       	yasr.resultsContainer.append(spinWrapper);
+		yasr.spinner = new Spinner().spin(spinWrapper.get(0));
+	}
 
+	yasr.hideSpinner = function() {
+		yasr.resultsContainer.find(".spinWrapper")
 	}
 
 	yasr.updateDownloadDropdown = function() {
 		var saveAsDropDown;
+		if (!window.editor) {
+			return;
+		}
 		yasr.header.find('.saveAsDropDown').remove();
 		var qType = window.editor.getQueryType();
 		if ('SELECT' == qType) {
@@ -265,7 +269,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (yasr.results.getAsJson().results) {
 			yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
 		}
-		if (yasr.results.getAsJson()) {
+		if (yasr.results.getAsJson() && !yasr.options.hideHeader) {
 			yasr.header.show();
 			yasr.updateDownloadDropdown();
 		}
@@ -469,7 +473,9 @@ var root = module.exports = function(parent, options, queryResults) {
 		var selection = utils.storage.get(selectorId);
 		if (selection) yasr.options.output = selection;
 	}
-	drawHeader(yasr);
+	if (!yasr.options.hideHeader) {
+		drawHeader(yasr);
+	}
 	if (!queryResults && yasr.options.persistency && yasr.options.persistency.results) {
 		var resultsId = yasr.getPersistencyId(yasr.options.persistency.results.key)
 		var fromStorage;

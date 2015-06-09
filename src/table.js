@@ -3,6 +3,7 @@ var $ = require("jquery"),
 	yutils = require("yasgui-utils"),
 	utils = require('./utils.js'),
 	imgs = require('./imgs.js'),
+	ZeroClipboard = require('zeroclipboard'),
 	_ = require('lodash');
 require("../lib/DataTables/media/js/jquery.dataTables.js");
 require("../lib/colResizable-1.4.js");
@@ -61,6 +62,7 @@ var root = module.exports = function(yasr) {
 	var eventId = yasr.getPersistencyId('eventId') || "yasr_" + $(yasr.container).closest('[id]').attr('id');
 	var addAdditionalEvents = function() {
         var client = new ZeroClipboard( $('td div .fa-link') );
+        client.config({bubbleEvents: false});
         client.on( "ready", function( readyEvent ) {
             client.on( "aftercopy", yasr.afterCopy);
         });
@@ -277,12 +279,12 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
 				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
 				if (prefixWithLocal.prefix != "") {
-					localHref = ctx + "/resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+					localHref = "explore/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
 				}
 			}
 		}
 		if (undefined == localHref) {
-			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
+			localHref = "explore?uri=" + encodeURIComponent(href);
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
@@ -294,7 +296,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 };
 
 var formatLiteralCustom = function(yasr, plugin, literalBinding) {
-	var stringRepresentation = YASR.utils.escapeHtmlEntities(literalBinding.value);
+	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}

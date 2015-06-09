@@ -167,10 +167,6 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.spinner = new Spinner().spin(spinWrapper.get(0));
 	}
 
-	yasr.hideSpinner = function() {
-		yasr.resultsContainer.find(".spinWrapper")
-	}
-
 	yasr.updateDownloadDropdown = function() {
 		var saveAsDropDown;
 		if (!window.editor) {

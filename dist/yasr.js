@@ -3,7 +3,7 @@
 //the current browserify version does not support require-ing js files which are used as entry-point
 //this way, we can still require our main.js file
 module.exports = require('./main.js');
-},{"./main.js":34}],2:[function(require,module,exports){
+},{"./main.js":39}],2:[function(require,module,exports){
 /**
                _ _____           _          _     _      
               | |  __ \         (_)        | |   | |     
@@ -1169,6 +1169,8 @@ RegExp.escape= function(s) {
 
 
 },{"jquery":undefined}],4:[function(require,module,exports){
+
+},{}],5:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1471,7 +1473,371 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
+exports.endianness = function () { return 'LE' };
+
+exports.hostname = function () {
+    if (typeof location !== 'undefined') {
+        return location.hostname
+    }
+    else return '';
+};
+
+exports.loadavg = function () { return [] };
+
+exports.uptime = function () { return 0 };
+
+exports.freemem = function () {
+    return Number.MAX_VALUE;
+};
+
+exports.totalmem = function () {
+    return Number.MAX_VALUE;
+};
+
+exports.cpus = function () { return [] };
+
+exports.type = function () { return 'Browser' };
+
+exports.release = function () {
+    if (typeof navigator !== 'undefined') {
+        return navigator.appVersion;
+    }
+    return '';
+};
+
+exports.networkInterfaces
+= exports.getNetworkInterfaces
+= function () { return {} };
+
+exports.arch = function () { return 'javascript' };
+
+exports.platform = function () { return 'browser' };
+
+exports.tmpdir = exports.tmpDir = function () {
+    return '/tmp';
+};
+
+exports.EOL = '\n';
+
+},{}],7:[function(require,module,exports){
+(function (process){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// resolves . and .. elements in a path array with directory names there
+// must be no slashes, empty elements, or device names (c:\) in the array
+// (so also no leading and trailing slashes - it does not distinguish
+// relative and absolute paths)
+function normalizeArray(parts, allowAboveRoot) {
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+    var last = parts[i];
+    if (last === '.') {
+      parts.splice(i, 1);
+    } else if (last === '..') {
+      parts.splice(i, 1);
+      up++;
+    } else if (up) {
+      parts.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (allowAboveRoot) {
+    for (; up--; up) {
+      parts.unshift('..');
+    }
+  }
+
+  return parts;
+}
+
+// Split a filename into [root, dir, basename, ext], unix version
+// 'root' is just a slash, or nothing.
+var splitPathRe =
+    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+var splitPath = function(filename) {
+  return splitPathRe.exec(filename).slice(1);
+};
+
+// path.resolve([from ...], to)
+// posix version
+exports.resolve = function() {
+  var resolvedPath = '',
+      resolvedAbsolute = false;
+
+  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+    var path = (i >= 0) ? arguments[i] : process.cwd();
+
+    // Skip empty and invalid entries
+    if (typeof path !== 'string') {
+      throw new TypeError('Arguments to path.resolve must be strings');
+    } else if (!path) {
+      continue;
+    }
+
+    resolvedPath = path + '/' + resolvedPath;
+    resolvedAbsolute = path.charAt(0) === '/';
+  }
+
+  // At this point the path should be resolved to a full absolute path, but
+  // handle relative paths to be safe (might happen when process.cwd() fails)
+
+  // Normalize the path
+  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+    return !!p;
+  }), !resolvedAbsolute).join('/');
+
+  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+};
+
+// path.normalize(path)
+// posix version
+exports.normalize = function(path) {
+  var isAbsolute = exports.isAbsolute(path),
+      trailingSlash = substr(path, -1) === '/';
+
+  // Normalize the path
+  path = normalizeArray(filter(path.split('/'), function(p) {
+    return !!p;
+  }), !isAbsolute).join('/');
+
+  if (!path && !isAbsolute) {
+    path = '.';
+  }
+  if (path && trailingSlash) {
+    path += '/';
+  }
+
+  return (isAbsolute ? '/' : '') + path;
+};
+
+// posix version
+exports.isAbsolute = function(path) {
+  return path.charAt(0) === '/';
+};
+
+// posix version
+exports.join = function() {
+  var paths = Array.prototype.slice.call(arguments, 0);
+  return exports.normalize(filter(paths, function(p, index) {
+    if (typeof p !== 'string') {
+      throw new TypeError('Arguments to path.join must be strings');
+    }
+    return p;
+  }).join('/'));
+};
+
+
+// path.relative(from, to)
+// posix version
+exports.relative = function(from, to) {
+  from = exports.resolve(from).substr(1);
+  to = exports.resolve(to).substr(1);
+
+  function trim(arr) {
+    var start = 0;
+    for (; start < arr.length; start++) {
+      if (arr[start] !== '') break;
+    }
+
+    var end = arr.length - 1;
+    for (; end >= 0; end--) {
+      if (arr[end] !== '') break;
+    }
+
+    if (start > end) return [];
+    return arr.slice(start, end - start + 1);
+  }
+
+  var fromParts = trim(from.split('/'));
+  var toParts = trim(to.split('/'));
+
+  var length = Math.min(fromParts.length, toParts.length);
+  var samePartsLength = length;
+  for (var i = 0; i < length; i++) {
+    if (fromParts[i] !== toParts[i]) {
+      samePartsLength = i;
+      break;
+    }
+  }
+
+  var outputParts = [];
+  for (var i = samePartsLength; i < fromParts.length; i++) {
+    outputParts.push('..');
+  }
+
+  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+  return outputParts.join('/');
+};
+
+exports.sep = '/';
+exports.delimiter = ':';
+
+exports.dirname = function(path) {
+  var result = splitPath(path),
+      root = result[0],
+      dir = result[1];
+
+  if (!root && !dir) {
+    // No dirname whatsoever
+    return '.';
+  }
+
+  if (dir) {
+    // It has a dirname, strip trailing slash
+    dir = dir.substr(0, dir.length - 1);
+  }
+
+  return root + dir;
+};
+
+
+exports.basename = function(path, ext) {
+  var f = splitPath(path)[2];
+  // TODO: make this comparison case-insensitive on windows?
+  if (ext && f.substr(-1 * ext.length) === ext) {
+    f = f.substr(0, f.length - ext.length);
+  }
+  return f;
+};
+
+
+exports.extname = function(path) {
+  return splitPath(path)[3];
+};
+
+function filter (xs, f) {
+    if (xs.filter) return xs.filter(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        if (f(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
+}
+
+// String.prototype.substr - negative index don't work in IE8
+var substr = 'ab'.substr(-1) === 'b'
+    ? function (str, start, len) { return str.substr(start, len) }
+    : function (str, start, len) {
+        if (start < 0) start = str.length + start;
+        return str.substr(start, len);
+    }
+;
+
+}).call(this,require('_process'))
+
+},{"_process":8}],8:[function(require,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canMutationObserver = typeof window !== 'undefined'
+    && window.MutationObserver;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    var queue = [];
+
+    if (canMutationObserver) {
+        var hiddenDiv = document.createElement("div");
+        var observer = new MutationObserver(function () {
+            var queueList = queue.slice();
+            queue.length = 0;
+            queueList.forEach(function (fn) {
+                fn();
+            });
+        });
+
+        observer.observe(hiddenDiv, { attributes: true });
+
+        return function nextTick(fn) {
+            if (!queue.length) {
+                hiddenDiv.setAttribute('yes', 'no');
+            }
+            queue.push(fn);
+        };
+    }
+
+    if (canPost) {
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],9:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -1593,7 +1959,7 @@ function isUndefined(arg) {
   });
 });
 
-},{"codemirror":undefined}],6:[function(require,module,exports){
+},{"codemirror":undefined}],10:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -1700,7 +2066,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
 
 });
 
-},{"codemirror":undefined}],7:[function(require,module,exports){
+},{"codemirror":undefined}],11:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -1851,7 +2217,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   });
 });
 
-},{"codemirror":undefined}],8:[function(require,module,exports){
+},{"codemirror":undefined}],12:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -1948,20 +2314,26 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   }
 
   function onGutterClick(cm, line, gutter) {
-    var opts = cm.state.foldGutter.options;
+    var state = cm.state.foldGutter;
+    if (!state) return;
+    var opts = state.options;
     if (gutter != opts.gutter) return;
     cm.foldCode(Pos(line, 0), opts.rangeFinder);
   }
 
   function onChange(cm) {
-    var state = cm.state.foldGutter, opts = cm.state.foldGutter.options;
+    var state = cm.state.foldGutter;
+    if (!state) return;
+    var opts = state.options;
     state.from = state.to = 0;
     clearTimeout(state.changeUpdate);
     state.changeUpdate = setTimeout(function() { updateInViewport(cm); }, opts.foldOnChangeTimeSpan || 600);
   }
 
   function onViewportChange(cm) {
-    var state = cm.state.foldGutter, opts = cm.state.foldGutter.options;
+    var state = cm.state.foldGutter;
+    if (!state) return;
+    var opts = state.options;
     clearTimeout(state.changeUpdate);
     state.changeUpdate = setTimeout(function() {
       var vp = cm.getViewport();
@@ -1983,13 +2355,15 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   }
 
   function onFold(cm, from) {
-    var state = cm.state.foldGutter, line = from.line;
+    var state = cm.state.foldGutter;
+    if (!state) return;
+    var line = from.line;
     if (line >= state.from && line < state.to)
       updateFoldInfo(cm, line, line + 1);
   }
 });
 
-},{"./foldcode":7,"codemirror":undefined}],9:[function(require,module,exports){
+},{"./foldcode":11,"codemirror":undefined}],13:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -2173,7 +2547,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   };
 });
 
-},{"codemirror":undefined}],10:[function(require,module,exports){
+},{"codemirror":undefined}],14:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -2294,7 +2668,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       } else if (state.lastType == "operator" || state.lastType == "keyword c" ||
                state.lastType == "sof" || /^[\[{}\(,;:]$/.test(state.lastType)) {
         readRegexp(stream);
-        stream.eatWhile(/[gimy]/); // 'y' is "sticky" option in Mozilla
+        stream.match(/^\b(([gimyu])(?![gimyu]*\2))+\b/);
         return ret("regexp", "string-2");
       } else {
         stream.eatWhile(isOperatorChar);
@@ -2867,7 +3241,7 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 });
 
-},{"codemirror":undefined}],11:[function(require,module,exports){
+},{"codemirror":undefined}],15:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -3253,9 +3627,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 });
 
-},{"codemirror":undefined}],12:[function(require,module,exports){
+},{"codemirror":undefined}],16:[function(require,module,exports){
+(function (process,__dirname){
 /*!
- * This file is part of Cytoscape.js 2.3.11.
+ * This file is part of Cytoscape.js 2.4.1.
  * 
  * Cytoscape.js is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by the Free
@@ -3285,7 +3660,7 @@ var cytoscape;
     return cytoscape.init.apply(cytoscape, arguments);
   };
 
-  $$.version = '2.3.11';
+  $$.version = '2.4.1';
   
   // allow functional access to cytoscape.js
   // e.g. var cyto = $.cytoscape({ selector: "#foo", ... });
@@ -3332,9 +3707,226 @@ var cytoscape;
   
 })( typeof window === 'undefined' ? null : window );
 
+// extra set to `this` is necessary for meteor
+this.cytoscape = cytoscape;
+
+// internal, minimal Promise impl s.t. apis can return promises in old envs
+// based on thenable (http://github.com/rse/thenable)
+
+// NB: you must use `new $$.Promise`, because you may have native promises that don't autonew for you
+
+;(function($$){ 'use strict';
+  
+  /*  promise states [Promises/A+ 2.1]  */
+  var STATE_PENDING   = 0;                                         /*  [Promises/A+ 2.1.1]  */
+  var STATE_FULFILLED = 1;                                         /*  [Promises/A+ 2.1.2]  */
+  var STATE_REJECTED  = 2;                                         /*  [Promises/A+ 2.1.3]  */
+
+  /*  promise object constructor  */
+  var api = function (executor) {
+    /*  optionally support non-constructor/plain-function call  */
+    if (!(this instanceof api))
+      return new api(executor);
+
+    /*  initialize object  */
+    this.id           = "Thenable/1.0.7";
+    this.state        = STATE_PENDING; /*  initial state  */
+    this.fulfillValue = undefined;     /*  initial value  */     /*  [Promises/A+ 1.3, 2.1.2.2]  */
+    this.rejectReason = undefined;     /*  initial reason */     /*  [Promises/A+ 1.5, 2.1.3.2]  */
+    this.onFulfilled  = [];            /*  initial handlers  */
+    this.onRejected   = [];            /*  initial handlers  */
+
+    /*  provide optional information-hiding proxy  */
+    this.proxy = {
+      then: this.then.bind(this)
+    };
+
+    /*  support optional executor function  */
+    if (typeof executor === "function")
+      executor.call(this, this.fulfill.bind(this), this.reject.bind(this));
+  };
+
+  /*  promise API methods  */
+  api.prototype = {
+    /*  promise resolving methods  */
+    fulfill: function (value) { return deliver(this, STATE_FULFILLED, "fulfillValue", value); },
+    reject:  function (value) { return deliver(this, STATE_REJECTED,  "rejectReason", value); },
+
+    /*  "The then Method" [Promises/A+ 1.1, 1.2, 2.2]  */
+    then: function (onFulfilled, onRejected) {
+      var curr = this;
+      var next = new api();                                    /*  [Promises/A+ 2.2.7]  */
+      curr.onFulfilled.push(
+        resolver(onFulfilled, next, "fulfill"));             /*  [Promises/A+ 2.2.2/2.2.6]  */
+      curr.onRejected.push(
+        resolver(onRejected,  next, "reject" ));             /*  [Promises/A+ 2.2.3/2.2.6]  */
+      execute(curr);
+      return next.proxy;                                       /*  [Promises/A+ 2.2.7, 3.3]  */
+    }
+  };
+
+  /*  deliver an action  */
+  var deliver = function (curr, state, name, value) {
+    if (curr.state === STATE_PENDING) {
+      curr.state = state;                                      /*  [Promises/A+ 2.1.2.1, 2.1.3.1]  */
+      curr[name] = value;                                      /*  [Promises/A+ 2.1.2.2, 2.1.3.2]  */
+      execute(curr);
+    }
+    return curr;
+  };
+
+  /*  execute all handlers  */
+  var execute = function (curr) {
+    if (curr.state === STATE_FULFILLED)
+      execute_handlers(curr, "onFulfilled", curr.fulfillValue);
+    else if (curr.state === STATE_REJECTED)
+      execute_handlers(curr, "onRejected",  curr.rejectReason);
+  };
+
+  /*  execute particular set of handlers  */
+  var execute_handlers = function (curr, name, value) {
+    /* global process: true */
+    /* global setImmediate: true */
+    /* global setTimeout: true */
+
+    /*  short-circuit processing  */
+    if (curr[name].length === 0)
+      return;
+
+    /*  iterate over all handlers, exactly once  */
+    var handlers = curr[name];
+    curr[name] = [];                                             /*  [Promises/A+ 2.2.2.3, 2.2.3.3]  */
+    var func = function () {
+      for (var i = 0; i < handlers.length; i++)
+        handlers[i](value);                                  /*  [Promises/A+ 2.2.5]  */
+    };
+
+    /*  execute procedure asynchronously  */                     /*  [Promises/A+ 2.2.4, 3.1]  */
+    if (typeof process === "object" && typeof process.nextTick === "function")
+      process.nextTick(func);
+    else if (typeof setImmediate === "function")
+      setImmediate(func);
+    else
+      setTimeout(func, 0);
+  };
+
+  /*  generate a resolver function  */
+  var resolver = function (cb, next, method) {
+    return function (value) {
+      if (typeof cb !== "function")                            /*  [Promises/A+ 2.2.1, 2.2.7.3, 2.2.7.4]  */
+        next[method].call(next, value);                      /*  [Promises/A+ 2.2.7.3, 2.2.7.4]  */
+      else {
+        var result;
+        try { result = cb(value); }                          /*  [Promises/A+ 2.2.2.1, 2.2.3.1, 2.2.5, 3.2]  */
+        catch (e) {
+          next.reject(e);                                  /*  [Promises/A+ 2.2.7.2]  */
+          return;
+        }
+        resolve(next, result);                               /*  [Promises/A+ 2.2.7.1]  */
+      }
+    };
+  };
+
+  /*  "Promise Resolution Procedure"  */                           /*  [Promises/A+ 2.3]  */
+  var resolve = function (promise, x) {
+    /*  sanity check arguments  */                               /*  [Promises/A+ 2.3.1]  */
+    if (promise === x || promise.proxy === x) {
+      promise.reject(new TypeError("cannot resolve promise with itself"));
+      return;
+    }
+
+    /*  surgically check for a "then" method
+      (mainly to just call the "getter" of "then" only once)  */
+    var then;
+    if ((typeof x === "object" && x !== null) || typeof x === "function") {
+      try { then = x.then; }                                   /*  [Promises/A+ 2.3.3.1, 3.5]  */
+      catch (e) {
+        promise.reject(e);                                   /*  [Promises/A+ 2.3.3.2]  */
+        return;
+      }
+    }
+
+    /*  handle own Thenables    [Promises/A+ 2.3.2]
+      and similar "thenables" [Promises/A+ 2.3.3]  */
+    if (typeof then === "function") {
+      var resolved = false;
+      try {
+        /*  call retrieved "then" method */                  /*  [Promises/A+ 2.3.3.3]  */
+        then.call(x,
+          /*  resolvePromise  */                           /*  [Promises/A+ 2.3.3.3.1]  */
+          function (y) {
+            if (resolved) return; resolved = true;       /*  [Promises/A+ 2.3.3.3.3]  */
+            if (y === x)                                 /*  [Promises/A+ 3.6]  */
+              promise.reject(new TypeError("circular thenable chain"));
+            else
+              resolve(promise, y);
+          },
+
+          /*  rejectPromise  */                            /*  [Promises/A+ 2.3.3.3.2]  */
+          function (r) {
+            if (resolved) return; resolved = true;       /*  [Promises/A+ 2.3.3.3.3]  */
+            promise.reject(r);
+          }
+        );
+      }
+      catch (e) {
+        if (!resolved)                                       /*  [Promises/A+ 2.3.3.3.3]  */
+          promise.reject(e);                               /*  [Promises/A+ 2.3.3.3.4]  */
+      }
+      return;
+    }
+
+    /*  handle other values  */
+    promise.fulfill(x);                                          /*  [Promises/A+ 2.3.4, 2.3.3.4]  */
+  };
+
+  // use native promises where possible
+  $$.Promise = typeof Promise === 'undefined' ? api : Promise;
+
+  // so we always have Promise.all()
+  $$.Promise.all = $$.Promise.all || function( ps ){
+    return new $$.Promise(function( resolveAll, rejectAll ){
+      var vals = new Array( ps.length );
+      var doneCount = 0;
+
+      var fulfill = function( i, val ){
+        vals[i] = val;
+        doneCount++;
+
+        if( doneCount === ps.length ){
+          resolveAll( vals );
+        }
+      };
+
+      for( var i = 0; i < ps.length; i++ ){
+        (function( i ){
+          var p = ps[i];
+          var isPromise = p.then != null;
+
+          if( isPromise ){
+            p.then(function( val ){
+              fulfill( i, val );
+            }, function( err ){
+              rejectAll( err );
+            });
+          } else {
+            var val = p;
+            fulfill( i, val );
+          }
+        })( i );
+      }
+
+    });
+  };
+
+})( cytoscape );
 // type testing utility functions
 
 ;(function($$, window){ 'use strict';
+
+  var typeofstr = typeof '';
+  var typeofobj = typeof {};
+  var typeoffn = typeof function(){};
 
   $$.is = {
     defined: function(obj){
@@ -3342,11 +3934,11 @@ var cytoscape;
     },
 
     string: function(obj){
-      return obj != null && typeof obj == typeof '';
+      return obj != null && typeof obj == typeofstr;
     },
     
     fn: function(obj){
-      return obj != null && typeof obj === typeof function(){};
+      return obj != null && typeof obj === typeoffn;
     },
     
     array: function(obj){
@@ -3354,7 +3946,11 @@ var cytoscape;
     },
     
     plainObject: function(obj){
-      return obj != null && typeof obj === typeof {} && !$$.is.array(obj) && obj.constructor === Object;
+      return obj != null && typeof obj === typeofobj && !$$.is.array(obj) && obj.constructor === Object;
+    },
+
+    object: function(obj){
+      return obj != null && typeof obj === typeofobj;
     },
     
     number: function(obj){
@@ -3401,6 +3997,14 @@ var cytoscape;
       return obj instanceof $$.Event;
     },
 
+    thread: function(obj){
+      return obj instanceof $$.Thread;
+    },
+
+    fabric: function(obj){
+      return obj instanceof $$.Fabric;
+    },
+
     emptyString: function(obj){
       if( !obj ){ // null is empty
         return true; 
@@ -3434,6 +4038,10 @@ var cytoscape;
         $$.is.number(obj.x1) && $$.is.number(obj.x2) &&
         $$.is.number(obj.y1) && $$.is.number(obj.y2)
       ;
+    },
+
+    promise: function(obj){
+      return $$.is.object(obj) && $$.is.fn(obj.then);
     },
 
     touch: function(){
@@ -5964,9 +6572,7 @@ var cytoscape;
       layoutProto.off = $$.define.off({ layout: true });
       layoutProto.trigger = $$.define.trigger({ layout: true });
 
-      // aliases for those folks who like old stuff:
-      layoutProto.bind = layoutProto.on;
-      layoutProto.unbind = layoutProto.off;
+      $$.define.eventAliasesOn( layoutProto );
     }
 
     return $$.util.setMap({
@@ -6126,6 +6732,7 @@ var cytoscape;
       this.namespace = props.namespace;
       this.layout = props.layout;
       this.data = props.data;
+      this.message = props.message;
     }
 
     // Create a timestamp if incoming event doesn't have one
@@ -6440,7 +7047,10 @@ var cytoscape;
               };
 
               for( var j = 0; j < all.length; j++ ){
-                all[j]._private.listeners.push( listener );
+                var _p = all[j]._private;
+
+                _p.listeners = _p.listeners || [];
+                _p.listeners.push( listener );
               }
             }
           } // for events array
@@ -6449,6 +7059,33 @@ var cytoscape;
         return self; // maintain chaining
       }; // function
     }, // on
+
+    eventAliasesOn: function( proto ){
+      var p = proto;
+
+      p.addListener = p.listen = p.bind = p.on;
+      p.removeListener = p.unlisten = p.unbind = p.off;
+      p.emit = p.trigger;
+
+      // this is just a wrapper alias of .on()
+      p.pon = p.promiseOn = function( events, selector ){
+        var self = this;
+        var args = Array.prototype.slice.call( arguments, 0 );
+
+        return new $$.Promise(function( resolve, reject ){
+          var callback = function( e ){
+            self.off.apply( self, offArgs );
+
+            resolve( e );
+          };
+
+          var onArgs = args.concat([ callback ]);
+          var offArgs = onArgs.concat([]);
+
+          self.on.apply( self, onArgs );
+        });
+      };
+    },
 
     off: function offImpl( params ){
       var defaults = {
@@ -6499,7 +7136,7 @@ var cytoscape;
               var namespace = match[2] ? match[2] : undefined;
 
               for( var i = 0; i < all.length; i++ ){ //
-                var listeners = all[i]._private.listeners;
+                var listeners = all[i]._private.listeners = all[i]._private.listeners || [];
 
                 for( var j = 0; j < listeners.length; j++ ){
                   var listener = listeners[j];
@@ -6535,8 +7172,8 @@ var cytoscape;
         var eventsIsString = $$.is.string(events);
         var eventsIsObject = $$.is.plainObject(events);
         var eventsIsEvent = $$.is.event(events);
-        var cy = this._private.cy || this;
-        var hasCompounds = cy.hasCompoundNodes();
+        var cy = this._private.cy || ( $$.is.core(this) ? this : null );
+        var hasCompounds = cy ? cy.hasCompoundNodes() : false;
 
         if( eventsIsString ){ // then make a plain event object for each event name
           var evts = events.split(/\s+/);
@@ -6574,7 +7211,7 @@ var cytoscape;
           
           for( var j = 0; j < all.length; j++ ){ // for each
             var triggerer = all[j];
-            var listeners = triggerer._private.listeners;
+            var listeners = triggerer._private.listeners = triggerer._private.listeners || [];
             var triggererIsElement = $$.is.element(triggerer);
             var bubbleUp = triggererIsElement || params.layout;
 
@@ -7079,7 +7716,7 @@ var cytoscape;
           query: true,
           // NB: if one colon selector is a substring of another from its start, place the longer one first
           // e.g. :foobar|:foo
-          regex: '(:selected|:unselected|:locked|:unlocked|:visible|:hidden|:transparent|:grabbed|:free|:removed|:inside|:grabbable|:ungrabbable|:animated|:unanimated|:selectable|:unselectable|:orphan|:nonorphan|:parent|:child|:loop|:simple|:active|:inactive|:touch)',
+          regex: '(:selected|:unselected|:locked|:unlocked|:visible|:hidden|:transparent|:grabbed|:free|:removed|:inside|:grabbable|:ungrabbable|:animated|:unanimated|:selectable|:unselectable|:orphan|:nonorphan|:parent|:child|:loop|:simple|:active|:inactive|:touch|:backgrounding|:nonbackgrounding)',
           populate: function( state ){
             this.colonSelectors.push( state );
           }
@@ -7454,6 +8091,12 @@ var cytoscape;
         break;
       case ':touch':
         allColonSelectorsMatch = $$.is.touch();
+        break;
+      case ':backgrounding':
+        allColonSelectorsMatch = element.backgrounding();
+        break;
+      case ':nonbackgrounding':
+        allColonSelectorsMatch = !element.backgrounding();
         break;
       }
       
@@ -7836,7 +8479,7 @@ var cytoscape;
 })( cytoscape );
 
 ;(function($$){ 'use strict';
-  
+
   $$.Style = function( cy ){
 
     if( !(this instanceof $$.Style) ){
@@ -7853,7 +8496,7 @@ var cytoscape;
       coreStyle: {},
       newStyle: true
     };
-    
+
     this.length = 0;
 
     this.addDefaultStylesheet();
@@ -7892,6 +8535,7 @@ var cytoscape;
       number: { number: true },
       size: { number: true, min: 0 },
       bgSize: { number: true, min: 0, allowPercent: true },
+      bgWH: { number: true, min: 0, allowPercent: true, enums: ['auto'] },
       bgPos: { number: true, allowPercent: true },
       bgRepeat: { enums: ['repeat', 'repeat-x', 'repeat-y', 'no-repeat'] },
       bgFit: { enums: ['none', 'contain', 'cover'] },
@@ -7900,13 +8544,16 @@ var cytoscape;
       lineStyle: { enums: ['solid', 'dotted', 'dashed'] },
       borderStyle: { enums: ['solid', 'dotted', 'dashed', 'double'] },
       curveStyle: { enums: ['bezier', 'unbundled-bezier', 'haystack'] },
-      fontFamily: { regex: '^([\\w- ]+(?:\\s*,\\s*[\\w- ]+)*)$' },
+      fontFamily: { regex: '^([\\w- \\"]+(?:\\s*,\\s*[\\w- \\"]+)*)$' },
       fontVariant: { enums: ['small-caps', 'normal'] },
       fontStyle: { enums: ['italic', 'normal', 'oblique'] },
       fontWeight: { enums: ['normal', 'bold', 'bolder', 'lighter', '100', '200', '300', '400', '500', '600', '800', '900', 100, 200, 300, 400, 500, 600, 700, 800, 900] },
       textDecoration: { enums: ['none', 'underline', 'overline', 'line-through'] },
       textTransform: { enums: ['none', 'uppercase', 'lowercase'] },
-      nodeShape: { enums: ['rectangle', 'roundrectangle', 'ellipse', 'triangle', 'square', 'pentagon', 'hexagon', 'heptagon', 'octagon', 'star'] },
+      textWrap: { enums: ['none', 'wrap'] },
+      textBackgroundShape: { enums: ['rectangle', 'roundrectangle']},
+      nodeShape: { enums: ['rectangle', 'roundrectangle', 'ellipse', 'triangle', 'square', 'pentagon', 'hexagon', 'heptagon', 'octagon', 'star', 'diamond', 'vee', 'rhomboid'] },
+      compoundIncludeLabels: { enums: ['include', 'exclude'] },
       arrowShape: { enums: ['tee', 'triangle', 'triangle-tee', 'triangle-backcurve', 'half-triangle-overshot', 'square', 'circle', 'diamond', 'none'] },
       arrowFill: { enums: ['filled', 'hollow'] },
       display: { enums: ['element', 'none'] },
@@ -7916,11 +8563,15 @@ var cytoscape;
       text: { string: true },
       data: { mapping: true, regex: data('data') },
       layoutData: { mapping: true, regex: data('layoutData') },
+      scratch: { mapping: true, regex: data('scratch') },
       mapData: { mapping: true, regex: mapData('mapData') },
       mapLayoutData: { mapping: true, regex: mapData('mapLayoutData') },
+      mapScratch: { mapping: true, regex: mapData('mapScratch') },
+      fn: { mapping: true, fn: true },
       url: { regex: '^url\\s*\\(\\s*([^\\s]+)\\s*\\s*\\)|none|(.+)$' },
       propList: { propList: true },
-      angle: { number: true, units: 'deg|rad' }
+      angle: { number: true, units: 'deg|rad' },
+      textRotation: { enums: ['none', 'autorotate'] }
     };
 
     // define visual style properties
@@ -7935,8 +8586,17 @@ var cytoscape;
       { name: 'text-outline-width', type: t.size },
       { name: 'text-outline-opacity', type: t.zeroOneNumber },
       { name: 'text-opacity', type: t.zeroOneNumber },
+      { name: 'text-background-color', type: t.color },
+      { name: 'text-background-opacity', type: t.zeroOneNumber },
+      { name: 'text-border-color', type: t.color },
+      { name: 'text-border-width', type: t.size },
+      { name: 'text-border-style', type: t.borderStyle },
+      { name: 'text-background-shape', type: t.textBackgroundShape},
       // { name: 'text-decoration', type: t.textDecoration }, // not supported in canvas
       { name: 'text-transform', type: t.textTransform },
+      { name: 'text-wrap', type: t.textWrap },
+      { name: 'text-max-width', type: t.size },
+
       // { name: 'text-rotation', type: t.angle }, // TODO disabled b/c rotation breaks bounding boxes
       { name: 'font-family', type: t.fontFamily },
       { name: 'font-style', type: t.fontStyle },
@@ -7944,6 +8604,7 @@ var cytoscape;
       { name: 'font-weight', type: t.fontWeight },
       { name: 'font-size', type: t.size },
       { name: 'min-zoomed-font-size', type: t.size },
+      { name: 'edge-text-rotation', type: t.textRotation },
 
       // visibility
       { name: 'display', type: t.display },
@@ -7955,6 +8616,20 @@ var cytoscape;
       { name: 'overlay-padding', type: t.size },
       { name: 'overlay-color', type: t.color },
       { name: 'overlay-opacity', type: t.zeroOneNumber },
+
+      // shadows
+      { name: 'shadow-blur', type: t.size },
+      { name: 'shadow-color', type: t.color },
+      { name: 'shadow-opacity', type: t.zeroOneNumber },
+      { name: 'shadow-offset-x', type: t.number },
+      { name: 'shadow-offset-y', type: t.number },
+
+      // label shadows
+      { name: 'text-shadow-blur', type: t.size },
+      { name: 'text-shadow-color', type: t.color },
+      { name: 'text-shadow-opacity', type: t.zeroOneNumber },
+      { name: 'text-shadow-offset-x', type: t.number },
+      { name: 'text-shadow-offset-y', type: t.number },
 
       // transition anis
       { name: 'transition-property', type: t.propList },
@@ -7974,7 +8649,7 @@ var cytoscape;
       { name: 'border-opacity', type: t.zeroOneNumber },
       { name: 'border-width', type: t.size },
       { name: 'border-style', type: t.borderStyle },
-      
+
       // node background images
       { name: 'background-image', type: t.url },
       { name: 'background-image-opacity', type: t.zeroOneNumber },
@@ -7983,6 +8658,8 @@ var cytoscape;
       { name: 'background-repeat', type: t.bgRepeat },
       { name: 'background-fit', type: t.bgFit },
       { name: 'background-clip', type: t.bgClip },
+      { name: 'background-width', type: t.bgWH },
+      { name: 'background-height', type: t.bgWH },
 
       // compound props
       { name: 'padding-left', type: t.size },
@@ -7990,6 +8667,7 @@ var cytoscape;
       { name: 'padding-top', type: t.size },
       { name: 'padding-bottom', type: t.size },
       { name: 'position', type: t.position },
+      { name: 'compound-sizing-wrt-labels', type: t.compoundIncludeLabels },
 
       // edge line
       { name: 'line-style', type: t.lineStyle },
@@ -8038,7 +8716,7 @@ var cytoscape;
     // allow access of properties by name ( e.g. $$.style.properties.height )
     for( var i = 0; i < props.length; i++ ){
       var prop = props[i];
-      
+
       props[ prop.name ] = prop; // allow lookup by name
     }
   })();
@@ -8047,7 +8725,7 @@ var cytoscape;
   $$.styfn.addDefaultStylesheet = function(){
     // to be nice, we build font related style properties from the core container
     // so that cytoscape matches the style of its container by default
-    // 
+    //
     // unfortunately, this doesn't seem work consistently and can grab the default stylesheet values
     // instead of the developer's values so let's just make it explicit for the dev for now
     //
@@ -8059,6 +8737,7 @@ var cytoscape;
     var color = '#000' || this.containerPropertyAsString('color') || '#000';
     var textTransform = 'none' || this.containerPropertyAsString('text-transform') || 'none';
     var fontSize = 16 || this.containerPropertyAsString('font-size') || 16;
+    var textMaxWidth = 9999 || this.containerPropertyAsString('text-max-width') || 9999;
 
     // fill the style with the default stylesheet
     this
@@ -8073,12 +8752,21 @@ var cytoscape;
           'text-opacity': 1,
           'text-decoration': 'none',
           'text-transform': textTransform,
+          'text-wrap': 'none',
+          'text-max-width': textMaxWidth,
+          'text-background-color': 'none',
+          'text-background-opacity': 1,
+          'text-border-width': 0,
+          'text-border-style': 'solid',
+          'text-border-color':'#000',
+          'text-background-shape':'rectangle',
           'font-family': fontFamily,
           'font-style': fontStyle,
           // 'font-variant': fontVariant,
           'font-weight': fontWeight,
           'font-size': fontSize,
           'min-zoomed-font-size': 0,
+          'edge-text-rotation': 'none',
           'visibility': 'visible',
           'display': 'element',
           'opacity': 1,
@@ -8087,6 +8775,16 @@ var cytoscape;
           'overlay-opacity': 0,
           'overlay-color': '#000',
           'overlay-padding': 10,
+          'shadow-opacity': 0,
+          'shadow-color': '#000',
+          'shadow-blur': 10,
+          'shadow-offset-x': 0,
+          'shadow-offset-y': 0,
+          'text-shadow-opacity': 0,
+          'text-shadow-color': '#000',
+          'text-shadow-blur': 5,
+          'text-shadow-offset-x': 0,
+          'text-shadow-offset-y': 0,
           'transition-property': 'none',
           'transition-duration': 0,
           'transition-delay': 0,
@@ -8102,6 +8800,8 @@ var cytoscape;
           'background-repeat': 'no-repeat',
           'background-fit': 'none',
           'background-clip': 'node',
+          'background-width': 'auto',
+          'background-height': 'auto',
           'border-color': '#000',
           'border-opacity': 1,
           'border-width': 0,
@@ -8116,7 +8816,8 @@ var cytoscape;
           'padding-left': 0,
           'padding-right': 0,
           'position': 'origin',
-          
+          'compound-sizing-wrt-labels': 'include',
+
 
           // node pie bg
           'pie-size': '100%',
@@ -8257,11 +8958,12 @@ var cytoscape;
   // - strValue : a string value that represents the property value in valid css
   // - bypass : true iff the property is a bypass property
   $$.styfn.parse = function( name, value, propIsBypass, propIsFlat ){
-    
+
     name = $$.util.camel2dash( name ); // make sure the property name is in dash form (e.g. 'property-name' not 'propertyName')
     var property = $$.style.properties[ name ];
     var passedValue = value;
-    
+    var types = $$.style.types;
+
     if( !property ){ return null; } // return null on property of unknown name
     if( value === undefined || value === null ){ return null; } // can't assign null
 
@@ -8283,38 +8985,70 @@ var cytoscape;
       };
     }
 
+    var hasPie = name.match(/pie-(\d+)-background-size/);
+
+    // check if value is a function used as a mapper
+    if( $$.is.fn(value) ){
+      return {
+        name: name,
+        value: value,
+        strValue: 'fn',
+        mapped: types.fn,
+        bypass: propIsBypass,
+        hasPie: hasPie
+      };
+    }
+
     // check if value is mapped
-    var data, mapData, layoutData, mapLayoutData;
+    var data, mapData, layoutData, mapLayoutData, scratch, mapScratch;
     if( !valueIsString || propIsFlat ){
       // then don't bother to do the expensive regex checks
 
     } else if(
-      ( data = new RegExp( $$.style.types.data.regex ).exec( value ) ) ||
-      ( layoutData = new RegExp( $$.style.types.layoutData.regex ).exec( value ) )
+      ( data = new RegExp( types.data.regex ).exec( value ) ) ||
+      ( layoutData = new RegExp( types.layoutData.regex ).exec( value ) ) ||
+      ( scratch = new RegExp( types.scratch.regex ).exec( value ) )
     ){
       if( propIsBypass ){ return false; } // mappers not allowed in bypass
-      
-      var isLayout = layoutData !== undefined;
-      data = data || layoutData;
+
+      var mapped;
+      if( data ){
+        mapped = types.data;
+      } else if( layoutData ){
+        mapped = types.layoutData;
+      } else {
+        mapped = types.scratch;
+      }
+
+      data = data || layoutData || scratch;
 
       return {
         name: name,
         value: data,
         strValue: '' + value,
-        mapped: isLayout ? $$.style.types.layoutData : $$.style.types.data,
+        mapped: mapped,
         field: data[1],
         bypass: propIsBypass,
-        hasPie: name.match(/pie-(\d+)-background-size/)
+        hasPie: hasPie
       };
 
     } else if(
-      ( mapData = new RegExp( $$.style.types.mapData.regex ).exec( value ) ) ||
-      ( mapLayoutData = new RegExp( $$.style.types.mapLayoutData.regex ).exec( value ) )
+      ( mapData = new RegExp( types.mapData.regex ).exec( value ) ) ||
+      ( mapLayoutData = new RegExp( types.mapLayoutData.regex ).exec( value ) ) ||
+      ( mapScratch = new RegExp( types.mapScratch.regex ).exec( value ) )
     ){
       if( propIsBypass ){ return false; } // mappers not allowed in bypass
 
-      var isLayout = mapLayoutData !== undefined;
-      mapData = mapData || mapLayoutData;
+      var mapped;
+      if( mapData ){
+        mapped = types.mapData;
+      } else if( mapLayoutData ){
+        mapped = types.mapLayoutData;
+      } else {
+        mapped = types.mapScratch;
+      }
+
+      mapData = mapData || mapLayoutData || mapScratch;
 
       // we can map only if the type is a colour or a number
       if( !(type.color || type.number) ){ return false; }
@@ -8328,11 +9062,11 @@ var cytoscape;
       // check if valueMin and valueMax are the same
       if( valueMin.value === valueMax.value ){
         return false; // can't make much of a mapper without a range
-      
+
       } else if( type.color ){
         var c1 = valueMin.value;
         var c2 = valueMax.value;
-        
+
         var same = c1[0] === c2[0] // red
           && c1[1] === c2[1] // green
           && c1[2] === c2[2] // blue
@@ -8353,19 +9087,19 @@ var cytoscape;
         name: name,
         value: mapData,
         strValue: '' + value,
-        mapped: isLayout ? $$.style.types.mapLayoutData : $$.style.types.mapData,
+        mapped: mapped,
         field: mapData[1],
         fieldMin: parseFloat( mapData[2] ), // min & max are numeric
         fieldMax: parseFloat( mapData[3] ),
         valueMin: valueMin.value,
         valueMax: valueMax.value,
         bypass: propIsBypass,
-        hasPie: name.match(/pie-(\d+)-background-size/)
+        hasPie: hasPie
       };
     }
 
     // check the type and return the appropriate object
-    if( type.number ){ 
+    if( type.number ){
       var units;
       var implicitUnits = 'px'; // not set => px
 
@@ -8380,14 +9114,14 @@ var cytoscape;
       if( !type.unitless ){
         if( valueIsString ){
           var unitsRegex = 'px|em' + (type.allowPercent ? '|\\%' : '');
-          if( units ){ unitsRegex = units; } // only allow explicit units if so set 
+          if( units ){ unitsRegex = units; } // only allow explicit units if so set
           var match = value.match( '^(' + $$.util.regex.number + ')(' + unitsRegex + ')?' + '$' );
-          
+
           if( match ){
             value = match[1];
             units = match[2] || implicitUnits;
           }
-          
+
         } else if( !units || type.implicitUnits ) {
           units = implicitUnits; // implicitly px if unspecified
         }
@@ -8427,7 +9161,7 @@ var cytoscape;
       }
 
       // check value is within range
-      if( (type.min !== undefined && value < type.min) 
+      if( (type.min !== undefined && value < type.min)
       || (type.max !== undefined && value > type.max)
       ){
         return null;
@@ -8439,7 +9173,7 @@ var cytoscape;
         strValue: '' + value + (units ? units : ''),
         units: units,
         bypass: propIsBypass,
-        hasPie: name.match(/pie-(\d+)-background-size/) && value != null && value !== 0 && value !== ''
+        hasPie: hasPie && value != null && value !== 0 && value !== ''
       };
 
       // normalise value in pixels
@@ -8459,8 +9193,8 @@ var cytoscape;
     } else if( type.propList ) {
 
       var props = [];
-      var propsStr = '' + value;      
- 
+      var propsStr = '' + value;
+
       if( propsStr === 'none' ){
         // leave empty
 
@@ -8593,9 +9327,10 @@ var cytoscape;
 
     return this; // chaining
   };
+  $$.styfn.style = $$.styfn.css;
 
   // add a single css rule to the current context
-  $$.styfn.cssRule = function( name, value ){ 
+  $$.styfn.cssRule = function( name, value ){
     // name-value pair
     var property = this.parse( name, value );
 
@@ -8624,6 +9359,7 @@ var cytoscape;
   };
 
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   // (potentially expensive calculation)
@@ -8690,7 +9426,7 @@ var cytoscape;
           // if a later context overrides this property, then the fact that this context has switched/diffed doesn't matter
           // (semi expensive check since it makes this function O(n^2) on context length, but worth it since overall result
           // is cached)
-          var laterCxtOverrides = false; 
+          var laterCxtOverrides = false;
           for( var k = i + 1; k < self.length; k++ ){
             var laterCxt = self[k];
             var hasLaterCxt = newCxtKey[k] === 't';
@@ -8841,7 +9577,9 @@ var cytoscape;
     var valign = style['text-valign'].strValue;
     var halign = style['text-valign'].strValue;
     var oWidth = style['text-outline-width'].pxValue;
-    _p.labelKey = fStyle +'$'+ size +'$'+ family +'$'+ weight +'$'+ content +'$'+ transform +'$'+ valign +'$'+ halign +'$'+ oWidth;
+    var wrap = style['text-wrap'].strValue;
+    var wrapW = style['text-max-width'].pxValue;
+    _p.labelKey = fStyle +'$'+ size +'$'+ family +'$'+ weight +'$'+ content +'$'+ transform +'$'+ valign +'$'+ halign +'$'+ oWidth + '$' + wrap + '$' + wrapW;
     _p.fontKey = fStyle +'$'+ weight +'$'+ size +'$'+ family;
 
     var width = style['width'].pxValue;
@@ -8854,7 +9592,7 @@ var cytoscape;
       var cpd = style['control-point-distance'] ? style['control-point-distance'].pxValue : undefined;
       var cpw = style['control-point-weight'].value;
       var curve = style['curve-style'].strValue;
-      
+
       _p.boundingBoxKey += '$'+ cpss +'$'+ cpd +'$'+ cpw +'$'+ curve;
     }
 
@@ -8881,21 +9619,27 @@ var cytoscape;
   //
   // for parsedProp:{ mapped: truthy }
   // the generated flattenedProp:{ mapping: prop }
-  // 
+  //
   // for parsedProp:{ bypass: true }
-  // the generated flattenedProp:{ bypassed: parsedProp } 
+  // the generated flattenedProp:{ bypassed: parsedProp }
   $$.styfn.applyParsedProperty = function( ele, parsedProp ){
     var prop = parsedProp;
     var style = ele._private.style;
     var fieldVal, flatProp;
+    var types = $$.style.types;
     var type = $$.style.properties[ prop.name ].type;
     var propIsBypass = prop.bypass;
     var origProp = style[ prop.name ];
     var origPropIsBypass = origProp && origProp.bypass;
+    var _p = ele._private;
 
     // can't apply auto to width or height unless it's a parent node
-    if( (parsedProp.name === 'height' || parsedProp.name === 'width') && parsedProp.value === 'auto' && ele.isNode() && !ele.isParent() ){
-      return false;
+    if( (parsedProp.name === 'height' || parsedProp.name === 'width') && ele.isNode() ){
+      if( parsedProp.value === 'auto' && !ele.isParent() ){
+        return false;
+      } else if( parsedProp.value !== 'auto' && ele.isParent() ){
+        prop = parsedProp = this.parse( parsedProp.name, 'auto', propIsBypass );
+      }
     }
 
     // check if we need to delete the current bypass
@@ -8906,11 +9650,11 @@ var cytoscape;
       if( !currentProp ){
         return true; // property is already not defined
       } else if( currentProp.bypass && currentProp.bypassed ){ // then replace the bypass property with the original
-        
+
         // because the bypassed property was already applied (and therefore parsed), we can just replace it (no reapplying necessary)
         style[ prop.name ] = currentProp.bypassed;
         return true;
-      
+
       } else {
         return false; // we're unsuccessful deleting the bypass
       }
@@ -8922,14 +9666,23 @@ var cytoscape;
 
     // put the property in the style objects
     switch( prop.mapped ){ // flatten the property if mapped
-    case $$.style.types.mapData:
-    case $$.style.types.mapLayoutData:
-      
-      var isLayout = prop.mapped === $$.style.types.mapLayoutData;
+    case types.mapData:
+    case types.mapLayoutData:
+    case types.mapScratch:
+
+      var isLayout = prop.mapped === types.mapLayoutData;
+      var isScratch = prop.mapped === types.mapScratch;
 
       // flatten the field (e.g. data.foo.bar)
       var fields = prop.field.split(".");
-      var fieldVal = isLayout ? ele._private.layoutData : ele._private.data;
+      var fieldVal;
+
+      if( isScratch || isLayout ){
+        fieldVal = _p.scratch;
+      } else {
+        fieldVal = _p.data;
+      }
+
       for( var i = 0; i < fields.length && fieldVal; i++ ){
         var field = fields[i];
         fieldVal = fieldVal[ field ];
@@ -8972,18 +9725,18 @@ var cytoscape;
           value: clr,
           strValue: 'rgb(' + clr[0] + ', ' + clr[1] + ', ' + clr[2] + ')'
         };
-      
+
       } else if( type.number ){
         var calcValue = prop.valueMin + (prop.valueMax - prop.valueMin) * percent;
         flatProp = this.parse( prop.name, calcValue, prop.bypass, true );
-      
+
       } else {
         return false; // can only map to colours and numbers
       }
 
       if( !flatProp ){ // if we can't flatten the property, then use the origProp so we still keep the mapping itself
         flatProp = this.parse( prop.name, origProp.strValue, prop.bypass, true );
-      } 
+      }
 
       if( !flatProp ){ printMappingErr(); }
       flatProp.mapping = prop; // keep a reference to the mapping
@@ -8991,19 +9744,27 @@ var cytoscape;
 
       break;
 
-    // direct mapping  
-    case $$.style.types.data: 
-    case $$.style.types.layoutData: 
-
-      var isLayout = prop.mapped === $$.style.types.layoutData;
+    // direct mapping
+    case types.data:
+    case types.layoutData:
+    case types.scratch:
+      var isLayout = prop.mapped === types.layoutData;
+      var isScratch = prop.mapped === types.scratch;
 
       // flatten the field (e.g. data.foo.bar)
       var fields = prop.field.split(".");
-      var fieldVal = isLayout ? ele._private.layoutData : ele._private.data;
-      for( var i = 0; i < fields.length && fieldVal; i++ ){
+      var fieldVal;
+
+      if( isScratch || isLayout ){
+        fieldVal = _p.scratch;
+      } else {
+        fieldVal = _p.data;
+      }
+
+      if( fieldVal ){ for( var i = 0; i < fields.length; i++ ){
         var field = fields[i];
         fieldVal = fieldVal[ field ];
-      }
+      } }
 
       flatProp = this.parse( prop.name, fieldVal, prop.bypass, true );
 
@@ -9016,12 +9777,23 @@ var cytoscape;
       if( !flatProp ){ printMappingErr(); }
       flatProp.mapping = prop; // keep a reference to the mapping
       prop = flatProp; // the flattened (mapped) property is the one we want
+
+      break;
+
+    case types.fn:
+      var fn = prop.value;
+      var fnRetVal = fn( ele );
+
+      flatProp = this.parse( prop.name, fnRetVal, prop.bypass, true );
+      flatProp.mapping = prop; // keep a reference to the mapping
+      prop = flatProp; // the flattened (mapped) property is the one we want
+
       break;
 
     case undefined:
       break; // just set the property
 
-    default: 
+    default:
       return false; // not a valid mapping
     }
 
@@ -9034,12 +9806,12 @@ var cytoscape;
       }
 
       style[ prop.name ] = prop; // and set
-    
+
     } else { // prop is not bypass
       if( origPropIsBypass ){ // then keep the orig prop (since it's a bypass) and link to the new prop
         origProp.bypassed = prop;
       } else { // then just replace the old prop with the new one
-        style[ prop.name ] = prop; 
+        style[ prop.name ] = prop;
       }
     }
 
@@ -9101,7 +9873,7 @@ var cytoscape;
         var toProp = diffProp.next != null ? diffProp.next : styProp;
         var diff = false;
 
-        if( !fromProp ){ continue; } 
+        if( !fromProp ){ continue; }
 
         // consider px values
         if( $$.is.number( fromProp.pxValue ) && $$.is.number( toProp.pxValue ) ){
@@ -9125,12 +9897,12 @@ var cytoscape;
           this.applyBypass(ele, prop, fromProp.strValue); // from val
           anyPrev = true;
         }
-        
+
       } // end if props allow ani
 
       // can't transition if there's nothing previous to transition from
       if( !anyPrev ){ return; }
-      
+
       ele._private.transitioning = true;
 
       ele.stop();
@@ -9144,7 +9916,7 @@ var cytoscape;
       }, {
         duration: duration,
         queue: false,
-        complete: function(){ 
+        complete: function(){
           if( !isBypass ){
             self.removeBypasses( ele, props );
           }
@@ -9160,9 +9932,10 @@ var cytoscape;
 
       ele._private.transitioning = false;
     }
-  }; 
+  };
 
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   // bypasses are applied to an existing style on an element, and just tacked on temporarily
@@ -9457,9 +10230,9 @@ var cytoscape;
     for( var i = 0; i < json.length; i++ ){
       var context = json[i];
       var selector = context.selector;
-      var props = context.css;
+      var props = context.style || context.css;
 
-      style.selector(selector); // apply selector
+      style.selector( selector ); // apply selector
 
       for( var name in props ){
         var value = props[name];
@@ -9508,7 +10281,7 @@ var cytoscape;
 
       json.push({
         selector: !selector ? 'core' : selector.toString(),
-        css: css
+        style: css
       });
     }
 
@@ -9669,8 +10442,10 @@ var cytoscape;
     this.length = 0;
   };
 
+  $$.sheetfn = $$.Stylesheet.prototype;
+
   // just store the selector to be parsed later
-  $$.Stylesheet.prototype.selector = function( selector ){
+  $$.sheetfn.selector = function( selector ){
     var i = this.length++;
 
     this[i] = {
@@ -9682,7 +10457,7 @@ var cytoscape;
   };
 
   // just store the property to be parsed later
-  $$.Stylesheet.prototype.css = function( name, value ){
+  $$.sheetfn.css = function( name, value ){
     var i = this.length - 1;
 
     if( $$.is.string(name) ){
@@ -9716,8 +10491,10 @@ var cytoscape;
     return this; // chaining
   };
 
+  $$.sheetfn.style = $$.sheetfn.css;
+
   // generate a real style object from the dummy stylesheet
-  $$.Stylesheet.prototype.generateStyle = function( cy ){
+  $$.sheetfn.generateStyle = function( cy ){
     var style = new $$.Style(cy);
 
     for( var i = 0; i < this.length; i++ ){
@@ -9738,6 +10515,752 @@ var cytoscape;
   };
 
 })( cytoscape );
+// cross-env thread/worker
+// NB : uses (heavyweight) processes on nodejs so best not to create too many threads
+
+;(function($$, window){ 'use strict';
+
+  $$.Thread = function( fn ){
+    if( !(this instanceof $$.Thread) ){
+      return new $$.Thread( fn );
+    }
+
+    this._private = {
+      requires: [],
+      files: [],
+      queue: null,
+      pass: []
+    };
+
+    if( fn ){
+      this.run( fn );
+    }
+
+  };
+
+  $$.thread = $$.Thread;
+  $$.thdfn = $$.Thread.prototype; // short alias
+
+  $$.fn.thread = function( fnMap, options ){
+    for( var name in fnMap ){
+      var fn = fnMap[name];
+      $$.Thread.prototype[ name ] = fn;
+    }
+  };
+
+  var stringifyFieldVal = function( val ){
+    var valStr = $$.is.fn( val ) ? val.toString() : 'JSON.parse("' + JSON.stringify(val) + '")';
+
+    return valStr;
+  };
+
+  // allows for requires with prototypes and subobjs etc
+  var fnAsRequire = function( fn ){
+    var req;
+    var fnName;
+
+    if( $$.is.object(fn) && fn.fn ){ // manual fn
+      req = fnAs( fn.fn, fn.name );
+      fnName = fn.name;
+      fn = fn.fn;
+    } else if( $$.is.fn(fn) ){ // auto fn
+      req = fn.toString();
+      fnName = fn.name;
+    } else if( $$.is.string(fn) ){ // stringified fn
+      req = fn;
+    } else if( $$.is.object(fn) ){ // plain object
+      if( fn.proto ){
+        req = '';
+      } else {
+        req = fn.name + ' = {};';
+      }
+
+      fnName = fn.name;
+      fn = fn.obj;
+    }
+
+    req += '\n';
+
+    var protoreq = function( val, subname ){
+      if( val.prototype ){
+        var protoNonempty = false;
+        for( var prop in val.prototype ){ protoNonempty = true; break; }
+
+        if( protoNonempty ){
+          req += fnAsRequire( {
+            name: subname,
+            obj: val,
+            proto: true
+          }, val );
+        }
+      }
+    };
+
+    // pull in prototype
+    if( fn.prototype && fnName != null ){
+
+      for( var name in fn.prototype ){
+        var protoStr = '';
+
+        var val = fn.prototype[ name ];
+        var valStr = stringifyFieldVal( val );
+        var subname = fnName + '.prototype.' + name;
+
+        protoStr += subname + ' = ' + valStr + ';\n';
+
+        if( protoStr ){
+          req += protoStr;
+        }
+
+        protoreq( val, subname ); // subobject with prototype
+      }
+  
+    }
+
+    // pull in properties for obj/fns
+    if( !$$.is.string(fn) ){ for( var name in fn ){
+      var propsStr = '';
+
+      if( fn.hasOwnProperty(name) ){
+        var val = fn[ name ];
+        var valStr = stringifyFieldVal( val );
+        var subname = fnName + '["' + name + '"]';
+
+        propsStr += subname + ' = ' + valStr + ';\n';
+      }
+
+      if( propsStr ){
+        req += propsStr;
+      }
+
+      protoreq( val, subname ); // subobject with prototype
+    } }
+
+    return req;
+  };
+  
+  var isPathStr = function( str ){
+    return $$.is.string(str) && str.match(/\.js$/);
+  };
+
+  $$.fn.thread({
+
+    require: function( fn, as ){
+      if( isPathStr(fn) ){
+        this._private.files.push( fn );
+        
+        return this;
+      }
+        
+      if( as ){
+        if( $$.is.fn(fn) ){
+          // disabled b/c doesn't work with forced names on functions w/ prototypes
+          //fn = fnAs( fn, as );
+
+          as = as || fn.name;
+
+          fn = { name: as, fn: fn };
+        } else {
+          fn = { name: as, obj: fn };
+        }
+      }
+
+      this._private.requires.push( fn );
+
+      return this; // chaining
+    },
+
+    pass: function( data ){
+      this._private.pass.push( data );
+
+      return this; // chaining
+    },
+
+    run: function( fn, pass ){ // fn used like main()
+      var self = this;
+      var _p = this._private;
+      pass = pass || _p.pass.shift();
+
+      if( _p.stopped ){
+        $$.util.error('Attempted to run a stopped thread!  Start a new thread or do not stop the existing thread and reuse it.');
+        return;
+      }
+
+      if( _p.running ){
+        return _p.queue = _p.queue.then(function(){ // inductive step
+          return self.run( fn, pass );
+        });
+      }
+      
+      var useWW = window != null;
+      var useNode = typeof module !== 'undefined';
+
+      self.trigger('run');
+
+      var runP = new $$.Promise(function( resolve, reject ){
+
+        _p.running = true;
+
+        var threadTechAlreadyExists = _p.ran;
+
+        var fnImplStr = $$.is.string( fn ) ? fn : fn.toString();
+
+        // worker code to exec
+        var fnStr = '\n' + ( _p.requires.map(function( r ){
+          return fnAsRequire( r );
+        }) ).concat( _p.files.map(function( f ){
+          if( useWW ){
+            var wwifyFile = function( file ){
+              if( file.match(/^\.\//) || file.match(/^\.\./) ){
+                return window.location.origin + window.location.pathname + file;
+              } else if( file.match(/^\//) ){
+                return window.location.origin + '/' + file;
+              }
+              return file;
+            };
+            
+            return 'importScripts("' + wwifyFile(f) + '");';
+          } else if( useNode ) {
+            return 'eval( require("fs").readFileSync("' + f + '", { encoding: "utf8" }) );';
+          }
+        }) ).concat([
+          '( function(){',
+            'var ret = (' + fnImplStr + ')(' + JSON.stringify(pass) + ');',
+            'if( ret !== undefined ){ resolve(ret); }', // assume if ran fn returns defined value (incl. null), that we want to resolve to it
+          '} )()\n'
+        ]).join('\n');
+
+        // because we've now consumed the requires, empty the list so we don't dupe on next run()
+        _p.requires = [];
+        _p.files = [];
+
+        if( useWW ){
+          var fnBlob, fnUrl;
+
+          // add normalised thread api functions
+          if( !threadTechAlreadyExists ){
+            var fnPre = fnStr + '';
+
+            fnStr = [
+              'function broadcast(m){ return message(m); };', // alias
+              'function message(m){ postMessage(m); };',
+              'function listen(fn){',
+              '  self.addEventListener("message", function(m){ ',
+              '    if( typeof m === "object" && (m.data.$$eval || m.data === "$$start") ){',
+              '    } else { ',
+              '      fn( m.data );',
+              '    }',
+              '  });',
+              '};', 
+              'self.addEventListener("message", function(m){  if( m.data.$$eval ){ eval( m.data.$$eval ); }  });',
+              'function resolve(v){ postMessage({ $$resolve: v }); };', 
+              'function reject(v){ postMessage({ $$reject: v }); };'
+            ].join('\n');
+          
+            fnStr += fnPre;
+
+            fnBlob = new Blob([ fnStr ], {
+              type: 'application/javascript'
+            });
+            fnUrl = window.URL.createObjectURL( fnBlob );
+          }
+          // create webworker and let it exec the serialised code
+          var ww = _p.webworker = _p.webworker || new Worker( fnUrl );
+
+          if( threadTechAlreadyExists ){ // then just exec new run() code
+            ww.postMessage({
+              $$eval: fnStr
+            });
+          }
+
+          // worker messages => events
+          var cb;
+          ww.addEventListener('message', cb = function( m ){
+            var isObject = $$.is.object(m) && $$.is.object( m.data );
+            
+            if( isObject && ('$$resolve' in m.data) ){
+              ww.removeEventListener('message', cb); // done listening b/c resolve()
+
+              resolve( m.data.$$resolve );
+            } else if( isObject && ('$$reject' in m.data) ){
+              ww.removeEventListener('message', cb); // done listening b/c reject()
+
+              reject( m.data.$$reject );
+            } else {
+              self.trigger( new $$.Event(m, { type: 'message', message: m.data }) );
+            }
+          }, false);
+
+          if( !threadTechAlreadyExists ){
+            ww.postMessage('$$start'); // start up the worker
+          }
+
+        } else if( useNode ){
+          // create a new process
+          var path = require('path');
+          var child_process = require('child_process');
+          var child = _p.child = _p.child || child_process.fork( path.join(__dirname, 'thread-node-fork') );
+
+          // child process messages => events
+          var cb;
+          child.on('message', cb = function( m ){
+            if( $$.is.object(m) && ('$$resolve' in m) ){
+              child.removeListener('message', cb); // done listening b/c resolve()
+
+              resolve( m.$$resolve );
+            } else if( $$.is.object(m) && ('$$reject' in m) ){
+              child.removeListener('message', cb); // done listening b/c reject()
+
+              reject( m.$$reject );
+            } else {
+              self.trigger( new $$.Event({}, { type: 'message', message: m }) );
+            }
+          });
+
+          // ask the child process to eval the worker code
+          child.send({
+            $$eval: fnStr
+          });
+        } else {
+          $$.error('Tried to create thread but no underlying tech found!');
+          // TODO fallback on main JS thread?
+        }
+
+      }).then(function( v ){
+        _p.running = false;
+        _p.ran = true;
+
+        self.trigger('ran');
+
+        return v;
+      });
+
+      if( _p.queue == null ){
+        _p.queue = runP; // i.e. first step of inductive promise chain (for queue)
+      }
+
+      return runP;
+    },
+
+    // send the thread a message
+    message: function( m ){
+      var _p = this._private;
+
+      if( _p.webworker ){
+        _p.webworker.postMessage( m );
+      }
+
+      if( _p.child ){
+        _p.child.send( m );
+      } 
+
+      return this; // chaining
+    },
+
+    stop: function(){
+      var _p = this._private;
+
+      if( _p.webworker ){
+        _p.webworker.terminate();
+      }
+
+      if( _p.child ){
+        _p.child.kill();
+      } 
+
+      _p.stopped = true;
+
+      return this.trigger('stop'); // chaining
+    },
+
+    stopped: function(){
+      return this._private.stopped;
+    }
+
+  });
+
+  var fnAs = function( fn, name ){
+    var fnStr = fn.toString();
+    fnStr = fnStr.replace(/function.*\(/, 'function ' + name + '(');
+
+    return fnStr;
+  };
+
+  var defineFnal = function( opts ){
+    opts = opts || {};
+
+    return function fnalImpl( fn, arg1 ){
+      var fnStr = fnAs( fn, '_$_$_' + opts.name );
+
+      this.require( fnStr );
+
+      return this.run( [ 
+        'function( data ){',
+        '  var origResolve = resolve;',
+        '  var res = [];',
+        '  ',
+        '  resolve = function( val ){',
+        '    res.push( val );',
+        '  };',
+        '  ',
+        '  var ret = data.' + opts.name + '( _$_$_' + opts.name + ( arguments.length > 1 ? ', ' + JSON.stringify(arg1) : '' ) + ' );',
+        '  ',
+        '  resolve = origResolve;',
+        '  resolve( res.length > 0 ? res : ret );',
+        '}'
+      ].join('\n') );
+    };
+  };
+
+  $$.fn.thread({
+    reduce: defineFnal({ name: 'reduce' }),
+
+    reduceRight: defineFnal({ name: 'reduceRight' }),
+
+    map: defineFnal({ name: 'map' })
+  });
+
+  // aliases
+  var fn = $$.thdfn;
+  fn.promise = fn.run;
+  fn.terminate = fn.halt = fn.stop;
+  fn.include = fn.require;
+
+  // higher level alias (in case you like the worker metaphor)
+  $$.worker = $$.Worker = $$.Thread;
+
+  // pull in event apis
+  $$.fn.thread({
+    on: $$.define.on(),
+    one: $$.define.on({ unbindSelfOnTrigger: true }),
+    off: $$.define.off(), 
+    trigger: $$.define.trigger()
+  });
+
+  $$.define.eventAliasesOn( $$.thdfn );
+  
+})( cytoscape, typeof window === 'undefined' ? null : window );
+
+;(function($$, window){ 'use strict';
+
+  $$.Fabric = function( N ){
+    if( !(this instanceof $$.Fabric) ){
+      return new $$.Fabric( N );
+    }
+
+    this._private = {
+      pass: []
+    };
+
+    var defN = 4;
+
+    if( $$.is.number(N) ){
+      // then use the specified number of threads
+    } if( typeof navigator !== 'undefined' && navigator.hardwareConcurrency != null ){
+      N = navigator.hardwareConcurrency;
+    } else if( typeof module !== 'undefined' ){
+      N = require('os').cpus().length;
+    } else { // TODO could use an estimation here but would the additional expense be worth it?
+      N = defN;
+    }
+
+    for( var i = 0; i < N; i++ ){
+      this[i] = $$.Thread();
+    }
+
+    this.length = N;
+  };
+
+  $$.fabric = $$.Fabric;
+  $$.fabfn = $$.Fabric.prototype; // short alias
+
+  $$.fn.fabric = function( fnMap, options ){
+    for( var name in fnMap ){
+      var fn = fnMap[name];
+      $$.Fabric.prototype[ name ] = fn;
+    }
+  };
+
+  $$.fn.fabric({
+
+    // require fn in all threads
+    require: function( fn, as ){
+      for( var i = 0; i < this.length; i++ ){
+        var thread = this[i];
+
+        thread.require( fn, as );
+      }
+
+      return this;
+    },
+
+    // get a random thread
+    random: function(){
+      var i = Math.round( (this.length - 1) * Math.random() );
+      var thread = this[i];
+
+      return thread;
+    },
+
+    // run on random thread
+    run: function( fn ){
+      var pass = this._private.pass.shift();
+
+      return this.random().pass( pass ).run( fn );
+    },
+
+    // sends a random thread a message
+    message: function( m ){
+      return this.random().message( m );
+    },
+
+    // send all threads a message
+    broadcast: function( m ){
+      for( var i = 0; i < this.length; i++ ){
+        var thread = this[i];
+
+        thread.message( m );
+      }
+
+      return this; // chaining
+    },
+
+    // stop all threads
+    stop: function(){
+      for( var i = 0; i < this.length; i++ ){
+        var thread = this[i];
+
+        thread.stop();
+      }
+
+      return this; // chaining
+    },
+
+    // pass data to be used with .spread() etc.
+    pass: function( data ){
+      var pass = this._private.pass;
+
+      if( $$.is.array(data) ){
+        pass.push( data );
+      } else {
+        $$.util.error('Only arrays or collections may be used with fabric.pass()');
+      }
+
+      return this; // chaining
+    },
+
+    spreadSize: function(){
+      var subsize =  Math.ceil( this._private.pass[0].length / this.length );
+
+      subsize = Math.max( 1, subsize ); // don't pass less than one ele to each thread
+
+      return subsize;
+    },
+
+    // split the data into slices to spread the data equally among threads
+    spread: function( fn ){
+      var self = this;
+      var _p = self._private;
+      var subsize = self.spreadSize(); // number of pass eles to handle in each thread
+      var pass = _p.pass.shift().concat([]); // keep a copy
+      var runPs = [];
+
+      for( var i = 0; i < this.length; i++ ){
+        var thread = this[i];
+        var slice = pass.splice( 0, subsize );
+
+        var runP = thread.pass( slice ).run( fn );
+
+        runPs.push( runP );
+
+        var doneEarly = pass.length === 0;
+        if( doneEarly ){ break; }
+      }
+
+      return $$.Promise.all( runPs ).then(function( thens ){
+        var postpass = [];
+        var p = 0;
+
+        // fill postpass with the total result joined from all threads
+        for( var i = 0; i < thens.length; i++ ){
+          var then = thens[i]; // array result from thread i
+
+          for( var j = 0; j < then.length; j++ ){
+            var t = then[j]; // array element
+
+            postpass[ p++ ] = t;
+          }
+        }
+
+        return postpass;
+      });
+    },
+
+    // parallel version of array.map()
+    map: function( fn ){
+      var self = this;
+
+      self.require( fn, '_$_$_fabmap' );
+
+      return self.spread(function( split ){
+        var mapped = [];
+        var origResolve = resolve;
+
+        resolve = function( val ){
+          mapped.push( val );
+        };
+
+        for( var i = 0; i < split.length; i++ ){
+          var oldLen = mapped.length;
+          var ret = _$_$_fabmap( split[i] );
+          var nothingInsdByResolve = oldLen === mapped.length;
+
+          if( nothingInsdByResolve ){
+            mapped.push( ret );
+          }
+        }
+
+        resolve = origResolve;
+
+        return mapped;
+      });
+
+    },
+
+    // parallel version of array.filter()
+    filter: function( fn ){
+      var _p = this._private;
+      var pass = _p.pass[0];
+
+      return this.map( fn ).then(function( include ){
+        var ret = [];
+
+        for( var i = 0; i < pass.length; i++ ){
+          var datum = pass[i];
+          var incDatum = include[i];
+
+          if( incDatum ){
+            ret.push( datum );
+          }
+        }
+
+        return ret;
+      });
+    },
+
+    // sorts the passed array using a divide and conquer strategy
+    sort: function( cmp ){
+      var self = this;
+      var P = this._private.pass[0].length;
+      var subsize = this.spreadSize();
+
+      cmp = cmp || function( a, b ){ // default comparison function
+        if( a < b ){
+          return -1;
+        } else if( a > b ){
+          return 1;
+        }
+
+        return 0;
+      };
+
+      self.require( cmp, '_$_$_cmp' );
+
+      return self.spread(function( split ){ // sort each split normally
+        var sortedSplit = split.sort( _$_$_cmp );
+        resolve( sortedSplit );
+
+      }).then(function( joined ){
+        // do all the merging in the main thread to minimise data transfer
+
+        // TODO could do merging in separate threads but would incur add'l cost of data transfer
+        // for each level of the merge
+
+        var merge = function( i, j, max ){
+          // don't overflow array
+          j = Math.min( j, P );
+          max = Math.min( max, P );
+
+          // left and right sides of merge
+          var l = i;
+          var r = j;
+
+          var sorted = [];
+
+          for( var k = l; k < max; k++ ){
+
+            var eleI = joined[i];
+            var eleJ = joined[j];
+
+            if( i < r && ( j >= max || cmp(eleI, eleJ) <= 0 ) ){
+              sorted.push( eleI );
+              i++;
+            } else {
+              sorted.push( eleJ );
+              j++;
+            }
+
+          }
+
+          // in the array proper, put the sorted values
+          for( var k = 0; k < sorted.length; k++ ){ // kth sorted item
+            var index = l + k;
+
+            joined[ index ] = sorted[k];
+          }
+        };
+
+        for( var splitL = subsize; splitL < P; splitL *= 2 ){ // merge until array is "split" as 1
+
+          for( var i = 0; i < P; i += 2*splitL ){
+            merge( i, i + splitL, i + 2*splitL );
+          }
+
+        }
+
+        return joined;
+      });
+    }
+
+
+  });
+
+  var defineRandomPasser = function( opts ){
+    opts = opts || {};
+
+    return function( fn, arg1 ){
+      var pass = this._private.pass.shift();
+
+      return this.random().pass( pass )[ opts.threadFn ]( fn, arg1 );
+    };
+  };
+
+  $$.fn.fabric({
+    randomMap: defineRandomPasser({ threadFn: 'map' }),
+
+    reduce: defineRandomPasser({ threadFn: 'reduce' }),
+
+    reduceRight: defineRandomPasser({ threadFn: 'reduceRight' })
+  });
+
+  // aliases
+  var fn = $$.fabfn;
+  fn.promise = fn.run;
+  fn.terminate = fn.halt = fn.stop;
+  fn.include = fn.require;
+
+  // pull in event apis
+  $$.fn.fabric({
+    on: $$.define.on(),
+    one: $$.define.on({ unbindSelfOnTrigger: true }),
+    off: $$.define.off(),
+    trigger: $$.define.trigger()
+  });
+
+  $$.define.eventAliasesOn( $$.fabfn );
+
+})( cytoscape, typeof window === 'undefined' ? null : window );
+
 ;(function($$, window){ 'use strict';
 
   var isTouch = $$.is.touch();
@@ -9810,6 +11333,7 @@ var cytoscape;
       elements: [], // array of elements
       id2index: {}, // element id => index in elements array
       listeners: [], // list of listeners
+      onRenders: [], // rendering listeners
       aniEles: $$.Collection(this), // elements being animated
       scratch: {}, // scratch object for core
       layout: null,
@@ -9863,49 +11387,76 @@ var cytoscape;
       _p.maxZoom = options.maxZoom;
     }
 
-    // init style
-    if( _p.styleEnabled ){
-      this.setStyle( options.style );
-    }
+    var loadExtData = function( next ){
+      var anyIsPromise = false;
 
-    // create the renderer
-    cy.initRenderer( $$.util.extend({
-      hideEdgesOnViewport: options.hideEdgesOnViewport,
-      hideLabelsOnViewport: options.hideLabelsOnViewport,
-      textureOnViewport: options.textureOnViewport,
-      wheelSensitivity: $$.is.number(options.wheelSensitivity) && options.wheelSensitivity > 0 ? options.wheelSensitivity : 1,
-      motionBlur: options.motionBlur,
-      pixelRatio: $$.is.number(options.pixelRatio) && options.pixelRatio > 0 ? options.pixelRatio : (options.pixelRatio === 'auto' ? undefined : 1),
-      tapThreshold: defVal( $$.is.touch() ? 8 : 4, $$.is.touch() ? options.touchTapThreshold : options.desktopTapThreshold )
-    }, options.renderer) );
+      for( var i = 0; i < extData.length; i++ ){
+        var datum = extData[i];
 
-    // trigger the passed function for the `initrender` event
-    if( options.initrender ){
-      cy.on('initrender', options.initrender);
-      cy.on('initrender', function(){
-        cy._private.initrender = true;
-      });
-    }
-
-    // initial load
-    cy.load(options.elements, function(){ // onready
-      cy.startAnimationLoop();
-      cy._private.ready = true;
-
-      // if a ready callback is specified as an option, the bind it
-      if( $$.is.fn( options.ready ) ){
-        cy.on('ready', options.ready);
+        if( $$.is.promise(datum) ){
+          anyIsPromise = true;
+          break;
+        }
       }
 
-      // bind all the ready handlers registered before creating this instance
-      for( var i = 0; i < readies.length; i++ ){
-        var fn = readies[i];
-        cy.on('ready', fn);
+      if( anyIsPromise ){
+        return $$.Promise.all( extData ).then( next ); // load all data asynchronously, then exec rest of init
+      } else {
+        next( extData ); // exec synchronously for convenience
       }
-      if( reg ){ reg.readies = []; } // clear b/c we've bound them all and don't want to keep it around in case a new core uses the same div etc
-      
-      cy.trigger('ready');
-    }, options.done);
+    };
+
+    var extData = [ options.style, options.elements ];
+    loadExtData(function( thens ){
+      var initStyle = thens[0];
+      var initEles = thens[1];
+   
+      // init style
+      if( _p.styleEnabled ){
+        cy.setStyle( initStyle );
+      }
+
+      // create the renderer
+      cy.initRenderer( $$.util.extend({
+        hideEdgesOnViewport: options.hideEdgesOnViewport,
+        hideLabelsOnViewport: options.hideLabelsOnViewport,
+        textureOnViewport: options.textureOnViewport,
+        wheelSensitivity: $$.is.number(options.wheelSensitivity) && options.wheelSensitivity > 0 ? options.wheelSensitivity : 1,
+        motionBlur: options.motionBlur === undefined ? true : options.motionBlur, // on by default
+        motionBlurOpacity: options.motionBlurOpacity === undefined ? 0.05 : options.motionBlurOpacity,
+        pixelRatio: $$.is.number(options.pixelRatio) && options.pixelRatio > 0 ? options.pixelRatio : (options.pixelRatio === 'auto' ? undefined : 1),
+        tapThreshold: defVal( $$.is.touch() ? 8 : 4, $$.is.touch() ? options.touchTapThreshold : options.desktopTapThreshold )
+      }, options.renderer) );
+
+      // trigger the passed function for the `initrender` event
+      if( options.initrender ){
+        cy.on('initrender', options.initrender);
+        cy.on('initrender', function(){
+          cy._private.initrender = true;
+        });
+      }
+
+      // initial load
+      cy.load(initEles, function(){ // onready
+        cy.startAnimationLoop();
+        cy._private.ready = true;
+
+        // if a ready callback is specified as an option, the bind it
+        if( $$.is.fn( options.ready ) ){
+          cy.on('ready', options.ready);
+        }
+
+        // bind all the ready handlers registered before creating this instance
+        for( var i = 0; i < readies.length; i++ ){
+          var fn = readies[i];
+          cy.on('ready', fn);
+        }
+        if( reg ){ reg.readies = []; } // clear b/c we've bound them all and don't want to keep it around in case a new core uses the same div etc
+        
+        cy.trigger('ready');
+      }, options.done);
+
+    });
   };
 
   $$.corefn = $$.Core.prototype; // short alias
@@ -10440,8 +11991,8 @@ var cytoscape;
             self.trigger('viewport');
           }
 
-          if( properties.css && isEles ){
-            var props = properties.css;
+          var props = properties.style || properties.css;
+          if( props && isEles ){
 
             for( var i = 0; i < props.length; i++ ){
               var name = props[i].name;
@@ -10453,6 +12004,7 @@ var cytoscape;
               
               style.overrideBypass( self, name, easedVal );
             } // for props
+            
           } // if 
 
         }
@@ -10582,9 +12134,7 @@ var cytoscape;
     trigger: $$.define.trigger() // .trigger( events [, extraParams] )
   });
 
-  // aliases for those folks who like old stuff:
-  $$.corefn.bind = $$.corefn.on;
-  $$.corefn.unbind = $$.corefn.off;
+  $$.define.eventAliasesOn( $$.corefn );
 
 })( cytoscape );
 
@@ -10597,11 +12147,23 @@ var cytoscape;
       options = options || {};
 
       return renderer.png( options );      
+    },
+    
+    jpg: function( options ){
+      var renderer = this._private.renderer;
+      options = options || {};
+      
+      options.bg = options.bg || '#fff';
+
+      return renderer.jpg( options );      
     }
     
   });
   
+  $$.corefn.jpeg = $$.corefn.jpg;
+  
 })( cytoscape );
+
 ;(function($$){ 'use strict';
   
   $$.fn.core({
@@ -10667,6 +12229,8 @@ var cytoscape;
     }
     
   });
+
+  $$.corefn.createLayout = $$.corefn.makeLayout;
   
 })( cytoscape );
 (function($$){ 'use strict';
@@ -10821,6 +12385,44 @@ var cytoscape;
         })
       );
        
+    },
+
+    triggerOnRender: function(){
+      var cbs = this._private.onRenders;
+
+      for( var i = 0; i < cbs.length; i++ ){
+        var cb = cbs[i];
+
+        cb();
+      }
+
+      return this;
+    },
+
+    onRender: function( cb ){
+      this._private.onRenders.push( cb );
+
+      return this;
+    },
+
+    offRender: function( fn ){
+      var cbs = this._private.onRenders;
+
+      if( fn == null ){ // unbind all
+        this._private.onRenders = [];
+        return this;
+      }
+
+      for( var i = 0; i < cbs.length; i++ ){ // unbind specified
+        var cb = cbs[i];
+
+        if( fn === cb ){
+          cbs.splice( i, 1 );
+          break;
+        }
+      }
+
+      return this;
     }
     
   });  
@@ -11549,7 +13151,6 @@ var cytoscape;
       cy: cy,
       single: true, // indicates this is an element
       data: params.data || {}, // data object
-      layoutData: {}, // place for layouts to put calculated stats etc for mappers
       position: params.position || {}, // (x, y) position pair
       autoWidth: undefined, // width and height of nodes calculated by the renderer when set to special 'auto' value
       autoHeight: undefined, 
@@ -11571,7 +13172,7 @@ var cytoscape;
         queue: []
       },
       rscratch: {}, // object in which the renderer can store information
-      scratch: {}, // scratch objects
+      scratch: params.scratch || {}, // scratch objects
       edges: [], // array of connected edges
       children: [] // array of children
     };
@@ -11786,6 +13387,7 @@ var cytoscape;
 
     return new $$.Collection( cy, elesArr );
   };
+  $$.elesfn.copy = $$.elesfn.clone;
 
   $$.elesfn.restore = function( notifyRenderer ){
     var self = this;
@@ -12598,11 +14200,11 @@ var cytoscape;
     aStar: function(options) {
       options = options || {};
 
-      var logDebug = function() {
-        if (debug) {
-          console.log.apply(console, arguments);
-        }
-      };
+      // var logDebug = function() {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
 
       // Reconstructs the path from Start to End, acumulating the result in pathAcum
       var reconstructPath = function(start, end, cameFromMap, pathAcum) {
@@ -12651,13 +14253,13 @@ var cytoscape;
 
       // Parse options
       // debug - optional
-      if (options.debug != null) {
-        var debug = options.debug;
-      } else {
-        var debug = false;
-      }
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
 
-      logDebug("Starting aStar..."); 
+      // logDebug("Starting aStar..."); 
       var cy = this._private.cy;
 
       // root - mandatory!
@@ -12666,7 +14268,7 @@ var cytoscape;
           // use it as a selector, e.g. "#rootID
           this.filter(options.root)[0] : 
           options.root[0];
-        logDebug("Source node: %s", source.id()); 
+        // logDebug("Source node: %s", source.id()); 
       } else {
         return undefined;
       }
@@ -12677,7 +14279,7 @@ var cytoscape;
           // use it as a selector, e.g. "#goalID
           this.filter(options.goal)[0] : 
           options.goal[0];
-        logDebug("Target node: %s", target.id()); 
+        // logDebug("Target node: %s", target.id()); 
       } else {
         return undefined;
       }
@@ -12716,7 +14318,7 @@ var cytoscape;
       gScore[source.id()] = 0;
       fScore[source.id()] = heuristic(source);
       
-      var edges = this.edges().not(':loop');
+      var edges = this.edges().stdFilter(function(e){ return !e.isLoop(); });
       var nodes = this.nodes();
 
       // Counter
@@ -12725,18 +14327,18 @@ var cytoscape;
       // Main loop 
       while (openSet.length > 0) {
         var minPos = findMin(openSet, fScore);
-        var cMin = this.filter("#" + openSet[minPos])[0];
+        var cMin = cy.getElementById( openSet[minPos] );
         steps++;
 
-        logDebug("\nStep: %s", steps);
-        logDebug("Processing node: %s, fScore = %s", cMin.id(), fScore[cMin.id()]);
+        // logDebug("\nStep: %s", steps);
+        // logDebug("Processing node: %s, fScore = %s", cMin.id(), fScore[cMin.id()]);
         
         // If we've found our goal, then we are done
         if (cMin.id() == target.id()) {
-          logDebug("Found goal node!");
+          // logDebug("Found goal node!");
           var rPath = reconstructPath(source.id(), target.id(), cameFrom, []);
           rPath.reverse();
-          logDebug("Path: %s", rPath);
+          // logDebug("Path: %s", rPath);
           return {
             found : true,
             distance : gScore[cMin.id()],
@@ -12749,27 +14351,29 @@ var cytoscape;
         closedSet.push(cMin.id());
         // Remove cMin from boundary nodes
         openSet.splice(minPos, 1);
-        logDebug("Added node to closedSet, removed from openSet.");
-        logDebug("Processing neighbors...");
+        // logDebug("Added node to closedSet, removed from openSet.");
+        // logDebug("Processing neighbors...");
 
         // Update scores for neighbors of cMin
         // Take into account if graph is directed or not
-        var vwEdges = cMin.connectedEdges(directed ? '[source = "' + cMin.id() + '"]' 
-                         : undefined).intersect(edges);         
+        var vwEdges = cMin.connectedEdges();
+        if( directed ){ vwEdges = vwEdges.stdFilter(function(ele){ return ele.data('source') === cMin.id(); }); }
+        vwEdges = vwEdges.intersect(edges);  
+        
         for (var i = 0; i < vwEdges.length; i++) {
           var e = vwEdges[i];
-          var w = e.connectedNodes('[id != "' + cMin.id() + '"]').intersect(nodes);
+          var w = e.connectedNodes().stdFilter(function(n){ return n.id() !== cMin.id(); }).intersect(nodes);
 
-          logDebug("   processing neighbor: %s", w.id());
+          // logDebug("   processing neighbor: %s", w.id());
           // if node is in closedSet, ignore it
           if (closedSet.indexOf(w.id()) != -1) {
-            logDebug("   already in closedSet, ignoring it.");
+            // logDebug("   already in closedSet, ignoring it.");
             continue;
           }
           
           // New tentative score for node w
           var tempScore = gScore[cMin.id()] + weightFn.apply(e, [e]);
-          logDebug("   tentative gScore: %d", tempScore);
+          // logDebug("   tentative gScore: %d", tempScore);
 
           // Update gScore for node w if:
           //   w not present in openSet
@@ -12783,8 +14387,8 @@ var cytoscape;
             openSet.push(w.id()); // Add node to openSet
             cameFrom[w.id()] = cMin.id();
             cameFromEdge[w.id()] = e.id();
-            logDebug("   not in openSet, adding it. ");
-            logDebug("   fScore(%s) = %s", w.id(), tempScore);
+            // logDebug("   not in openSet, adding it. ");
+            // logDebug("   fScore(%s) = %s", w.id(), tempScore);
             continue;
           }
           // w already in openSet, but with greater gScore
@@ -12792,8 +14396,8 @@ var cytoscape;
             gScore[w.id()] = tempScore;
             fScore[w.id()] = tempScore + heuristic(w);
             cameFrom[w.id()] = cMin.id();
-            logDebug("   better score, replacing gScore. ");
-            logDebug("   fScore(%s) = %s", w.id(), tempScore);
+            // logDebug("   better score, replacing gScore. ");
+            // logDebug("   fScore(%s) = %s", w.id(), tempScore);
           }
 
         } // End of neighbors update
@@ -12801,7 +14405,7 @@ var cytoscape;
       } // End of main loop
 
       // If we've reached here, then we've not reached our goal
-      logDebug("Reached end of computation without finding our goal");
+      // logDebug("Reached end of computation without finding our goal");
       return {
         found : false,
         distance : undefined,
@@ -12821,20 +14425,20 @@ var cytoscape;
     floydWarshall: function(options) {
       options = options || {};
 
-      var logDebug = function() {
-        if (debug) {
-          console.log.apply(console, arguments);
-        }
-      };
+      // var logDebug = function() {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
 
       // Parse options
       // debug - optional
-      if (options.debug != null) {
-        var debug = options.debug;
-      } else {
-        var debug = false;
-      }
-      logDebug("Starting floydWarshall..."); 
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+      // logDebug("Starting floydWarshall..."); 
 
       var cy = this._private.cy;
 
@@ -12853,7 +14457,7 @@ var cytoscape;
         var directed = false;
       }
 
-      var edges = this.edges().not(':loop');
+      var edges = this.edges().stdFilter(function(e){ return !e.isLoop(); });
       var nodes = this.nodes();
       var numNodes = nodes.length;
 
@@ -13030,20 +14634,20 @@ var cytoscape;
     bellmanFord: function(options) {
       options = options || {};
 
-      var logDebug = function() {
-        if (debug) {
-          console.log.apply(console, arguments);
-        }
-      };
+      // var logDebug = function() {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
 
       // Parse options
       // debug - optional
-      if (options.debug != null) {
-        var debug = options.debug;
-      } else {
-        var debug = false;
-      }
-      logDebug("Starting bellmanFord..."); 
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+      // logDebug("Starting bellmanFord..."); 
 
       // Weight function - optional
       if (options.weight != null && $$.is.fn(options.weight)) {       
@@ -13068,14 +14672,14 @@ var cytoscape;
         } else {
           var source = options.root[0];
         }
-        logDebug("Source node: %s", source.id()); 
+        // logDebug("Source node: %s", source.id()); 
       } else {
         $$.util.error("options.root required");
         return undefined;
       }
 
       var cy = this._private.cy;
-      var edges = this.edges().not(':loop');
+      var edges = this.edges().stdFilter(function(e){ return !e.isLoop(); });
       var nodes = this.nodes();
       var numNodes = nodes.length;
 
@@ -13237,11 +14841,11 @@ var cytoscape;
     kargerStein: function(options) {
       options = options || {};
       
-      var logDebug = function() {
-        if (debug) {
-          console.log.apply(console, arguments);
-        }
-      };
+      // var logDebug = function() {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
 
       // Function which colapses 2 (meta) nodes into one
       // Updates the remaining edge lists
@@ -13312,15 +14916,15 @@ var cytoscape;
 
       // Parse options
       // debug - optional
-      if (options != null && options.debug != null) {
-        var debug = options.debug;
-      } else {
-        var debug = false;
-      }
-      logDebug("Starting kargerStein..."); 
+      // if (options != null && options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+      // logDebug("Starting kargerStein..."); 
 
       var cy = this._private.cy;
-      var edges = this.edges().not(':loop');
+      var edges = this.edges().stdFilter(function(e){ return !e.isLoop(); });
       var nodes = this.nodes();
       var numNodes = nodes.length;
       var numEdges = edges.length;
@@ -13435,21 +15039,21 @@ var cytoscape;
         }
       };
       
-      var logDebug = function() {
-        if (debug) {
-          console.log.apply(console, arguments);
-        }
-      };
+      // var logDebug = function() {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
       
       // Parse options
       // debug - optional
-      if (options != null && 
-        options.debug != null) {
-        var debug = options.debug;
-      } else {
-        var debug = false;
-      }
-      logDebug("Starting pageRank..."); 
+      // if (options != null && 
+      //   options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+      // logDebug("Starting pageRank..."); 
 
       // dampingFactor - optional
       if (options != null && 
@@ -13486,7 +15090,7 @@ var cytoscape;
       }
 
       var cy = this._private.cy;
-      var edges = this.edges().not(':loop');
+      var edges = this.edges().stdFilter(function(e){ return !e.isLoop(); });
       var nodes = this.nodes();
       var numNodes = nodes.length;
       var numEdges = edges.length;
@@ -13583,12 +15187,12 @@ var cytoscape;
         
         // If difference is less than the desired threshold, stop iterating
         if (diff < epsilon) {
-          logDebug("Stoped at iteration %s", iter);
+          // logDebug("Stoped at iteration %s", iter);
           break;
         }
       }
             
-      logDebug("Result:\n" + eigenvector);
+      // logDebug("Result:\n" + eigenvector);
 
       // Construct result
       var res = {
@@ -13606,12 +15210,549 @@ var cytoscape;
 
 
       return res;
-    } // pageRank
+    }, // pageRank
 
+
+    // options => options object
+    //   weight: function( edge ){} // specifies weight to use for `edge`/`this`. If not present, it will be asumed a weight of 1 for all edges
+    //   directed // default false
+    // retObj => returned object by function
+    // if directed
+    //   indegree : function(node) // Returns the normalized indegree of the given node
+    //   outdegree: function(node) // Returns the normalized outdegree of the given node
+    // if undirected
+    //   degree : function(node) // Returns the normalized degree of the given node
+    degreeCentralityNormalized: function (options) {
+      options = options || {};
+
+      // var logDebug = function () {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
+
+      // Parse options
+      // debug - optional
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+
+      // directed - optional
+      if (options.directed != null) {
+        var directed = options.directed;
+      } else {
+        var directed = false;
+      }
+
+      // logDebug("Starting degree centrality...");
+      var nodes = this.nodes();
+      var numNodes = nodes.length;
+
+      if (!directed) {
+        var degrees = {};
+        var maxDegree = 0;
+
+        for (var i = 0; i < numNodes; i++) {
+          var node = nodes[i];
+          // add current node to the current options object and call degreeCentrality 
+          var currDegree = this.degreeCentrality($$.util.extend({}, options, {root: node}));
+          if (maxDegree < currDegree.degree)
+            maxDegree = currDegree.degree;
+
+          degrees[node.id()] = currDegree.degree;
+        }
+
+        return {
+          degree: function (node) {
+            if ($$.is.string(node)) {
+              // from is a selector string
+              var node = (cy.filter(node)[0]).id();
+            } else {
+              // from is a node
+              var node = node.id();
+            }
+
+            return degrees[node] / maxDegree;
+          }
+        };
+      } else {
+        var indegrees = {};
+        var outdegrees = {};
+        var maxIndegree = 0;
+        var maxOutdegree = 0;
+
+        for (var i = 0; i < numNodes; i++) {
+          var node = nodes[i];
+          // add current node to the current options object and call degreeCentrality 
+          var currDegree = this.degreeCentrality($$.util.extend({}, options, {root: node}));
+
+          if (maxIndegree < currDegree.indegree)
+            maxIndegree = currDegree.indegree;
+
+          if (maxOutdegree < currDegree.outdegree)
+            maxOutdegree = currDegree.outdegree;
+
+          indegrees[node.id()] = currDegree.indegree;
+          outdegrees[node.id()] = currDegree.outdegree;
+        }
+
+        return {
+          indegree: function (node) {
+            if ($$.is.string(node)) {
+              // from is a selector string
+              var node = (cy.filter(node)[0]).id();
+            } else {
+              // from is a node
+              var node = node.id();
+            }
+
+            return indegrees[node] / maxIndegree;
+          },
+          outdegree: function (node) {
+            if ($$.is.string(node)) {
+              // from is a selector string
+              var node = (cy.filter(node)[0]).id();
+            } else {
+              // from is a node
+              var node = node.id();
+            }
+
+            return outdegrees[node] / maxOutdegree;
+          }
+
+        };
+      }
+
+    }, // degreeCentralityNormalized
+
+    // Implemented from the algorithm in Opsahl's paper "Node centrality in weighted networks: Generalizing degree and shortest paths" check the heading 2 "Degree"
+    // options => options object
+    //   node : focal node
+    //   weight: function( edge ){} // specifies weight to use for `edge`/`this`. If not present, it will be asumed a weight of 1 for all edges
+    //   alpha : alpha value for the algorithm (Benchmark values of alpha: 0 -> disregards the weights focuses on number of edges
+    //                                                                     1 -> disregards the number of edges focuses on total amount of weight 
+    //   directed // default false
+    // retObj => returned object by function
+    // if directed
+    //   indegree : indegree of the given node
+    //   outdegree: outdegree of the given node
+    // if undirected
+    //   degree : degree of the given node
+    degreeCentrality: function (options) {
+      options = options || {};
+
+      var callingEles = this;
+
+      // var logDebug = function () {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
+
+      // Parse options
+      // debug - optional
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+
+      // logDebug("Starting degree centrality...");
+
+      // root - mandatory!
+      if (options != null && options.root != null) {
+        var root = $$.is.string(options.root) ? this.filter(options.root)[0] : options.root[0];
+        // logDebug("Source node: %s", root.id());
+      } else {
+        return undefined;
+      }
+
+      // weight - optional
+      if (options.weight != null && $$.is.fn(options.weight)) {
+        var weightFn = options.weight;
+      } else {
+        // If not specified, assume each edge has equal weight (1)
+        var weightFn = function (e) {
+          return 1;
+        };
+      }
+
+      // directed - optional
+      if (options.directed != null) {
+        var directed = options.directed;
+      } else {
+        var directed = false;
+      }
+
+      // alpha - optional
+      if (options.alpha != null && $$.is.number(options.alpha)) {
+        var alpha = options.alpha;
+      } else {
+        alpha = 0;
+      }
+
+
+      if (!directed) {
+        var connEdges = root.connectedEdges().intersection( callingEles );
+        var k = connEdges.length;
+        var s = 0;
+
+        // Now, sum edge weights
+        for (var i = 0; i < connEdges.length; i++) {
+          var edge = connEdges[i];
+          s += weightFn.apply(edge, [edge]);
+        }
+
+        return {
+          degree: Math.pow(k, 1 - alpha) * Math.pow(s, alpha)
+        };
+      } else {
+        var incoming = root.connectedEdges('edge[target = "' + root.id() + '"]').intersection( callingEles );
+        var outgoing = root.connectedEdges('edge[source = "' + root.id() + '"]').intersection( callingEles );
+        var k_in = incoming.length;
+        var k_out = outgoing.length;
+        var s_in = 0;
+        var s_out = 0;
+
+        // Now, sum incoming edge weights
+        for (var i = 0; i < incoming.length; i++) {
+          var edge = incoming[i];
+          s_in += weightFn.apply(edge, [edge]);
+        }
+
+        // Now, sum outgoing edge weights
+        for (var i = 0; i < outgoing.length; i++) {
+          var edge = outgoing[i];
+          s_out += weightFn.apply(edge, [edge]);
+        }
+
+        return {
+          indegree: Math.pow(k_in, 1 - alpha) * Math.pow(s_in, alpha),
+          outdegree: Math.pow(k_out, 1 - alpha) * Math.pow(s_out, alpha)
+        };
+      }
+    }, // degreeCentrality
+
+    // options => options object
+    //   weight: function( edge ){} // specifies weight to use for `edge`/`this`. If not present, it will be asumed a weight of 1 for all edges
+    //   directed // default false
+    // retObj => returned object by function
+    //   closeness : function(node) // Returns the normalized closeness of the given node
+    closenessCentralityNormalized: function (options) {
+      options = options || {};
+
+      // var logDebug = function () {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
+
+      // Parse options
+      // debug - optional
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+
+      // logDebug("Starting closeness centrality...");
+
+      var closenesses = {};
+      var maxCloseness = 0;
+      var nodes = this.nodes();
+      var fw = this.floydWarshall({weight: options.weight, directed: options.directed});
+
+      // Compute closeness for every node and find the maximum closeness
+      for(var i = 0; i < nodes.length; i++){
+        var currCloseness = 0;
+        for (var j = 0; j < nodes.length; j++) {
+          if (i != j) {
+            currCloseness += 1 / fw.distance(nodes[i], nodes[j]);
+          }
+        }
+
+        if (maxCloseness < currCloseness)
+          maxCloseness = currCloseness;
+
+        closenesses[nodes[i].id()] = currCloseness;
+      }
+
+      return {
+        closeness: function (node) {
+          if ($$.is.string(node)) {
+            // from is a selector string
+            var node = (cy.filter(node)[0]).id();
+          } else {
+            // from is a node
+            var node = node.id();
+          }
+
+          return closenesses[node] / maxCloseness;
+        }
+      };
+    },
+    // Implemented from pseudocode from wikipedia
+    // options => options object
+    //   root : focal node
+    //   weight: function( edge ){} // specifies weight to use for `edge`/`this`. If not present, it will be asumed a weight of 1 for all edges
+    //   directed // default false
+    // closeness => returned value by the function. Closeness value of the given node.
+    closenessCentrality: function (options) {
+      options = options || {};
+
+      // var logDebug = function () {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
+
+      // Parse options
+      // debug - optional
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+
+      // logDebug("Starting closeness centrality...");
+
+      // root - mandatory!
+      if (options.root != null) {
+        if ($$.is.string(options.root)) {
+          // use it as a selector, e.g. "#rootID
+          var root = this.filter(options.root)[0];
+        } else {
+          var root = options.root[0];
+        }
+        // logDebug("Source node: %s", root.id());
+      } else {
+        $$.util.error("options.root required");
+        return undefined;
+      }
+
+      // weight - optional
+      if (options.weight != null && $$.is.fn(options.weight)) {
+        var weight = options.weight;
+      } else {
+        var weight = function(){return 1;};
+      }
+
+      // directed - optional
+      if (options.directed != null && $$.is.bool(options.directed)) {
+        var directed = options.directed;
+      } else {
+        var directed = false;
+      }
+
+      // we need distance from this node to every other node
+      var dijkstra = this.dijkstra({
+        root: root,
+        weight: weight,
+        directed: directed
+      });
+      var totalDistance = 0;
+
+      var nodes = this.nodes();
+      for (var i = 0; i < nodes.length; i++)
+        if (nodes[i].id() != root.id())
+          totalDistance += 1 / dijkstra.distanceTo(nodes[i]);
+
+      return totalDistance;
+    }, // closenessCentrality
+
+    // Implemented from the algorithm in the paper "On Variants of Shortest-Path Betweenness Centrality and their Generic Computation" by Ulrik Brandes
+    // options => options object
+    //   weight: function( edge ){} // specifies weight to use for `edge`/`this`. If not present, it will be asumed a weight of 1 for all edges
+    //   directed // default false
+    // retObj => returned object by function
+    //   betweenness : function(node) // Returns the betweenness centrality of the given node
+    //   betweennessNormalized : function(node) // Returns the normalized betweenness centrality of the given node
+    betweennessCentrality: function (options) {
+      options = options || {};
+
+      // var logDebug = function () {
+      //   if (debug) {
+      //     console.log.apply(console, arguments);
+      //   }
+      // };
+
+      // Parse options
+      // debug - optional
+      // if (options.debug != null) {
+      //   var debug = options.debug;
+      // } else {
+      //   var debug = false;
+      // }
+
+      // logDebug("Starting betweenness centrality...");
+
+      // Weight - optional
+      if (options.weight != null && $$.is.fn(options.weight)) {
+        var weightFn = options.weight;
+        var weighted = true;
+      } else {
+        var weighted = false;
+      }
+
+      // Directed - default false
+      if (options.directed != null && $$.is.bool(options.directed)) {
+        var directed = options.directed;
+      } else {
+        var directed = false;
+      }
+
+      var priorityInsert = function (queue, ele) {
+        queue.unshift(ele);
+        for (var i = 0; d[queue[i]] < d[queue[i + 1]] && i < queue.length - 1; i++) {
+          var tmp = queue[i];
+          queue[i] = queue[i + 1];
+          queue[i + 1] = tmp;
+        }
+      };
+
+      var cy = this._private.cy;
+
+      // starting
+      var V = this.nodes();
+      var A = {};
+      var C = {};
+
+      // A contains the neighborhoods of every node
+      for (var i = 0; i < V.length; i++) {
+        if (directed) {
+          A[V[i].id()] = V[i].outgoers("node"); // get outgoers of every node
+        } else {
+          A[V[i].id()] = V[i].openNeighborhood("node"); // get neighbors of every node          
+        }
+      }
+
+      // C contains the betweenness values
+      for (var i = 0; i < V.length; i++) {
+        C[V[i].id()] = 0;
+      }
+
+      for (var s = 0; s < V.length; s++) {
+        var S = []; // stack
+        var P = {};
+        var g = {};
+        var d = {};
+        var Q = []; // queue
+
+        // init dictionaries
+        for (var i = 0; i < V.length; i++) {
+          P[V[i].id()] = [];
+          g[V[i].id()] = 0;
+          d[V[i].id()] = Number.POSITIVE_INFINITY;
+        }
+
+        g[V[s].id()] = 1; // sigma
+        d[V[s].id()] = 0; // distance to s
+
+        Q.unshift(V[s].id());
+
+        while (Q.length > 0) {
+          var v = Q.pop();
+          S.push(v);
+          if (weighted) {
+            A[v].forEach(function (w) {
+              if (cy.$('#' + v).edgesTo(w).length > 0) {
+                var edge = cy.$('#' + v).edgesTo(w)[0];
+              } else {
+                var edge = w.edgesTo('#' + v)[0];
+              }
+              
+              var edgeWeight = weightFn.apply(edge, [edge]);
+
+              if (d[w.id()] > d[v] + edgeWeight) {
+                d[w.id()] = d[v] + edgeWeight;
+                if (Q.indexOf(w.id()) < 0) { //if w is not in Q
+                  priorityInsert(Q, w.id());
+                } else { // update position if w is in Q
+                  Q.splice(Q.indexOf(w.id()), 1);
+                  priorityInsert(Q, w.id());
+                }
+                g[w.id()] = 0;
+                P[w.id()] = [];
+              }
+              if (d[w.id()] == d[v] + edgeWeight) {
+                g[w.id()] = g[w.id()] + g[v];
+                P[w.id()].push(v);
+              }
+            });
+          } else {
+            A[v].forEach(function (w) {
+              if (d[w.id()] == Number.POSITIVE_INFINITY) {
+                Q.unshift(w.id());
+                d[w.id()] = d[v] + 1;
+              }
+              if (d[w.id()] == d[v] + 1) {
+                g[w.id()] = g[w.id()] + g[v];
+                P[w.id()].push(v);
+              }
+            });
+          }
+        }
+
+        var e = {};
+        for (var i = 0; i < V.length; i++) {
+          e[V[i].id()] = 0;
+        }
+
+        while (S.length > 0) {
+          var w = S.pop();
+          P[w].forEach(function (v) {
+            e[v] = e[v] + (g[v] / g[w]) * (1 + e[w]);
+            if (w != V[s].id())
+              C[w] = C[w] + e[w];
+          });
+        }
+      }
+
+      var max = 0;
+      for (var key in C) {
+        if (max < C[key])
+          max = C[key];
+      }
+
+      var ret = {
+        betweenness: function (node) {
+          if ($$.is.string(node)) {
+            var node = (cy.filter(node)[0]).id();
+          } else {
+            var node = node.id();
+          }
+
+          return C[node];
+        },
+
+        betweennessNormalized: function (node) {
+          if ($$.is.string(node)) {
+            var node = (cy.filter(node)[0]).id();
+          } else {
+            var node = node.id();
+          }
+
+          return C[node] / max;
+        }
+      };
+
+      // alias
+      ret.betweennessNormalised = ret.betweennessNormalized;
+
+      return ret;
+    } // betweennessCentrality
   }); // $$.fn.eles
 
-
+  // nice, short mathemathical alias
+  $$.elesfn.dc = $$.elesfn.degreeCentrality;
+  $$.elesfn.dcn = $$.elesfn.degreeCentralityNormalised = $$.elesfn.degreeCentralityNormalized;
+  $$.elesfn.cc = $$.elesfn.closenessCentrality;
+  $$.elesfn.ccn = $$.elesfn.closenessCentralityNormalised = $$.elesfn.closenessCentralityNormalized;
+  $$.elesfn.bc = $$.elesfn.betweennessCentrality;
 }) (cytoscape);
+
 ;(function( $$ ){ 'use strict';
 
   $$.fn.eles({
@@ -13627,74 +15768,6 @@ var cytoscape;
 ;(function( $$ ){ 'use strict';
   
   $$.fn.eles({
-    classes: function(opts){
-      var eles = this;
-      var changed = [];
-      var fn;
-
-      if( $$.is.fn(opts) ){
-        fn = opts;
-
-      } else if( !$$.is.plainObject(opts) ){
-        return this; // needs opts or fn
-      } 
-
-      for(var i = 0; i < eles.length; i++){
-        var ele = eles[i];
-        var eleChanged = false;
-
-        opts = fn ? fn.apply(ele, [i, ele]) : opts;
-
-        // add classes
-        if( opts.add ){ for( var j = 0; j < opts.add.length; j++ ){
-          var cls = opts.add[j];
-          var hasClass = ele._private.classes[cls];
-
-          ele._private.classes[cls] = true;
-
-          if( !hasClass && !eleChanged ){
-            changed.push( ele );
-            eleChanged = true;
-          }
-        } }
-
-        // remove classes
-        if( opts.remove ){ for( var j = 0; j < opts.remove.length; j++ ){
-          var cls = opts.remove[j];
-          var hasClass = ele._private.classes[cls];
-
-          ele._private.classes[cls] = false;
-
-          if( hasClass && !eleChanged ){
-            changed.push( ele );
-            eleChanged = true;
-          }
-        } }
-
-        // toggle classes
-        if( opts.toggle ){ for( var j = 0; j < opts.toggle.length; j++ ){
-          var cls = opts.toggle[j];
-          var hasClass = ele._private.classes[cls];
-
-          ele._private.classes[cls] = !hasClass;
-
-          if( !eleChanged ){
-            changed.push( ele );
-            eleChanged = true;
-          }
-        } }
-      }
-
-      if( changed.length > 0 ){
-        new $$.Collection( this.cy(), changed )
-          .updateStyle()
-          .trigger('class')
-        ;
-      }
-
-      return this;
-    },
-
     addClass: function(classes){
       classes = classes.split(/\s+/);
       var self = this;
@@ -13834,7 +15907,7 @@ var cytoscape;
 
     some: function( fn, thisArg ){
       for( var i = 0; i < this.length; i++ ){
-        var ret = fn.apply( thisArg, [ this[i], i, this ] );
+        var ret = !thisArg ? fn( this[i], i, this ) : fn.apply( thisArg, [ this[i], i, this ] );
 
         if( ret ){
           return true;
@@ -13846,7 +15919,7 @@ var cytoscape;
 
     every: function( fn, thisArg ){
       for( var i = 0; i < this.length; i++ ){
-        var ret = fn.apply( thisArg, [ this[i], i, this ] );
+        var ret = !thisArg ? fn( this[i], i, this ) : fn.apply( thisArg, [ this[i], i, this ] );
 
         if( !ret ){
           return false;
@@ -13879,6 +15952,8 @@ var cytoscape;
       return this.neighborhood().intersect( collection ).length === collection.length;
     }
   });
+
+  $$.elesfn.allAreNeighbours = $$.elesfn.allAreNeighbors;
   
 })( cytoscape );
 
@@ -14004,7 +16079,7 @@ var cytoscape;
   
 })( cytoscape );
 ;(function($$){ 'use strict';
-  
+
   var borderWidthMultiplier = 2 * 0.5;
   var borderWidthAdjustment = 0;
 
@@ -14044,15 +16119,22 @@ var cytoscape;
 
     scratch: $$.define.data({
       field: 'scratch',
-      allowBinding: false,
+      bindingEvent: 'scratch',
+      allowBinding: true,
       allowSetting: true,
-      settingTriggersEvent: false,
-      allowGetting: true
+      settingEvent: 'scratch',
+      settingTriggersEvent: true,
+      triggerFnName: 'trigger',
+      allowGetting: true,
+      updateStyle: true
     }),
 
     removeScratch: $$.define.removeData({
       field: 'scratch',
-      triggerEvent: false
+      event: 'scratch',
+      triggerFnName: 'trigger',
+      triggerEvent: true,
+      updateStyle: true
     }),
 
     rscratch: $$.define.data({
@@ -14117,10 +16199,10 @@ var cytoscape;
     positions: function( pos, silent ){
       if( $$.is.plainObject(pos) ){
         this.position(pos);
-        
+
       } else if( $$.is.fn(pos) ){
         var fn = pos;
-        
+
         for( var i = 0; i < this.length; i++ ){
           var ele = this[i];
 
@@ -14160,7 +16242,8 @@ var cytoscape;
       function update( parent ){
         var children = parent.children();
         var style = parent._private.style;
-        var bb = children.boundingBox({ includeLabels: false, includeEdges: false });
+        var includeLabels = style['compound-sizing-wrt-labels'].value === 'include';
+        var bb = children.boundingBox({ includeLabels: includeLabels, includeEdges: true });
         var padding = {
           top: style['padding-top'].pxValue,
           bottom: style['padding-bottom'].pxValue,
@@ -14252,7 +16335,7 @@ var cytoscape;
     },
 
     // get/set the position relative to the parent
-    parentPosition: function( dim, val ){
+    relativePosition: function( dim, val ){
       var ele = this[0];
       var cy = this.cy();
       var ppos = $$.is.plainObject( dim ) ? dim : undefined;
@@ -14368,7 +16451,7 @@ var cytoscape;
     },
 
     // convenience function to get a numerical value for the height of the node
-    height: function(){ 
+    height: function(){
       var ele = this[0];
       var cy = ele._private.cy;
       var styleEnabled = cy._private.styleEnabled;
@@ -14467,12 +16550,13 @@ var cytoscape;
       for( var i = 0; i < eles.length; i++ ){
         var ele = eles[i];
         var _p = ele._private;
+        var style = _p.style;
         var display = styleEnabled ? _p.style['display'].value : 'element';
         var isNode = _p.group === 'nodes';
         var ex1, ex2, ey1, ey2, x, y;
         var includedEle = false;
 
-        if( display === 'none' ){ continue; } // then ele doesn't take up space      
+        if( display === 'none' ){ continue; } // then ele doesn't take up space
 
         if( isNode && includeNodes ){
           includedEle = true;
@@ -14498,22 +16582,28 @@ var cytoscape;
           y1 = ey1 < y1 ? ey1 : y1;
           y2 = ey2 > y2 ? ey2 : y2;
 
-        } else if( ele.isEdge() && includeEdges ){ 
+        } else if( ele.isEdge() && includeEdges ){
           includedEle = true;
 
-          var n1pos = ele._private.source._private.position;
-          var n2pos = ele._private.target._private.position;
+          var n1 = _p.source;
+          var n1_p = n1._private;
+          var n1pos = n1_p.position;
+          
+          var n2 = _p.target;
+          var n2_p = n2._private;
+          var n2pos = n2_p.position;
+          
 
           // handle edge dimensions (rough box estimate)
           //////////////////////////////////////////////
 
-          var rstyle = ele._private.rstyle || {};
+          var rstyle = _p.rstyle || {};
 
           ex1 = n1pos.x;
           ex2 = n2pos.x;
           ey1 = n1pos.y;
           ey2 = n2pos.y;
-
+          
           if( ex1 > ex2 ){
             var temp = ex1;
             ex1 = ex2;
@@ -14537,7 +16627,7 @@ var cytoscape;
           if( styleEnabled ){
             var bpts = rstyle.bezierPts || [];
 
-            var w = ele._private.style['width'].pxValue;
+            var w = style['width'].pxValue;
             var wHalf = w/2;
 
             for( var j = 0; j < bpts.length; j++ ){
@@ -14554,8 +16644,38 @@ var cytoscape;
               y2 = ey2 > y2 ? ey2 : y2;
             }
           }
+          
+          // precise haystacks (sanity check)
+          ///////////////////////////////////
+          
+          if( styleEnabled && style['curve-style'].strValue === 'haystack' ){
+            var hpts = _p.rscratch.haystackPts;
+            
+            ex1 = hpts[0];
+            ey1 = hpts[1];
+            ex2 = hpts[2];
+            ey2 = hpts[3];
+
+            if( ex1 > ex2 ){
+              var temp = ex1;
+              ex1 = ex2;
+              ex2 = temp;
+            }
+
+            if( ey1 > ey2 ){
+              var temp = ey1;
+              ey1 = ey2;
+              ey2 = temp;
+            }
+
+            x1 = ex1 < x1 ? ex1 : x1;
+            x2 = ex2 > x2 ? ex2 : x2;
+            y1 = ey1 < y1 ? ey1 : y1;
+            y2 = ey2 > y2 ? ey2 : y2;  
+          }
 
         } // edges
+            
 
         // handle label dimensions
         //////////////////////////
@@ -14636,12 +16756,19 @@ var cytoscape;
         h: y2 - y1
       };
     }
-  }); 
+  });
 
-  // in case some users want to be explicit
-  $$.elesfn.modelPosition = $$.elesfn.position;
-  $$.elesfn.modelPositions = $$.elesfn.positions;
-  
+  // aliases
+  var fn = $$.elesfn;
+  fn.attr = fn.data;
+  fn.removeAttr = fn.removeData;
+  fn.modelPosition = fn.point = fn.position;
+  fn.modelPositions = fn.points = fn.positions;
+  fn.renderedPoint = fn.renderedPosition;
+  fn.relativePoint = fn.relativePosition;
+  fn.boundingbox = fn.boundingBox;
+  fn.renderedBoundingbox = fn.renderedBoundingBox;
+
 })( cytoscape );
 
 ;(function( $$ ){ 'use strict';
@@ -14796,9 +16923,8 @@ var cytoscape;
     }
   });
 
-  // aliases for those folks who like old stuff:
-  $$.elesfn.bind = $$.elesfn.on;
-  $$.elesfn.unbind = $$.elesfn.off;
+  // aliases:
+  $$.define.eventAliasesOn( $$.elesfn );
   
 })( cytoscape );
 
@@ -14870,6 +16996,12 @@ var cytoscape;
       
     },
 
+    absoluteComplement: function(){
+      var cy = this._private.cy;
+
+      return cy.elements().not( this );
+    },
+
     intersect: function( other ){
       var cy = this._private.cy;
       
@@ -14897,6 +17029,76 @@ var cytoscape;
       }
       
       return new $$.Collection( cy, elements );
+    },
+
+    xor: function( other ){
+      var cy = this._private.cy;
+
+      if( $$.is.string(other) ){
+        other = cy.$( other );
+      }
+
+      var elements = [];
+      var col1 = this;
+      var col2 = other;
+      
+      var add = function( col, other ){
+
+        for( var i = 0; i < col.length; i++ ){
+          var ele = col[i];
+          var id = ele._private.data.id;
+          var inOther = other._private.ids[ id ];
+          
+          if( !inOther ){
+            elements.push( ele );
+          }
+        }
+
+      };
+
+      add( col1, col2 );
+      add( col2, col1 );
+
+      return new $$.Collection( cy, elements );
+    },  
+
+    diff: function( other ){
+      var cy = this._private.cy;
+
+      if( $$.is.string(other) ){
+        other = cy.$( other );
+      }
+
+      var left = [];
+      var right = [];
+      var both = [];
+      var col1 = this;
+      var col2 = other;
+
+      var add = function( col, other, retEles ){
+
+        for( var i = 0; i < col.length; i++ ){
+          var ele = col[i];
+          var id = ele._private.data.id;
+          var inOther = other._private.ids[ id ];
+          
+          if( inOther ){
+            both.push( ele );
+          } else {
+            retEles.push( ele );
+          }
+        }
+
+      };
+
+      add( col1, col2, left );
+      add( col2, col1, right );
+
+      return {
+        left: new $$.Collection( cy, left, { unique: true } ),
+        right: new $$.Collection( cy, right, { unique: true } ),
+        both: new $$.Collection( cy, both, { unique: true } )
+      };
     },
 
     add: function( toAdd ){
@@ -15020,7 +17222,7 @@ var cytoscape;
 
       for( var i = 0; i < eles.length; i++ ){
         var ele = eles[i];
-        var ret = mapFn.apply( thisArg, [ele, i, eles] );
+        var ret = thisArg ? mapFn.apply( thisArg, [ele, i, eles] ) : mapFn( ele, i, eles );
 
         arr.push( ret );
       }
@@ -15035,7 +17237,7 @@ var cytoscape;
 
       for( var i = 0; i < eles.length; i++ ){
         var ele = eles[i];
-        var include = fn.apply( thisArg, [ele, i, eles] );
+        var include = thisArg ? fn.apply( thisArg, [ele, i, eles] ) : fn( ele, i, eles );
 
         if( include ){
           filterEles.push( ele );
@@ -15052,7 +17254,7 @@ var cytoscape;
 
       for( var i = 0; i < eles.length; i++ ){
         var ele = eles[i];
-        var val = valFn.apply( thisArg, [ ele, i, eles ] );
+        var val = thisArg ? valFn.apply( thisArg, [ ele, i, eles ] ) : valFn( ele, i, eles );
 
         if( val > max ){
           max = val;
@@ -15073,7 +17275,7 @@ var cytoscape;
 
       for( var i = 0; i < eles.length; i++ ){
         var ele = eles[i];
-        var val = valFn.apply( thisArg, [ ele, i, eles ] );
+        var val = thisArg ? valFn.apply( thisArg, [ ele, i, eles ] ) : valFn( ele, i, eles );
 
         if( val < min ){
           min = val;
@@ -15087,6 +17289,15 @@ var cytoscape;
       };
     }
   });
+
+  // aliases
+  var fn = $$.elesfn;
+  fn['u'] = fn['|'] = fn['+'] = fn.union = fn.or = fn.add;
+  fn['\\'] = fn['!'] = fn['-'] = fn.difference = fn.relativeComplement = fn.not;
+  fn['n'] = fn['&'] = fn['.'] = fn.and = fn.intersection = fn.intersect;
+  fn['^'] = fn['(+)'] = fn['(-)'] = fn.symmetricDifference = fn.symdiff = fn.xor;
+  fn.fnFilter = fn.filterFn = fn.stdFilter;
+  fn.complement = fn.abscomp = fn.absoluteComplement;
   
 })( cytoscape );
 ;(function($$){ 'use strict';
@@ -15143,7 +17354,7 @@ var cytoscape;
 
         for(var i = 0; i < this.length; i++){
           var ele = this[i];
-          var ret = fn.apply( thisArg, [ ele, i, this ] );
+          var ret = thisArg ? fn.apply( thisArg, [ ele, i, this ] ) : fn( ele, i, this );
 
           if( ret === false ){ break; } // exit each early on return false
         }
@@ -15232,18 +17443,25 @@ var cytoscape;
       var ele = this[0];
       if( !ele ){ return undefined; }
 
+      // var cy = ele.cy();
       var _p = ele._private;
       var group = _p.group;
 
       if( group === 'nodes' ){
-        return _p.data.parent ? ele.parents().size() : 0;
+        var depth = _p.data.parent ? ele.parents().size() : 0;
+        
+        if( !ele.isParent() ){
+          return Number.MAX_VALUE; // childless nodes always on top
+        }
+        
+        return depth;
       } else {
         var src = _p.source;
         var tgt = _p.target;
-        var srcDepth = src._private.data.parent ? src.parents().size() : 0;
-        var tgtDepth = tgt._private.data.parent ? tgt.parents().size() : 0;
+        var srcDepth = src.zDepth();
+        var tgtDepth = tgt.zDepth();
 
-        return Math.max( srcDepth - 1, tgtDepth - 1, 0 ) + 0.5; // depth of deepest parent and just a bit above
+        return Math.max( srcDepth, tgtDepth, 0 ); // depth of deepest parent
       }
     }
   });
@@ -15272,13 +17490,13 @@ var cytoscape;
 
     if( sameDepth ){
       
-      if( aIsNode && bIsEdge ){
+      if( aIsNode && bIsEdge ){      
         return 1; // 'a' is a node, it should be drawn later       
       
       } else if( aIsEdge && bIsNode ){
         return -1; // 'a' is an edge, it should be drawn first
 
-      } else { // both nodes or both edges
+      } else { // both nodes or both edges        
         if( zDiff === 0 ){ // same z-index => compare indices in the core (order added to graph w/ last on top)
           return a_p.index - b_p.index;
         } else {
@@ -15287,7 +17505,7 @@ var cytoscape;
       }
     
     // elements on different level
-    } else {
+    } else {      
       return depthDiff; // deeper element should be drawn later
     }
 
@@ -15395,6 +17613,9 @@ var cytoscape;
     }
 
   });
+
+  // aliases:
+  $$.elesfn.createLayout = $$.elesfn.makeLayout;
   
 })( cytoscape );
 
@@ -15652,6 +17873,9 @@ var cytoscape;
     },
 
     transparent: function(){
+      var cy = this.cy();
+      if( !cy.styleEnabled() ){ return false; }
+
       var ele = this[0];
       var hasCompoundNodes = ele.cy().hasCompoundNodes();
 
@@ -15676,14 +17900,23 @@ var cytoscape;
 
         return ele.isParent() && autoW && autoH;
       }
+    },
+
+    backgrounding: function(){
+      var cy = this.cy();
+      if( !cy.styleEnabled() ){ return false; }
+
+      var ele = this[0];
+
+      return ele._private.backgrounding ? true : false;
     }
 
   });
 
 
-  $$.elesfn.style = $$.elesfn.css;
+  $$.elesfn.bypass = $$.elesfn.style = $$.elesfn.css;
   $$.elesfn.renderedStyle = $$.elesfn.renderedCss;
-  $$.elesfn.removeStyle = $$.elesfn.removeCss;
+  $$.elesfn.removeBypass = $$.elesfn.removeStyle = $$.elesfn.removeCss;
   
 })( cytoscape );
 ;(function($$){ 'use strict';
@@ -15815,6 +18048,8 @@ var cytoscape;
     on: 'selectify',
     off: 'unselectify'
   });
+
+  $$.elesfn.deselect = $$.elesfn.unselect;
   
   $$.elesfn.grabbed = function(){
     var ele = this[0];
@@ -16050,6 +18285,11 @@ var cytoscape;
       return this.neighborhood( selector );
     }
   });  
+
+  // aliases
+  $$.elesfn.neighbourhood = $$.elesfn.neighborhood;
+  $$.elesfn.closedNeighbourhood = $$.elesfn.closedNeighborhood;
+  $$.elesfn.openNeighbourhood = $$.elesfn.openNeighborhood;
 
 
   // Edge functions
@@ -16619,14 +18859,19 @@ var cytoscape;
 
 (function($$) { 'use strict';
 
-  function CanvasRenderer(options) {
-    
-    CanvasRenderer.CANVAS_LAYERS = 5;
-    CanvasRenderer.SELECT_BOX = 0;
-    CanvasRenderer.DRAG = 2;
-    CanvasRenderer.NODE = 4;
-    CanvasRenderer.TEXTURE_BUFFER = 0;
-    CanvasRenderer.BUFFER_COUNT = 2;
+  CanvasRenderer.CANVAS_LAYERS = 3;
+  //
+  CanvasRenderer.SELECT_BOX = 0;
+  CanvasRenderer.DRAG = 1;
+  CanvasRenderer.NODE = 2;
+
+  CanvasRenderer.BUFFER_COUNT = 3;
+  //
+  CanvasRenderer.TEXTURE_BUFFER = 0;
+  CanvasRenderer.MOTIONBLUR_BUFFER_NODE = 1;
+  CanvasRenderer.MOTIONBLUR_BUFFER_DRAG = 2;
+
+  function CanvasRenderer(options) {  
 
     this.options = options;
 
@@ -16712,9 +18957,16 @@ var cytoscape;
     this.hideLabelsOnViewport = options.hideLabelsOnViewport;
     this.textureOnViewport = options.textureOnViewport;
     this.wheelSensitivity = options.wheelSensitivity;
-    this.motionBlurEnabled = options.motionBlur === undefined ? true : options.motionBlur; // on by default
+    this.motionBlurEnabled = options.motionBlur; // on by default
     this.forcedPixelRatio = options.pixelRatio;
     this.motionBlur = true; // for initial kick off
+    this.motionBlurOpacity = options.motionBlurOpacity;
+    this.motionBlurTransparency = 1 - this.motionBlurOpacity;
+    this.motionBlurPxRatio = 1;
+    this.mbPxRBlurry = 1; //0.8;
+    this.minMbLowQualFrames = 4;
+    this.fullQualityMb = false;
+    this.clearedForMotionBlur = [];
     this.tapThreshold = options.tapThreshold;
     this.tapThreshold2 = options.tapThreshold * options.tapThreshold;
     this.tapholdDuration = 500;
@@ -17209,8 +19461,9 @@ var cytoscape;
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
-  CanvasRenderer.prototype.getCachedNodes = function() {
+  CRp.getCachedNodes = function() {
     var data = this.data; var cy = this.data.cy;
     
     if (data.cache == null) {
@@ -17224,7 +19477,7 @@ var cytoscape;
     return data.cache.cachedNodes;
   };
   
-  CanvasRenderer.prototype.updateNodesCache = function() {
+  CRp.updateNodesCache = function() {
     var data = this.data; var cy = this.data.cy;
     
     if (data.cache == null) {
@@ -17234,7 +19487,7 @@ var cytoscape;
     data.cache.cachedNodes = cy.nodes();
   };
   
-  CanvasRenderer.prototype.getCachedEdges = function() {
+  CRp.getCachedEdges = function() {
     var data = this.data; var cy = this.data.cy;
     
     if (data.cache == null) {
@@ -17248,7 +19501,7 @@ var cytoscape;
     return data.cache.cachedEdges;
   };
   
-  CanvasRenderer.prototype.updateEdgesCache = function() {
+  CRp.updateEdgesCache = function() {
     var data = this.data; var cy = this.data.cy;
     
     if (data.cache == null) {
@@ -17263,9 +19516,10 @@ var cytoscape;
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
   // Project mouse
-  CanvasRenderer.prototype.projectIntoViewport = function(clientX, clientY) {
+  CRp.projectIntoViewport = function(clientX, clientY) {
     var offsets = this.findContainerClientCoords();
     var offsetLeft = offsets[0];
     var offsetTop = offsets[1];
@@ -17277,7 +19531,7 @@ var cytoscape;
     return [x, y];
   };
 
-  CanvasRenderer.prototype.findContainerClientCoords = function() {
+  CRp.findContainerClientCoords = function() {
     var container = this.data.container;
 
     var bb = this.containerBB = this.containerBB || container.getBoundingClientRect();
@@ -17285,12 +19539,12 @@ var cytoscape;
     return [bb.left, bb.top, bb.right - bb.left, bb.bottom - bb.top];
   };
 
-  CanvasRenderer.prototype.invalidateContainerClientCoordsCache = function(){
+  CRp.invalidateContainerClientCoordsCache = function(){
     this.containerBB = null;
   };
 
   // Find nearest element
-  CanvasRenderer.prototype.findNearestElement = function(x, y, visibleElementsOnly){
+  CRp.findNearestElement = function(x, y, visibleElementsOnly){
     var self = this;
     var eles = this.getCachedZSortedEles();
     var near = [];
@@ -17486,7 +19740,7 @@ var cytoscape;
   }; 
 
   // 'Give me everything from this box'
-  CanvasRenderer.prototype.getAllInBox = function(x1, y1, x2, y2) {
+  CRp.getAllInBox = function(x1, y1, x2, y2) {
     var nodes = this.getCachedNodes();
     var edges = this.getCachedEdges();
     var box = [];
@@ -17600,7 +19854,7 @@ var cytoscape;
    * @param node          a node
    * @return {number}     width of the node
    */
-  CanvasRenderer.prototype.getNodeWidth = function(node)
+  CRp.getNodeWidth = function(node)
   {
     return node.width();
   };
@@ -17612,7 +19866,7 @@ var cytoscape;
    * @param node          a node
    * @return {number}     width of the node
    */
-  CanvasRenderer.prototype.getNodeHeight = function(node)
+  CRp.getNodeHeight = function(node)
   {
     return node.height();
   };
@@ -17624,7 +19878,7 @@ var cytoscape;
    * @param node          a node
    * @return {String}     shape of the node
    */
-  CanvasRenderer.prototype.getNodeShape = function(node)
+  CRp.getNodeShape = function(node)
   {
     // TODO only allow rectangle for a compound node?
 //    if (node._private.style['width'].value == 'auto' ||
@@ -17647,7 +19901,7 @@ var cytoscape;
   };
 
 
-  CanvasRenderer.prototype.getNodePadding = function(node)
+  CRp.getNodePadding = function(node)
   {
     var left = node._private.style['padding-left'].pxValue;
     var right = node._private.style['padding-right'].pxValue;
@@ -17680,13 +19934,13 @@ var cytoscape;
       bottom : bottom};
   };
 
-  CanvasRenderer.prototype.zOrderSort = $$.Collection.zIndexSort;
+  CRp.zOrderSort = $$.Collection.zIndexSort;
 
-  CanvasRenderer.prototype.updateCachedZSortedEles = function(){
+  CRp.updateCachedZSortedEles = function(){
     this.getCachedZSortedEles( true );
   };
 
-  CanvasRenderer.prototype.getCachedZSortedEles = function( forceRecalc ){
+  CRp.getCachedZSortedEles = function( forceRecalc ){
     var lastNodes = this.lastZOrderCachedNodes;
     var lastEdges = this.lastZOrderCachedEdges;
     var nodes = this.getCachedNodes();
@@ -17724,7 +19978,7 @@ var cytoscape;
     return eles;
   };
 
-  CanvasRenderer.prototype.projectBezier = function(edge){
+  CRp.projectBezier = function(edge){
     var qbezierAt = $$.math.qbezierAt;
     var rs = edge._private.rscratch;
     var bpts = edge._private.rstyle.bezierPts = [];
@@ -17784,7 +20038,7 @@ var cytoscape;
     }
   };
 
-  CanvasRenderer.prototype.recalculateNodeLabelProjection = function( node ){
+  CRp.recalculateNodeLabelProjection = function( node ){ 
     var content = node._private.style['content'].strValue;
     if( !content || content.match(/^\s+$/) ){ return; }
 
@@ -17831,14 +20085,16 @@ var cytoscape;
     this.applyLabelDimensions( node );
   };
 
-  CanvasRenderer.prototype.recalculateEdgeLabelProjection = function( edge ){
+  CRp.recalculateEdgeLabelProjection = function( edge ){
     var content = edge._private.style['content'].strValue;
     if( !content || content.match(/^\s+$/) ){ return; }
 
     var textX, textY;  
     var edgeCenterX, edgeCenterY;
-    var rs = edge._private.rscratch;
-    var rstyle = edge._private.rstyle;
+    var _p = edge._private;
+    var rs = _p.rscratch;
+    //var style = _p.style;
+    var rstyle = _p.rstyle;
     
     if (rs.edgeType == 'self') {
       edgeCenterX = rs.selfEdgeMidX;
@@ -17850,11 +20106,14 @@ var cytoscape;
       edgeCenterX = $$.math.qbezierAt( rs.startX, rs.cp2x, rs.endX, 0.5 );
       edgeCenterY = $$.math.qbezierAt( rs.startY, rs.cp2y, rs.endY, 0.5 );
     } else if (rs.edgeType == 'haystack') {
-      var srcPos = edge._private.source._private.position;
-      var tgtPos = edge._private.target._private.position;
+      // var src = _p.source;
+      // var tgt = _p.target;
+      // var srcPos = src._private.position;
+      // var tgtPos = tgt._private.position;
+      var pts = rs.haystackPts;
 
-      edgeCenterX = (srcPos.x + rs.source.x + tgtPos.x + rs.target.x)/2;
-      edgeCenterY = (srcPos.y + rs.source.y + tgtPos.y + rs.target.y)/2;
+      edgeCenterX = ( pts[0] + pts[2] )/2;
+      edgeCenterY = ( pts[1] + pts[3] )/2;
     }
     
     textX = edgeCenterX;
@@ -17869,7 +20128,7 @@ var cytoscape;
     this.applyLabelDimensions( edge );
   };
 
-  CanvasRenderer.prototype.applyLabelDimensions = function( ele ){
+  CRp.applyLabelDimensions = function( ele ){
     var rs = ele._private.rscratch;
     var rstyle = ele._private.rstyle;
 
@@ -17883,10 +20142,11 @@ var cytoscape;
     rs.labelHeight = labelDims.height;
   };
 
-  CanvasRenderer.prototype.getLabelText = function( ele ){
+  CRp.getLabelText = function( ele ){ 
     var style = ele._private.style;
     var text = ele._private.style['content'].strValue;
     var textTransform = style['text-transform'].value;
+    var rscratch = ele._private.rscratch;
     
     if (textTransform == 'none') {
     } else if (textTransform == 'uppercase') {
@@ -17895,10 +20155,63 @@ var cytoscape;
       text = text.toLowerCase();
     }
 
+    if( style['text-wrap'].value === 'wrap' ){
+      //console.log('wrap'); 
+      
+      // save recalc if the label is the same as before
+      if( rscratch.labelWrapKey === rscratch.labelKey ){ 
+        // console.log('wrap cache hit');
+        return rscratch.labelWrapCachedText;
+      }
+      // console.log('wrap cache miss');
+
+      var lines = text.split('\n');
+      var maxW = style['text-max-width'].pxValue;
+      var wrappedLines = [];
+
+      for( var l = 0; l < lines.length; l++ ){
+        var line = lines[l];
+        var lineDims = this.calculateLabelDimensions( ele, line, 'line=' + line );
+        var lineW = lineDims.width;
+
+        if( lineW > maxW ){ // line is too long
+          var words = line.split(/\s+/); // NB: assume collapsed whitespace into single space
+          var subline = '';
+
+          for( var w = 0; w < words.length; w++ ){
+            var word = words[w];
+            var testLine = subline.length === 0 ? word : subline + ' ' + word;
+            var testDims = this.calculateLabelDimensions( ele, testLine, 'testLine=' + testLine );
+            var testW = testDims.width;
+
+            if( testW <= maxW ){ // word fits on current line
+              subline += word + ' ';
+            } else { // word starts new line
+              wrappedLines.push( subline );
+              subline = word + ' ';
+            }
+          }
+
+          // if there's remaining text, put it in a wrapped line
+          if( !subline.match(/^\s+$/) ){
+            wrappedLines.push( subline );
+          }
+        } else { // line is already short enough
+          wrappedLines.push( line );
+        }
+      } // for
+
+      rscratch.labelWrapCachedLines = wrappedLines;
+      rscratch.labelWrapCachedText = text = wrappedLines.join('\n');
+      rscratch.labelWrapKey = rscratch.labelKey;
+
+      // console.log(text)
+    } // if wrap
+
     return text;
   };
 
-  CanvasRenderer.prototype.calculateLabelDimensions = function( ele, text ){
+  CRp.calculateLabelDimensions = function( ele, text, extraKey ){
     var r = this;
     var style = ele._private.style;
     var fStyle = style['font-style'].strValue;
@@ -17908,6 +20221,11 @@ var cytoscape;
     var weight = style['font-weight'].strValue;
 
     var cacheKey = ele._private.labelKey;
+
+    if( extraKey ){
+      cacheKey += '$@$' + extraKey;
+    }
+
     var cache = r.labelDimCache || (r.labelDimCache = {});
 
     if( cache[cacheKey] ){
@@ -17940,6 +20258,12 @@ var cytoscape;
     ds.padding = '0';
     ds.lineHeight = '1';
 
+    if( style['text-wrap'].value === 'wrap' ){
+      ds.whiteSpace = 'pre'; // so newlines are taken into account
+    } else {
+      ds.whiteSpace = 'normal';
+    }
+
     // put label content in div
     div.textContent = text;
 
@@ -17951,7 +20275,7 @@ var cytoscape;
     return cache[cacheKey];
   };  
 
-  CanvasRenderer.prototype.recalculateRenderedStyle = function( eles ){
+  CRp.recalculateRenderedStyle = function( eles ){
     var edges = [];
     var nodes = [];
     var handledEdge = {};
@@ -17959,6 +20283,7 @@ var cytoscape;
     for( var i = 0; i < eles.length; i++ ){
       var ele = eles[i];
       var _p = ele._private;
+      var style = _p.style;
       var rs = _p.rscratch;
       var rstyle = _p.rstyle;
       var id = _p.data.id;
@@ -17969,13 +20294,17 @@ var cytoscape;
       if( ele._private.group === 'nodes' ){
         var pos = _p.position;
         var posSame = rstyle.nodeX != null && rstyle.nodeY != null && pos.x === rstyle.nodeX && pos.y === rstyle.nodeY;
+        var wSame = rstyle.nodeW != null && rstyle.nodeW === style['width'].pxValue;
+        var hSame = rstyle.nodeH != null && rstyle.nodeH === style['height'].pxValue;
 
-        if( !posSame || !styleSame ){
+        if( !posSame || !styleSame || !wSame || !hSame ){
           nodes.push( ele );
         }
 
         rstyle.nodeX = pos.x;
         rstyle.nodeY = pos.y;
+        rstyle.nodeW = style['width'].pxValue;
+        rstyle.nodeH = style['height'].pxValue;
       } else { // edges
 
         var srcPos = ele._private.source._private.position;
@@ -18025,7 +20354,7 @@ var cytoscape;
     this.recalculateLabelProjections( nodes, edges );
   };
 
-  CanvasRenderer.prototype.recalculateLabelProjections = function( nodes, edges ){
+  CRp.recalculateLabelProjections = function( nodes, edges ){
     for( var i = 0; i < nodes.length; i++ ){
       this.recalculateNodeLabelProjection( nodes[i] );
     }
@@ -18035,13 +20364,13 @@ var cytoscape;
     }
   };
 
-  CanvasRenderer.prototype.recalculateEdgeProjections = function( edges ){
+  CRp.recalculateEdgeProjections = function( edges ){
     this.findEdgeControlPoints( edges );
   };
 
 
   // Find edge control points
-  CanvasRenderer.prototype.findEdgeControlPoints = function(edges) {
+  CRp.findEdgeControlPoints = function(edges) {
     if( !edges || edges.length === 0 ){ return; }
 
     var cy = this.data.cy;
@@ -18484,13 +20813,16 @@ var cytoscape;
 
         // project the edge into rstyle
         this.projectBezier( edge );
+        this.recalculateEdgeLabelProjection( edge );
 
       }
     }
       
     for( var i = 0; i < haystackEdges.length; i++ ){
       var edge = haystackEdges[i];
-      var rscratch = edge._private.rscratch;
+      var _p = edge._private;
+      var rscratch = _p.rscratch;
+      var rs = rscratch;
 
       if( !rscratch.haystack ){
         var angle = Math.random() * 2 * Math.PI;
@@ -18506,17 +20838,38 @@ var cytoscape;
           x: Math.cos(angle),
           y: Math.sin(angle)
         };
-      }  
+
+      }
+
+      var src = _p.source;
+      var tgt = _p.target;
+      var srcPos = src._private.position;
+      var tgtPos = tgt._private.position;
+      var srcW = src.width();
+      var tgtW = tgt.width();
+      var srcH = src.height();
+      var tgtH = tgt.height();
+      var radius = style['haystack-radius'].value;
+      var halfRadius = radius/2; // b/c have to half width/height
+
+      rs.haystackPts = [
+        rs.source.x * srcW * halfRadius + srcPos.x,
+        rs.source.y * srcH * halfRadius + srcPos.y,
+        rs.target.x * tgtW * halfRadius + tgtPos.x,
+        rs.target.y * tgtH * halfRadius + tgtPos.y
+      ];
 
       // always override as haystack in case set to different type previously
       rscratch.edgeType = 'haystack';
       rscratch.haystack = true;
+
+      this.recalculateEdgeLabelProjection( edge );
     }
 
     return hashTable;
   };
 
-  CanvasRenderer.prototype.findEndpoints = function(edge) {
+  CRp.findEndpoints = function(edge) {
     var intersect;
 
     var source = edge.source()[0];
@@ -18592,7 +20945,7 @@ var cytoscape;
         
       if (intersect.length === 0) {
         rs.noArrowPlacement = true;
-  //      return;
+        // return;
       } else {
         rs.noArrowPlacement = false;
       }
@@ -18621,7 +20974,7 @@ var cytoscape;
       
       if (intersect.length === 0) {
         rs.noArrowPlacement = true;
-  //      return;
+       // return;
       } else {
         rs.noArrowPlacement = false;
       }
@@ -18713,7 +21066,7 @@ var cytoscape;
   };
 
   // Find adjacent edges
-  CanvasRenderer.prototype.findEdges = function(nodeSet) {
+  CRp.findEdges = function(nodeSet) {
     
     var edges = this.getCachedEdges();
     
@@ -18735,7 +21088,7 @@ var cytoscape;
     return adjacentEdges;
   };
 
-  CanvasRenderer.prototype.getArrowWidth = CanvasRenderer.prototype.getArrowHeight = function(edgeWidth) {
+  CRp.getArrowWidth = CRp.getArrowHeight = function(edgeWidth) {
     var cache = this.arrowWidthCache = this.arrowWidthCache || {};
 
     var cachedVal = cache[edgeWidth];
@@ -18755,9 +21108,10 @@ var cytoscape;
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
 // Draw edge
-  CanvasRenderer.prototype.drawEdge = function(context, edge, drawOverlayInstead) {
+  CRp.drawEdge = function(context, edge, drawOverlayInstead) {
     var rs = edge._private.rscratch;
     var usePaths = CanvasRenderer.usePaths();
 
@@ -18803,35 +21157,38 @@ var cytoscape;
     source = startNode = edge._private.source;
     target = endNode = edge._private.target;
 
-    var targetPos = target._private.position;
-    var targetW = target.width();
-    var targetH = target.height();
-    var sourcePos = source._private.position;
-    var sourceW = source.width();
-    var sourceH = source.height();
+    // var targetPos = target._private.position;
+    // var targetW = target.width();
+    // var targetH = target.height();
+    // var sourcePos = source._private.position;
+    // var sourceW = source.width();
+    // var sourceH = source.height();
 
 
     var edgeWidth = style['width'].pxValue + (drawOverlayInstead ? 2 * overlayPadding : 0);
     var lineStyle = drawOverlayInstead ? 'solid' : style['line-style'].value;
     context.lineWidth = edgeWidth;
     
-    if( rs.edgeType !== 'haystack' ){
-      //this.findEndpoints(edge);
-    }
+    var shadowBlur = style['shadow-blur'].pxValue;
+    var shadowOpacity = style['shadow-opacity'].value;
+    var shadowColor = style['shadow-color'].value;
+    var shadowOffsetX = style['shadow-offset-x'].pxValue;
+    var shadowOffsetY = style['shadow-offset-y'].pxValue;
+
+    this.shadowStyle(context,  shadowColor, drawOverlayInstead ? 0 : shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
+    
+    // if( rs.edgeType !== 'haystack' ){
+    //   this.findEndpoints(edge);
+    // }
     
     if( rs.edgeType === 'haystack' ){
-      var radius = style['haystack-radius'].value;
-      var halfRadius = radius/2; // b/c have to half width/height
+      // var radius = style['haystack-radius'].value;
+      // var halfRadius = radius/2; // b/c have to half width/height
 
       this.drawStyledEdge(
         edge, 
         context, 
-        rs.haystackPts = [
-          rs.source.x * sourceW * halfRadius + sourcePos.x,
-          rs.source.y * sourceH * halfRadius + sourcePos.y,
-          rs.target.x * targetW * halfRadius + targetPos.x,
-          rs.target.y * targetH * halfRadius + targetPos.y
-        ],
+        rs.haystackPts,
         lineStyle,
         edgeWidth
       );
@@ -18884,10 +21241,12 @@ var cytoscape;
       this.drawArrowheads(context, edge, drawOverlayInstead);
     }
 
+    this.shadowStyle(context, 'transparent', 0); // reset for next guy
+
   };
   
   
-  CanvasRenderer.prototype.drawStyledEdge = function(
+  CRp.drawStyledEdge = function(
       edge, context, pts, type, width) {
 
     // 3 points given -> assume Bezier
@@ -18967,7 +21326,7 @@ var cytoscape;
 
   };
 
-  CanvasRenderer.prototype.drawArrowheads = function(context, edge, drawOverlayInstead) {
+  CRp.drawArrowheads = function(context, edge, drawOverlayInstead) {
     if( drawOverlayInstead ){ return; } // don't do anything for overlays 
 
     var rs = edge._private.rscratch;
@@ -19004,11 +21363,6 @@ var cytoscape;
 
       var gco = context.globalCompositeOperation;
 
-      context.globalCompositeOperation = 'destination-out';
-      
-      self.fillStyle(context, 255, 255, 255, 1);
-
-
       var arrowClearFill = style[prefix + '-arrow-fill'].value === 'hollow' ? 'both' : 'filled';
       var arrowFill = style[prefix + '-arrow-fill'].value;
 
@@ -19017,12 +21371,18 @@ var cytoscape;
         arrowClearFill = 'hollow';
       }
 
-      self.drawArrowShape( edge, prefix, context, 
-        arrowClearFill, style['width'].pxValue, style[prefix + '-arrow-shape'].value, 
-        x, y, dispX, dispY
-      );
+      if( style.opacity.value !== 1 ){ // then extra clear is needed
+        context.globalCompositeOperation = 'destination-out';
+        
+        self.fillStyle(context, 255, 255, 255, 1);
+        
+        self.drawArrowShape( edge, prefix, context, 
+          arrowClearFill, style['width'].pxValue, style[prefix + '-arrow-shape'].value, 
+          x, y, dispX, dispY
+        );
 
-      context.globalCompositeOperation = gco;
+        context.globalCompositeOperation = gco;
+      } // otherwise, the opaque arrow clears it for free :)
 
       var color = style[prefix + '-arrow-color'].value;
       self.fillStyle(context, color[0], color[1], color[2], style.opacity.value);
@@ -19080,7 +21440,7 @@ var cytoscape;
   };
   
   // Draw arrowshape
-  CanvasRenderer.prototype.drawArrowShape = function(edge, arrowType, context, fill, edgeWidth, shape, x, y, dispX, dispY) {
+  CRp.drawArrowShape = function(edge, arrowType, context, fill, edgeWidth, shape, x, y, dispX, dispY) {
     var usePaths = CanvasRenderer.usePaths();
     var rs = edge._private.rscratch;
     var pathCacheHit = false;
@@ -19154,11 +21514,13 @@ var cytoscape;
   };
 
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
-  CanvasRenderer.prototype.getCachedImage = function(url, onLoad) {
+  CRp.getCachedImage = function(url, onLoad) {
     var r = this;
     var imageCache = r.imageCache = r.imageCache || {};
 
@@ -19175,7 +21537,7 @@ var cytoscape;
     return image;
   };
     
-  CanvasRenderer.prototype.drawInscribedImage = function(context, img, node) {
+  CRp.drawInscribedImage = function(context, img, node) {
     var r = this;
     var nodeX = node._private.position.x;
     var nodeY = node._private.position.y;
@@ -19193,6 +21555,28 @@ var cytoscape;
     
     var w = img.width;
     var h = img.height;
+    
+    if( w === 0 || h === 0 ){
+      return; // no point in drawing empty image (and chrome is broken in this case)
+    }
+
+    var bgW = style['background-width'];
+    if( bgW.value !== 'auto' ){
+      if( bgW.units === '%' ){
+        w = bgW.value/100 * nodeW;
+      } else {
+        w = bgW.pxValue;
+      }
+    }
+
+    var bgH = style['background-height'];
+    if( bgH.value !== 'auto' ){
+      if( bgH.units === '%' ){
+        h = bgH.value/100 * nodeH;
+      } else {
+        h = bgH.pxValue;
+      }
+    }
 
     if( w === 0 || h === 0 ){
       return; // no point in drawing empty image (and chrome is broken in this case)
@@ -19282,9 +21666,10 @@ var cytoscape;
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
   // Draw edge text
-  CanvasRenderer.prototype.drawEdgeText = function(context, edge) {
+  CRp.drawEdgeText = function(context, edge) {
     var text = edge._private.style['content'].strValue;
 
     if( !text || text.match(/^\s+$/) ){
@@ -19299,20 +21684,47 @@ var cytoscape;
     if( computedSize < minSize ){
       return;
     }
-  
+
     // Calculate text draw position
-    
+
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // this.recalculateEdgeLabelProjection( edge );
-    
     var rs = edge._private.rscratch;
-    this.drawText(context, edge, rs.labelX, rs.labelY);
+    if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
+
+    var style = edge._private.style;
+    var autorotate = style['edge-text-rotation'].strValue === 'autorotate';
+    var theta, dx, dy;
+
+    if( autorotate ){
+      switch( rs.edgeType ){
+        case 'haystack':
+          dx = rs.haystackPts[2] - rs.haystackPts[0];
+          dy = rs.haystackPts[3] - rs.haystackPts[1];
+          break;
+        default:
+          dx = rs.endX - rs.startX;
+          dy = rs.endY - rs.startY;
+      }
+
+      theta = Math.atan( dy / dx );
+
+      context.translate(rs.labelX, rs.labelY);
+      context.rotate(theta);
+
+      this.drawText(context, edge, 0, 0);
+
+      context.rotate(-theta);
+      context.translate(-rs.labelX, -rs.labelY);
+    } else {
+      this.drawText(context, edge, rs.labelX, rs.labelY);
+    }
+
   };
 
   // Draw node text
-  CanvasRenderer.prototype.drawNodeText = function(context, node) {
+  CRp.drawNodeText = function(context, node) {
     var text = node._private.style['content'].strValue;
 
     if ( !text || text.match(/^\s+$/) ) {
@@ -19325,12 +21737,13 @@ var cytoscape;
     if( computedSize < minSize ){
       return;
     }
-      
+
     // this.recalculateNodeLabelProjection( node );
 
     var textHalign = node._private.style['text-halign'].strValue;
     var textValign = node._private.style['text-valign'].strValue;
     var rs = node._private.rscratch;
+    if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
 
     switch( textHalign ){
       case 'left':
@@ -19360,8 +21773,8 @@ var cytoscape;
 
     this.drawText(context, node, rs.labelX, rs.labelY);
   };
-  
-  CanvasRenderer.prototype.getFontCache = function(context){
+
+  CRp.getFontCache = function(context){
     var cache;
 
     this.fontCaches = this.fontCaches || [];
@@ -19384,7 +21797,7 @@ var cytoscape;
 
   // set up canvas context with font
   // returns transformed text string
-  CanvasRenderer.prototype.setupTextStyle = function( context, element ){
+  CRp.setupTextStyle = function( context, element ){
     // Font style
     var parentOpacity = element.effectiveOpacity();
     var style = element._private.style;
@@ -19396,6 +21809,11 @@ var cytoscape;
     var outlineOpacity = style['text-outline-opacity'].value * opacity;
     var color = style['color'].value;
     var outlineColor = style['text-outline-color'].value;
+    var shadowBlur = style['text-shadow-blur'].pxValue;
+    var shadowOpacity = style['text-shadow-opacity'].value;
+    var shadowColor = style['text-shadow-color'].value;
+    var shadowOffsetX = style['text-shadow-offset-x'].pxValue;
+    var shadowOffsetY = style['text-shadow-offset-y'].pxValue;
 
     var fontCacheKey = element._private.fontKey;
     var cache = this.getFontCache(context);
@@ -19406,61 +21824,238 @@ var cytoscape;
       cache.key = fontCacheKey;
     }
 
-    var text = String(style['content'].value);
-    var textTransform = style['text-transform'].value;
-    
-    if (textTransform == 'none') {
-    } else if (textTransform == 'uppercase') {
-      text = text.toUpperCase();
-    } else if (textTransform == 'lowercase') {
-      text = text.toLowerCase();
-    }
-    
+    var text = this.getLabelText( element );
+
     // Calculate text draw position based on text alignment
-    
+
     // so text outlines aren't jagged
     context.lineJoin = 'round';
 
     this.fillStyle(context, color[0], color[1], color[2], opacity);
-    
+
     this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], outlineOpacity);
+
+    this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
 
     return text;
   };
 
+  function roundRect(ctx, x, y, width, height, radius) {
+    var radius = radius || 5;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   // Draw text
-  CanvasRenderer.prototype.drawText = function(context, element, textX, textY) {
-    var style = element._private.style;
+  CRp.drawText = function(context, element, textX, textY) {
+    var _p = element._private;
+    var style = _p.style;
+    var rstyle = _p.rstyle;
+    var rscratch = _p.rscratch;
     var parentOpacity = element.effectiveOpacity();
-    if( parentOpacity === 0 ){ return; }
+    if( parentOpacity === 0 || style["text-opacity"].value === 0){ return; }
 
     var text = this.setupTextStyle( context, element );
-    
-    if ( text != null && !isNaN(textX) && !isNaN(textY) ) {
-     
-      var lineWidth = 2  * style['text-outline-width'].value; // *2 b/c the stroke is drawn centred on the middle
-      if (lineWidth > 0) {
-        context.lineWidth = lineWidth;
-        context.strokeText(text, textX, textY);
+    var halign = style["text-halign"].value;
+    var valign = style["text-valign"].value;
+
+    if( element.isEdge() ){
+      halign = 'center';
+      valign = 'center';
+    }
+
+    if ( text != null && !isNaN(textX) && !isNaN(textY)) {
+      var backgroundOpacity = style["text-background-opacity"].value;
+      if ((style["text-background-color"] && style["text-background-color"].value != "none" || style["text-border-width"].pxValue > 0) && backgroundOpacity > 0) {
+        var textBorderWidth = style["text-border-width"].pxValue;
+        var margin = 4 + textBorderWidth/2;
+
+        if (element.isNode()) {
+          //Move textX, textY to include the background margins
+          if (valign == "top") {
+            textY -=margin;
+          } else if (valign == "bottom") {
+            textY +=margin;
+          }
+          if (halign == "left") {
+            textX -=margin;
+          } else if (halign == "right") {
+            textX +=margin;
+          }
+        }
+
+        var bgWidth = rstyle.labelWidth;
+        var bgHeight = rstyle.labelHeight;
+        var bgX = textX;
+
+        if (halign) {
+          if (halign == "center") {
+            bgX = bgX - bgWidth / 2;
+          } else if (halign == "left") {
+            bgX = bgX- bgWidth;
+          }
+        }
+
+        var bgY = textY;
+
+        if (element.isNode()) {
+          if (valign == "top") {
+             bgY = bgY - bgHeight;
+          } else if (valign == "center") {
+            bgY = bgY- bgHeight / 2;
+          }
+        } else {
+          bgY = bgY - bgHeight / 2;
+        }
+
+        if (style['edge-text-rotation'].strValue === 'autorotate') {
+          textY = 0;
+          bgWidth += 4;
+          bgX = textX - bgWidth / 2;
+          bgY = textY - bgHeight / 2;
+        } else {
+          // Adjust with border width & margin
+          bgX -= margin;
+          bgY -= margin;
+          bgHeight += margin*2;
+          bgWidth += margin*2;
+        }
+
+        if (style["text-background-color"]) {
+          var textFill = context.fillStyle;
+          var textBackgroundColor = style["text-background-color"].value;
+
+          context.fillStyle = "rgba(" + textBackgroundColor[0] + "," + textBackgroundColor[1] + "," + textBackgroundColor[2] + "," + backgroundOpacity * parentOpacity + ")";
+          var styleShape = style['text-background-shape'].strValue;
+          if (styleShape == "roundrectangle") {
+            roundRect(context, bgX, bgY, bgWidth, bgHeight, 2);
+          } else {
+            context.fillRect(bgX,bgY,bgWidth,bgHeight);
+          }
+          context.fillStyle = textFill;
+        }
+
+        if (textBorderWidth > 0) {
+          var textStroke = context.strokeStyle;
+          var textLineWidth = context.lineWidth;
+          var textBorderColor = style["text-border-color"].value;
+          var textBorderStyle = style['text-border-style'].value;
+
+          context.strokeStyle = "rgba(" + textBorderColor[0] + "," + textBorderColor[1] + "," + textBorderColor[2] + "," + backgroundOpacity * parentOpacity + ")";
+          context.lineWidth = textBorderWidth;
+
+          if( context.setLineDash ){ // for very outofdate browsers
+            switch( textBorderStyle ){
+              case 'dotted':
+                context.setLineDash([ 1, 1 ]);
+                break;
+              case 'dashed':
+                context.setLineDash([ 4, 2 ]);
+                break;
+              case 'double':
+                context.lineWidth = textBorderWidth/4; // 50% reserved for white between the two borders
+                context.setLineDash([ ]);
+                break;
+              case 'solid':
+                context.setLineDash([ ]);
+                break;
+            }
+          }
+
+          context.strokeRect(bgX,bgY,bgWidth,bgHeight);
+
+          if( textBorderStyle === 'double' ){
+            var whiteWidth = textBorderWidth/2;
+
+            context.strokeRect(bgX+whiteWidth,bgY+whiteWidth,bgWidth-whiteWidth*2,bgHeight-whiteWidth*2);
+          }
+
+          if( context.setLineDash ){ // for very outofdate browsers
+            context.setLineDash([ ]);
+          }
+          context.lineWidth = textLineWidth;
+          context.strokeStyle = textStroke;
+        }
+
       }
 
-      context.fillText(text, textX, textY);
+      var lineWidth = 2  * style['text-outline-width'].pxValue; // *2 b/c the stroke is drawn centred on the middle
+
+      if( lineWidth > 0 ){
+        context.lineWidth = lineWidth;
+      }
+
+      if( style['text-wrap'].value === 'wrap' ){ //console.log('draw wrap');
+        var lines = rscratch.labelWrapCachedLines;
+        var lineHeight = rstyle.labelHeight / lines.length;
+
+        //console.log('lines', lines);
+
+        switch( valign ){
+          case 'top':
+            textY -= (lines.length - 1) * lineHeight;
+            break;
+
+          case 'bottom':
+            // nothing required
+            break;
+
+          default:
+          case 'center':
+            textY -= (lines.length - 1) * lineHeight / 2;
+        }
+
+        for( var l = 0; l < lines.length; l++ ){
+          if( lineWidth > 0 ){
+            context.strokeText( lines[l], textX, textY );
+          }
+
+          context.fillText( lines[l], textX, textY );
+
+          textY += lineHeight;
+        }
+
+        // var fontSize = style['font-size'].pxValue;
+        // wrapText(context, text, textX, textY, style['text-max-width'].pxValue, fontSize + 1);
+      } else {
+        if( lineWidth > 0 ){
+          context.strokeText( text, textX, textY );
+        }
+
+        context.fillText( text, textX, textY );
+      }
+
+
+      this.shadowStyle(context, 'transparent', 0); // reset for next guy
     }
   };
 
-  
+
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
   // Draw node
-  CanvasRenderer.prototype.drawNode = function(context, node, drawOverlayInstead) {
+  CRp.drawNode = function(context, node, drawOverlayInstead) {
 
     var r = this;
     var nodeWidth, nodeHeight;
     var style = node._private.style;
     var rs = node._private.rscratch;
+    var _p = node._private;
     
     var usePaths = CanvasRenderer.usePaths();
     var canvasContext = context;
@@ -19485,6 +22080,30 @@ var cytoscape;
 
     if( drawOverlayInstead === undefined || !drawOverlayInstead ){
 
+      var url = style['background-image'].value[2] ||
+        style['background-image'].value[1];
+      var image;
+
+      if (url !== undefined) {
+        
+        // get image, and if not loaded then ask to redraw when later loaded
+        image = this.getCachedImage(url, function(){
+          r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+          
+          r.drawingImage = true;
+          
+          r.redraw();
+        });
+        
+        var prevBging = _p.backgrounding;
+        _p.backgrounding = !image.complete;
+
+        if( prevBging !== _p.backgrounding ){ // update style b/c :backgrounding state changed
+          node.updateStyle( false );
+        }
+      } 
+
       // Node color & opacity
 
       var bgColor = style['background-color'].value;
@@ -19494,6 +22113,14 @@ var cytoscape;
       this.fillStyle(context, bgColor[0], bgColor[1], bgColor[2], style['background-opacity'].value * style['opacity'].value * parentOpacity);
       
       this.strokeStyle(context, borderColor[0], borderColor[1], borderColor[2], style['border-opacity'].value * style['opacity'].value * parentOpacity);
+      
+      var shadowBlur = style['shadow-blur'].pxValue;
+      var shadowOpacity = style['shadow-opacity'].value;
+      var shadowColor = style['shadow-color'].value;
+      var shadowOffsetX = style['shadow-offset-x'].pxValue;
+      var shadowOffsetY = style['shadow-offset-y'].pxValue;
+
+      this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
 
       context.lineJoin = 'miter'; // so borders are square with the node shape
 
@@ -19514,10 +22141,6 @@ var cytoscape;
         }
       }
 
-      //var image = this.getCachedImage('url');
-      
-      var url = style['background-image'].value[2] ||
-        style['background-image'].value[1];
       
       var styleShape = style['shape'].strValue;
 
@@ -19565,20 +22188,12 @@ var cytoscape;
         context.fill();
       }
 
+      this.shadowStyle(context, 'transparent', 0); // reset for next guy
+
       if (url !== undefined) {
-        
-        // get image, and if not loaded then ask to redraw when later loaded
-        var image = this.getCachedImage(url, function(){
-          r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
-          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
-          
-          r.redraw();
-        });
-        
         if( image.complete ){
           this.drawInscribedImage(context, image, node);
         }
-        
       } 
       
       var darkness = style['background-blacken'].value;
@@ -19676,13 +22291,13 @@ var cytoscape;
   };
 
   // does the node have at least one pie piece?
-  CanvasRenderer.prototype.hasPie = function(node){
+  CRp.hasPie = function(node){
     node = node[0]; // ensure ele ref
     
     return node._private.hasPie;
   };
 
-  CanvasRenderer.prototype.drawPie = function(context, node){
+  CRp.drawPie = function(context, node){
     node = node[0]; // ensure ele ref
 
     var pieSize = node._private.style['pie-size'];
@@ -19738,13 +22353,16 @@ var cytoscape;
 
   
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CR = CanvasRenderer;
+  var CRp = CanvasRenderer.prototype;
 
   // var isFirefox = typeof InstallTrigger !== 'undefined';
 
-  CanvasRenderer.prototype.getPixelRatio = function(){ 
+  CRp.getPixelRatio = function(){ 
     var context = this.data.contexts[0];
 
     if( this.forcedPixelRatio != null ){
@@ -19767,7 +22385,7 @@ var cytoscape;
     return (window.devicePixelRatio || 1) / backingStore;
   };
 
-  CanvasRenderer.prototype.paintCache = function(context){
+  CRp.paintCache = function(context){
     var caches = this.paintCaches = this.paintCaches || [];
     var needToCreateCache = true;
     var cache;
@@ -19791,7 +22409,7 @@ var cytoscape;
     return cache;
   };
 
-  CanvasRenderer.prototype.fillStyle = function(context, r, g, b, a){
+  CRp.fillStyle = function(context, r, g, b, a){
     context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
     
     // turn off for now, seems context does its own caching
@@ -19805,7 +22423,7 @@ var cytoscape;
     // }
   };
 
-  CanvasRenderer.prototype.strokeStyle = function(context, r, g, b, a){
+  CRp.strokeStyle = function(context, r, g, b, a){
     context.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
     
     // turn off for now, seems context does its own caching
@@ -19818,13 +22436,36 @@ var cytoscape;
     //   context.strokeStyle = cache.strokeStyle = strokeStyle;
     // }
   };
+  
+  CRp.shadowStyle = function(context, color, opacity, blur, offsetX, offsetY){
+    var zoom = this.data.cy.zoom();
+
+    if (opacity > 0) {
+      context.shadowBlur = blur * zoom;
+      context.shadowColor = "rgba(" + color[0] + "," + color[1] + "," + color[2] + "," + opacity + ")";
+      context.shadowOffsetX = offsetX * zoom;
+      context.shadowOffsetY = offsetY * zoom;
+    } else {
+      context.shadowBlur = 0;
+      context.shadowColor = "transparent";
+    }
+  };
 
   // Resize canvas
-  CanvasRenderer.prototype.matchCanvasSize = function(container) {
+  CRp.matchCanvasSize = function(container) {
     var data = this.data;
     var width = container.clientWidth;
     var height = container.clientHeight;
     var pixelRatio = this.getPixelRatio();
+    var mbPxRatio = this.motionBlurPxRatio;
+
+    if(
+      container === this.data.bufferCanvases[CR.MOTIONBLUR_BUFFER_NODE] ||
+      container === this.data.bufferCanvases[CR.MOTIONBLUR_BUFFER_DRAG]
+    ){
+      pixelRatio = mbPxRatio;
+    }
+
     var canvasWidth = width * pixelRatio;
     var canvasHeight = height * pixelRatio;
     var canvas;
@@ -19881,7 +22522,7 @@ var cytoscape;
 
   };
 
-  CanvasRenderer.prototype.renderTo = function( cxt, zoom, pan, pxRatio ){
+  CRp.renderTo = function( cxt, zoom, pan, pxRatio ){
     this.redraw({
       forcedContext: cxt,
       forcedZoom: zoom,
@@ -19891,7 +22532,7 @@ var cytoscape;
     });
   };
 
-  CanvasRenderer.prototype.timeToRender = function(){
+  CRp.timeToRender = function(){
     return this.redrawTotalTime / this.redrawCount;
   };
 
@@ -19900,10 +22541,10 @@ var cytoscape;
   CanvasRenderer.motionBlurDelay = 100;
 
   // Redraw frame
-  CanvasRenderer.prototype.redraw = function( options ) {
+  CRp.redraw = function( options ) {
     options = options || {};
 
-    // console.log('redraw');
+    // console.log('redraw()');
 
     var forcedContext = options.forcedContext;
     var drawAllLayers = options.drawAllLayers;
@@ -19914,10 +22555,19 @@ var cytoscape;
     var pixelRatio = options.forcedPxRatio === undefined ? this.getPixelRatio() : options.forcedPxRatio;
     var cy = r.data.cy; var data = r.data; 
     var needDraw = data.canvasNeedsRedraw;
+    var textureDraw = r.textureOnViewport && !forcedContext && (r.pinching || r.hoverData.dragging || r.swipePanning || r.data.wheelZooming);
     var motionBlur = options.motionBlur !== undefined ? options.motionBlur : r.motionBlur;
-    motionBlur = motionBlur && !forcedContext && r.motionBlurEnabled;
+    var mbPxRatio = r.motionBlurPxRatio;
+    var hasCompoundNodes = cy.hasCompoundNodes();
+    var inNodeDragGesture = r.hoverData.draggingEles;
+    var inBoxSelection = r.hoverData.selecting || r.touchData.selecting ? true : false;
+    motionBlur = motionBlur && !forcedContext && r.motionBlurEnabled && !inBoxSelection;
+    var motionBlurFadeEffect = motionBlur;
 
-    if( motionBlur && r.motionBlurTimeout ){
+    // console.log('textureDraw?', textureDraw);
+
+
+    if( !forcedContext && r.motionBlurTimeout ){
       clearTimeout( r.motionBlurTimeout );
     }
 
@@ -19939,13 +22589,13 @@ var cytoscape;
 
     if( this.lastDrawTime === undefined ){ this.lastDrawTime = 0; }
 
-    var nowTime = +new Date();
+    var nowTime = Date.now();
     var timeElapsed = nowTime - this.lastDrawTime;
     var callAfterLimit = timeElapsed >= redrawLimit;
 
-    if( !forcedContext ){
+    if( !forcedContext && !r.clearingMotionBlur ){
       if( !callAfterLimit || this.currentlyDrawing ){
-        // console.log('-- skip');
+        // console.log('-- skip', redrawLimit);
 
         // we have new things to draw but we're busy, so try again when possibly free
         this.redrawTimeout = setTimeout(function(){
@@ -19958,15 +22608,53 @@ var cytoscape;
       this.currentlyDrawing = true;
     }
 
+    if( motionBlur ){
+      if( r.mbFrames == null ){
+        r.mbFrames = 0;
+      }
 
-    var startTime = +new Date();
+      if( !r.drawingImage ){ // image loading frames don't count towards motion blur blurry frames
+        r.mbFrames++;
+      }
+      
+      if( r.mbFrames < 3 ){ // need several frames before even high quality motionblur
+        motionBlurFadeEffect = false;
+      }
 
-    //console.log('-- redraw --')
+      // go to lower quality blurry frames when several m/b frames have been rendered (avoids flashing)
+      if( r.mbFrames > r.minMbLowQualFrames ){
+        //r.fullQualityMb = false;
+        r.motionBlurPxRatio = r.mbPxRBlurry;
+      }
+    } 
+
+    // console.log('mb: %s, N: %s, q: %s', motionBlur, r.mbFrames, r.motionBlurPxRatio);
+
+    if( r.clearingMotionBlur ){
+      //r.fullQualityMb = true; // TODO enable when doesn't cause scaled flashing issue
+
+      r.motionBlurPxRatio = 1;
+    }
 
 
+    var startTime = Date.now();
+
+    // console.log('-- redraw --')
+    
     function drawToContext(){ 
-      // startTime = +new Date();
+      // startTime = Date.now();
       // console.profile('draw' + startTime)
+      
+      // b/c drawToContext() may be async w.r.t. redraw(), keep track of last texture frame
+      // because a rogue async texture frame would clear needDraw
+      if( r.textureDrawLastFrame && !textureDraw ){
+        needDraw[CR.NODE] = true;
+        needDraw[CR.SELECT_BOX] = true;
+      }
+      
+      // console.log('drawToContext()');
+      // console.log( 'needDraw', needDraw[CR.NODE], needDraw[CR.DRAG], needDraw[CR.SELECT_BOX] );
+
       var edges = r.getCachedEdges();
       var coreStyle = cy.style()._private.coreStyle;
       
@@ -19977,6 +22665,21 @@ var cytoscape;
         x: pan.x,
         y: pan.y
       };
+
+      var vp = {
+        zoom: zoom,
+        pan: {
+          x: pan.x,
+          y: pan.y
+        }
+      };
+      var prevVp = r.prevViewport;
+      var viewportIsDiff = prevVp === undefined || vp.zoom !== prevVp.zoom || vp.pan.x !== prevVp.pan.x || vp.pan.y !== prevVp.pan.y;
+
+      // we want the low quality motionblur only when the viewport is being manipulated etc (where it's not noticed)
+      if( !viewportIsDiff && !(inNodeDragGesture && !hasCompoundNodes) ){
+        r.motionBlurPxRatio = 1;
+      }
 
       if( forcedPan ){
         effectivePan = forcedPan;
@@ -20001,36 +22704,65 @@ var cytoscape;
         }
       };
 
+      function mbclear( context, x, y, w, h ){
+        var gco = context.globalCompositeOperation;
+
+        context.globalCompositeOperation = 'destination-out';
+        r.fillStyle( context, 255, 255, 255, r.motionBlurTransparency );
+        context.fillRect(x, y, w, h);
+
+        context.globalCompositeOperation = gco;
+      }
+
       function setContextTransform(context, clear){
+        var ePan, eZoom, w, h;
+
+        if( /*!r.fullQualityMb &&*/ !r.clearingMotionBlur && (context === data.bufferContexts[CR.MOTIONBLUR_BUFFER_NODE] || context === data.bufferContexts[CR.MOTIONBLUR_BUFFER_DRAG]) ){
+          ePan = {
+            x: pan.x * mbPxRatio,
+            y: pan.y * mbPxRatio
+          };
+
+          eZoom = zoom * mbPxRatio;
+
+          w = r.canvasWidth * mbPxRatio;
+          h = r.canvasHeight * mbPxRatio;
+        } else {
+          ePan = effectivePan;
+          eZoom = effectiveZoom;
+
+          w = r.canvasWidth;
+          h = r.canvasHeight;
+        }
+
         context.setTransform(1, 0, 0, 1, 0, 0);
 
-        if( clear === 'motionBlur' ){
-          var gco = context.globalCompositeOperation;
-
-          context.globalCompositeOperation = 'destination-out';
-          r.fillStyle( context, 255, 255, 255, 0.666 );
-          context.fillRect(0, 0, r.canvasWidth, r.canvasHeight);
-
-          context.globalCompositeOperation = gco;
+        if( clear === 'motionBlur' ){ 
+          mbclear(context, 0, 0, w, h);
         } else if( !forcedContext && (clear === undefined || clear) ){
-          context.clearRect(0, 0, r.canvasWidth, r.canvasHeight);
+          context.clearRect(0, 0, w, h);
         }
         
         if( !drawAllLayers ){
-          context.translate(effectivePan.x, effectivePan.y);
-          context.scale(effectiveZoom, effectiveZoom);
+          context.translate( ePan.x, ePan.y );
+          context.scale( eZoom, eZoom );
         }
         if( forcedPan ){
-          context.translate(forcedPan.x, forcedPan.y);
+          context.translate( forcedPan.x, forcedPan.y );
         } 
         if( forcedZoom ){
-          context.scale(forcedZoom, forcedZoom);
+          context.scale( forcedZoom, forcedZoom );
         }
       }
 
-      var textureDraw = r.textureOnViewport && !forcedContext && (r.pinching || r.hoverData.dragging || r.swipePanning || r.data.wheelZooming);
+      if( !textureDraw ){
+        r.textureDrawLastFrame = false;
+      }
 
       if( textureDraw ){
+        // console.log('textureDraw')
+        
+        r.textureDrawLastFrame = true;
 
         var bb;
 
@@ -20065,17 +22797,22 @@ var cytoscape;
           };
         }
 
-        needDraw[CanvasRenderer.DRAG] = false;
-        needDraw[CanvasRenderer.NODE] = false;
+        needDraw[CR.DRAG] = false;
+        needDraw[CR.NODE] = false;
 
-        var context = data.contexts[CanvasRenderer.NODE];
+        var context = data.contexts[CR.NODE];
 
         var texture = r.textureCache.texture;
         var vp = r.textureCache.viewport;
         bb = r.textureCache.bb;
 
         context.setTransform(1, 0, 0, 1, 0, 0);
-        context.clearRect(0, 0, vp.width, vp.height);
+
+        if( motionBlur ){
+          mbclear(context, 0, 0, vp.width, vp.height);
+        } else {
+          context.clearRect(0, 0, vp.width, vp.height);
+        }
 
         var outsideBgColor = coreStyle['outside-texture-bg-color'].value;
         var outsideBgOpacity = coreStyle['outside-texture-bg-opacity'].value;
@@ -20097,7 +22834,7 @@ var cytoscape;
       var hideEdges = r.hideEdgesOnViewport && vpManip;
       var hideLabels = r.hideLabelsOnViewport && vpManip;
 
-      if (needDraw[CanvasRenderer.DRAG] || needDraw[CanvasRenderer.NODE] || drawAllLayers || drawOnlyNodeLayer) {
+      if (needDraw[CR.DRAG] || needDraw[CR.NODE] || drawAllLayers || drawOnlyNodeLayer) {
         //NB : VERY EXPENSIVE
 
         if( hideEdges ){ 
@@ -20157,42 +22894,69 @@ var cytoscape;
 
       }
 
-      var nodeLayerNeedsMotionClear = needDraw[CanvasRenderer.DRAG] && !needDraw[CanvasRenderer.NODE] && motionBlur && !r.clearedNodeLayerForMotionBlur;
-      if( nodeLayerNeedsMotionClear ){ r.clearedNodeLayerForMotionBlur = true; }
+      var needMbClear = [];
 
-      if( needDraw[CanvasRenderer.NODE] || drawAllLayers || drawOnlyNodeLayer || nodeLayerNeedsMotionClear ){
-        // console.log('redrawing node layer');
-        
-        var context = forcedContext || data.contexts[CanvasRenderer.NODE];
+      needMbClear[CR.NODE] = !needDraw[CR.NODE] && motionBlur && !r.clearedForMotionBlur[CR.NODE] || r.clearingMotionBlur;
+      if( needMbClear[CR.NODE] ){ r.clearedForMotionBlur[CR.NODE] = true; }
 
-        setContextTransform( context, motionBlur && !nodeLayerNeedsMotionClear ? 'motionBlur' : undefined );
+      needMbClear[CR.DRAG] = !needDraw[CR.DRAG] && motionBlur && !r.clearedForMotionBlur[CR.DRAG] || r.clearingMotionBlur;
+      if( needMbClear[CR.DRAG] ){ r.clearedForMotionBlur[CR.DRAG] = true; }
+
+      // console.log('--');
+
+      // if( needDraw[CR.DRAG] && motionBlur && needDraw[CR.NODE] && inNodeDragGesture ){
+      //   console.log('NODE blurclean');
+      // 
+      //   var context = data.contexts[CR.NODE];
+      // 
+      //   setContextTransform( context, true );
+      //   drawElements(eles.nondrag, context);
+      // 
+      //   needDraw[CR.NODE] = false; 
+      //   needMbClear[CR.NODE] = false;
+      // 
+      // } else 
+      if( needDraw[CR.NODE] || drawAllLayers || drawOnlyNodeLayer || needMbClear[CR.NODE] ){
+        // console.log('NODE', needDraw[CR.NODE], needMbClear[CR.NODE]);
+
+        var useBuffer = motionBlur && !needMbClear[CR.NODE] && mbPxRatio !== 1;
+        var context = forcedContext || ( useBuffer ? r.data.bufferContexts[ CR.MOTIONBLUR_BUFFER_NODE ] : data.contexts[CR.NODE] );
+        var clear = motionBlur && !useBuffer ? 'motionBlur' : undefined;
+
+        if( needDraw[CR.DRAG] && needDraw[CR.NODE] ){
+          clear = true;
+        }
+
+        setContextTransform( context, clear );
         drawElements(eles.nondrag, context);
         
-        if( !drawAllLayers ){
-          needDraw[CanvasRenderer.NODE] = false; 
+        if( !drawAllLayers && !motionBlur ){
+          needDraw[CR.NODE] = false; 
         }
       }
-      
-      if ( !drawOnlyNodeLayer && (needDraw[CanvasRenderer.DRAG] || drawAllLayers) ) {
+
+      if ( !drawOnlyNodeLayer && (needDraw[CR.DRAG] || drawAllLayers || needMbClear[CR.DRAG]) ) {
+        // console.log('DRAG');
+
+        var useBuffer = motionBlur && !needMbClear[CR.DRAG] && mbPxRatio !== 1;
+        var context = forcedContext || ( useBuffer ? r.data.bufferContexts[ CR.MOTIONBLUR_BUFFER_DRAG ] : data.contexts[CR.DRAG] );
         
-        var context = forcedContext || data.contexts[CanvasRenderer.DRAG];
-        
-        setContextTransform( context, motionBlur ? 'motionBlur' : undefined );
+        setContextTransform( context, motionBlur && !useBuffer ? 'motionBlur' : undefined );
         drawElements(eles.drag, context);
         
-        if( !drawAllLayers ){
-          needDraw[CanvasRenderer.DRAG] = false;
+        if( !drawAllLayers && !motionBlur ){
+          needDraw[CR.DRAG] = false;
         }
       }
       
-      if( r.showFps || (!drawOnlyNodeLayer && (needDraw[CanvasRenderer.SELECT_BOX] && !drawAllLayers)) ) {
+      if( r.showFps || (!drawOnlyNodeLayer && (needDraw[CR.SELECT_BOX] && !drawAllLayers)) ) {
         // console.log('redrawing selection box');
         
-        var context = forcedContext || data.contexts[CanvasRenderer.SELECT_BOX];
+        var context = forcedContext || data.contexts[CR.SELECT_BOX];
 
         setContextTransform( context );
 
-        if( data.select[4] == 1 && r.hoverData.selecting ){
+        if( data.select[4] == 1 && ( r.hoverData.selecting || r.touchData.selecting ) ){
           var zoom = data.cy.zoom();
           var borderWidth = coreStyle['selection-box-border-width'].value / zoom;
           
@@ -20258,12 +23022,56 @@ var cytoscape;
         }
 
         if( !drawAllLayers ){
-          needDraw[CanvasRenderer.SELECT_BOX] = false; 
+          needDraw[CR.SELECT_BOX] = false; 
+        }
+      }
+
+      // motionblur: blit rendered blurry frames
+      if( motionBlur && mbPxRatio !== 1 ){
+        var cxtNode = data.contexts[CR.NODE];
+        var txtNode = r.data.bufferCanvases[ CR.MOTIONBLUR_BUFFER_NODE ];
+
+        var cxtDrag = data.contexts[CR.DRAG];
+        var txtDrag = r.data.bufferCanvases[ CR.MOTIONBLUR_BUFFER_DRAG ];
+
+        var drawMotionBlur = function( cxt, txt, needClear ){
+          cxt.setTransform(1, 0, 0, 1, 0, 0);
+
+          if( needClear || !motionBlurFadeEffect ){
+            cxt.clearRect( 0, 0, r.canvasWidth, r.canvasHeight );
+          } else {
+            mbclear( cxt, 0, 0, r.canvasWidth, r.canvasHeight );
+          }
+          
+          var pxr = /*r.fullQualityMb ? 1 :*/ mbPxRatio;
+
+          cxt.drawImage( 
+            txt, // img
+            0, 0, // sx, sy
+            r.canvasWidth * pxr, r.canvasHeight * pxr, // sw, sh
+            0, 0, // x, y
+            r.canvasWidth, r.canvasHeight // w, h
+          );
+        };
+
+        if( needDraw[CR.NODE] || needMbClear[CR.NODE] ){
+          // console.log('mb NODE', needMbClear[CR.NODE]);
+
+          drawMotionBlur( cxtNode, txtNode, needMbClear[CR.NODE] );
+          needDraw[CR.NODE] = false;
+        }
+
+        if( needDraw[CR.DRAG] || needMbClear[CR.DRAG] ){
+          // console.log('mb DRAG');
+
+          drawMotionBlur( cxtDrag, txtDrag, needMbClear[CR.DRAG] );
+          needDraw[CR.DRAG] = false;
+          //needMbClear[CR.NODE] = true;
         }
       }
 
 
-      var endTime = +new Date();
+      var endTime = Date.now();
 
       if( r.averageRedrawTime === undefined ){
         r.averageRedrawTime = endTime - startTime;
@@ -20288,6 +23096,8 @@ var cytoscape;
 
       r.currentlyDrawing = false;
 
+      r.prevViewport = vp;
+
       // console.profileEnd('draw' + startTime)
 
       if( r.clearingMotionBlur ){
@@ -20299,18 +23109,23 @@ var cytoscape;
       if( motionBlur ){ 
         r.motionBlurTimeout = setTimeout(function(){
           r.motionBlurTimeout = null;
-          // console.log('motion blur clear');
+          // console.log('mb CLEAR');
 
-          r.clearedNodeLayerForMotionBlur = false;
+          r.clearedForMotionBlur[CR.NODE] = false;
+          r.clearedForMotionBlur[CR.DRAG] = false;
           r.motionBlur = false;
-          r.clearingMotionBlur = true;
+          r.clearingMotionBlur = !textureDraw;
+          r.mbFrames = 0;
 
-          needDraw[CanvasRenderer.NODE] = true; 
-          needDraw[CanvasRenderer.DRAG] = true; 
+          needDraw[CR.NODE] = true; 
+          needDraw[CR.DRAG] = true; 
 
           r.redraw();
         }, CanvasRenderer.motionBlurDelay);
       }
+
+      r.drawingImage = false;
+
     } // draw to context
 
     if( !forcedContext ){
@@ -20323,6 +23138,10 @@ var cytoscape;
       r.initrender = true;
       cy.trigger('initrender');
     }
+
+    if( !forcedContext ){
+      cy.triggerOnRender();
+    }
     
   };
 
@@ -20331,9 +23150,10 @@ var cytoscape;
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
   // @O Polygon drawing
-  CanvasRenderer.prototype.drawPolygonPath = function(
+  CRp.drawPolygonPath = function(
     context, x, y, width, height, points) {
 
     var halfW = width / 2;
@@ -20350,7 +23170,7 @@ var cytoscape;
     context.closePath();
   };
   
-  CanvasRenderer.prototype.drawPolygon = function(
+  CRp.drawPolygon = function(
     context, x, y, width, height, points) {
 
     // Draw path
@@ -20361,7 +23181,7 @@ var cytoscape;
   };
   
   // Round rectangle drawing
-  CanvasRenderer.prototype.drawRoundRectanglePath = function(
+  CRp.drawRoundRectanglePath = function(
     context, x, y, width, height, radius) {
     
     var halfWidth = width / 2;
@@ -20387,7 +23207,7 @@ var cytoscape;
     context.closePath();
   };
   
-  CanvasRenderer.prototype.drawRoundRectangle = function(
+  CRp.drawRoundRectangle = function(
     context, x, y, width, height, radius) {
     
     this.drawRoundRectanglePath(context, x, y, width, height, radius);
@@ -20401,8 +23221,9 @@ var cytoscape;
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
-  CanvasRenderer.prototype.createBuffer = function(w, h) {
+  CRp.createBuffer = function(w, h) {
     var buffer = document.createElement('canvas');
     buffer.width = w;
     buffer.height = h;
@@ -20410,7 +23231,7 @@ var cytoscape;
     return [buffer, buffer.getContext('2d')];
   };
 
-  CanvasRenderer.prototype.bufferCanvasImage = function( options ){
+  CRp.bufferCanvasImage = function( options ){
     var data = this.data;
     var cy = data.cy;
     var bb = cy.elements().boundingBox();
@@ -20423,6 +23244,22 @@ var cytoscape;
       height *= options.scale;
 
       scale = options.scale;
+    } else if( $$.is.number(options.maxWidth) || $$.is.number(options.maxHeight) ){
+      var maxScaleW = Infinity;
+      var maxScaleH = Infinity;
+
+      if( $$.is.number(options.maxWidth) ){
+        maxScaleW = scale * options.maxWidth / width;
+      }
+
+      if( $$.is.number(options.maxHeight) ){
+        maxScaleH = scale * options.maxHeight / height;
+      }
+
+      scale = Math.min( maxScaleW, maxScaleH );
+
+      width *= scale;
+      height *= scale;
     }
 
     var buffCanvas = document.createElement('canvas');
@@ -20477,16 +23314,23 @@ var cytoscape;
     return buffCanvas;
   }; 
 
-  CanvasRenderer.prototype.png = function( options ){
+  CRp.png = function( options ){
     return this.bufferCanvasImage( options ).toDataURL('image/png');
+  };
+  
+  CRp.jpg = function( options ){
+    return this.bufferCanvasImage( options ).toDataURL('image/jpeg');
   };
 
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CR = CanvasRenderer;
+  var CRp = CR.prototype;
 
-  CanvasRenderer.prototype.registerBinding = function(target, event, handler, useCapture){
+  CRp.registerBinding = function(target, event, handler, useCapture){
     this.bindings.push({
       target: target,
       event: event,
@@ -20497,7 +23341,7 @@ var cytoscape;
     target.addEventListener(event, handler, useCapture);
   };
 
-  CanvasRenderer.prototype.nodeIsDraggable = function(node) {
+  CRp.nodeIsDraggable = function(node) {
     if (node._private.style['opacity'].value !== 0
       && node._private.style['visibility'].value == 'visible'
       && node._private.style['display'].value == 'element'
@@ -20506,11 +23350,11 @@ var cytoscape;
 
       return true;
     }
-    
+
     return false;
   };
 
-  CanvasRenderer.prototype.load = function() {
+  CRp.load = function() {
     var r = this;
 
     var getDragListIds = function(opts){
@@ -20559,7 +23403,7 @@ var cytoscape;
           opts.addToList.push( iNode );
           listHasId[ iNode.id() ] = true;
 
-          _p.grabbed = true; 
+          _p.grabbed = true;
         }
 
         var edges = _p.edges;
@@ -20583,7 +23427,7 @@ var cytoscape;
         opts.addToList.push( node );
         listHasId[ node.id() ] = true;
 
-        _p.grabbed = true; 
+        _p.grabbed = true;
       }
 
       var edges = _p.edges;
@@ -20597,6 +23441,30 @@ var cytoscape;
       updateAncestorsInDragLayer( node, {
         inDragLayer: opts.inDragLayer
       } );
+    };
+    
+    var freeDraggedElements = function( draggedElements ){
+      if( !draggedElements ){ return; }
+      
+      for (var i=0; i < draggedElements.length; i++) {
+
+        var dEi_p = draggedElements[i]._private;
+
+        if(dEi_p.group === 'nodes') {
+          dEi_p.rscratch.inDragLayer = false;
+          dEi_p.grabbed = false;
+
+          var sEdges = dEi_p.edges;
+          for( var j = 0; j < sEdges.length; j++ ){ sEdges[j]._private.rscratch.inDragLayer = false; }
+
+          // for compound nodes, also remove related nodes and edges from the drag layer
+          updateAncestorsInDragLayer(draggedElements[i], { inDragLayer: false });
+
+        } else if( dEi_p.group === 'edges' ){
+          dEi_p.rscratch.inDragLayer = false;
+        }
+
+      }
     };
 
     // helper function to determine which ancestor nodes and edges should go
@@ -20621,11 +23489,10 @@ var cytoscape;
         return;
       }
 
-      var nodes = parent
-        .descendants()
-        .add( parent )
-        .not( node )
-        .not( node.descendants() )
+      var nodes = parent.descendants()
+        .merge( parent )
+        .unmerge( node )
+        .unmerge( node.descendants() )
       ;
 
       var edges = nodes.connectedEdges();
@@ -20681,7 +23548,7 @@ var cytoscape;
       r.invalidateContainerClientCoordsCache();
 
       r.matchCanvasSize(r.data.container);
-      r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+      r.data.canvasNeedsRedraw[CR.NODE] = true;
       r.redraw();
     }, 100 ) );
 
@@ -20694,7 +23561,7 @@ var cytoscape;
     var bbCtnr = r.data.cy.container();
 
     for( ;; ){
-      
+
       invalCtnrBBOnScroll( bbCtnr );
 
       if( bbCtnr.parentNode ){
@@ -20702,7 +23569,7 @@ var cytoscape;
       } else {
         break;
       }
-      
+
     }
 
     // stop right click menu from appearing on cy
@@ -20715,18 +23582,20 @@ var cytoscape;
     };
 
     // Primary key
-    r.registerBinding(r.data.container, 'mousedown', function(e) { 
+    r.registerBinding(r.data.container, 'mousedown', function(e) {
       e.preventDefault();
       r.hoverData.capture = true;
       r.hoverData.which = e.which;
-      
-      var cy = r.data.cy; 
+
+      var cy = r.data.cy;
       var pos = r.projectIntoViewport(e.clientX, e.clientY);
       var select = r.data.select;
       var near = r.findNearestElement(pos[0], pos[1], true);
       var draggedElements = r.dragData.possibleDragElements;
 
       r.hoverData.mdownPos = pos;
+      
+      var needsRedraw = r.data.canvasNeedsRedraw;
 
       var checkForTaphold = function(){
         r.hoverData.tapholdCancelled = false;
@@ -20762,8 +23631,8 @@ var cytoscape;
         r.hoverData.cxtStarted = true;
 
         var cxtEvt = new $$.Event(e, {
-          type: 'cxttapstart', 
-          cyPosition: { x: pos[0], y: pos[1] } 
+          type: 'cxttapstart',
+          cyPosition: { x: pos[0], y: pos[1] }
         });
 
         if( near ){
@@ -20780,7 +23649,7 @@ var cytoscape;
 
       // Primary button
       } else if (e.which == 1) {
-        
+
         if( near ){
           near.activate();
         }
@@ -20820,11 +23689,11 @@ var cytoscape;
                 near.trigger( grabEvent );
               }
 
-              r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
-              r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+              needsRedraw[CR.NODE] = true;
+              needsRedraw[CR.DRAG] = true;
 
             }
-            
+
             near
               .trigger(new $$.Event(e, {
                 type: 'mousedown',
@@ -20839,7 +23708,7 @@ var cytoscape;
                 cyPosition: { x: pos[0], y: pos[1] }
               }))
             ;
-            
+
           } else if (near == null) {
             cy
               .trigger(new $$.Event(e, {
@@ -20856,16 +23725,16 @@ var cytoscape;
               }))
             ;
           }
-          
+
           r.hoverData.down = near;
           r.hoverData.downTime = (new Date()).getTime();
 
         }
-      
+
         // Selection box
         if ( near == null || near.isEdge() ) {
           select[4] = 1;
-          var timeUntilActive = Math.max( 0, CanvasRenderer.panOrBoxSelectDelay - (+new Date() - r.hoverData.downTime) );
+          var timeUntilActive = Math.max( 0, CR.panOrBoxSelectDelay - (+new Date() - r.hoverData.downTime) );
 
           clearTimeout( r.bgActiveTimeout );
 
@@ -20884,8 +23753,8 @@ var cytoscape;
 
               //checkForTaphold();
 
-              r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
-      
+              needsRedraw[CR.SELECT_BOX] = true;
+
               r.redraw();
             }, timeUntilActive);
           } else {
@@ -20894,27 +23763,27 @@ var cytoscape;
               y: pos[1]
             };
 
-            r.hoverData.dragging = true;
+            //r.hoverData.dragging = true;
 
             //checkForTaphold();
 
-            r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
-    
+            needsRedraw[CR.SELECT_BOX] = true;
+
             r.redraw();
           }
-          
+
         }
-      
+
         checkForTaphold();
-      
-      } 
-      
+
+      }
+
       // Initialize selection box coordinates
       select[0] = select[2] = pos[0];
       select[1] = select[3] = pos[1];
-      
+
     }, false);
-    
+
     r.registerBinding(window, 'mousemove', $$.util.throttle( function(e) {
       var preventDefault = false;
       var capture = r.hoverData.capture;
@@ -20952,14 +23821,15 @@ var cytoscape;
       var zoom = cy.zoom();
       var pos = r.projectIntoViewport(e.clientX, e.clientY);
       var select = r.data.select;
-      
+      var needsRedraw = r.data.canvasNeedsRedraw;
+
       var near = null;
       if( !r.hoverData.draggingEles ){
         near = r.findNearestElement(pos[0], pos[1], true);
       }
       var last = r.hoverData.last;
       var down = r.hoverData.down;
-      
+
       var disp = [pos[0] - select[2], pos[1] - select[3]];
 
       var draggedElements = r.dragData.possibleDragElements;
@@ -20977,14 +23847,14 @@ var cytoscape;
         var dragDelta = r.hoverData.dragDelta = r.hoverData.dragDelta || [];
 
         if( dragDelta.length === 0 ){
-          dragDelta.push(0);
-          dragDelta.push(0);
+          dragDelta.push( disp[0] );
+          dragDelta.push( disp[1] );
         } else {
           dragDelta[0] += disp[0];
           dragDelta[1] += disp[1];
         }
       };
-      
+
 
       preventDefault = true;
 
@@ -21005,7 +23875,7 @@ var cytoscape;
               cyPosition: { x: pos[0], y: pos[1] }
             }))
           ;
-          
+
         } else if (near == null) {
           cy
             .trigger(new $$.Event(e, {
@@ -21090,16 +23960,17 @@ var cytoscape;
           }
 
           cy.panBy( deltaP );
-          
+
+          r.hoverData.dragged = true;
         }
-        
+
         // Needs reproject due to pan changing viewport
         pos = r.projectIntoViewport(e.clientX, e.clientY);
 
       // Checks primary button down & out of time & mouse not moved much
       } else if(
           select[4] == 1 && (down == null || down.isEdge())
-          && ( !cy.boxSelectionEnabled() || (+new Date() - r.hoverData.downTime >= CanvasRenderer.panOrBoxSelectDelay) )
+          && ( !cy.boxSelectionEnabled() || (+new Date() - r.hoverData.downTime >= CR.panOrBoxSelectDelay) )
           //&& (Math.abs(select[3] - select[1]) + Math.abs(select[2] - select[0]) < 4)
           && !r.hoverData.selecting
           && rdist2 >= r.tapThreshold2
@@ -21117,38 +23988,38 @@ var cytoscape;
           r.data.bgActivePosistion = undefined;
           r.hoverData.selecting = true;
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+          needsRedraw[CR.SELECT_BOX] = true;
           r.redraw();
         }
-        
+
         if( down && down.isEdge() && down.active() ){ down.unactivate(); }
 
         if (near != last) {
-          
+
           if (last) {
             last.trigger( new $$.Event(e, {
               type: 'mouseout',
               cyPosition: { x: pos[0], y: pos[1] }
-            }) ); 
+            }) );
 
             last.trigger( new $$.Event(e, {
               type: 'tapdragout',
               cyPosition: { x: pos[0], y: pos[1] }
-            }) ); 
+            }) );
           }
-          
+
           if (near) {
             near.trigger( new $$.Event(e, {
               type: 'mouseover',
               cyPosition: { x: pos[0], y: pos[1] }
-            }) ); 
+            }) );
 
             near.trigger( new $$.Event(e, {
               type: 'tapdragover',
               cyPosition: { x: pos[0], y: pos[1] }
-            }) ); 
+            }) );
           }
-          
+
           r.hoverData.last = near;
         }
 
@@ -21159,7 +24030,7 @@ var cytoscape;
             var justStartedDrag = !r.dragData.didDrag;
 
             if( justStartedDrag ) {
-              r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+              needsRedraw[CR.NODE] = true;
             }
 
             r.dragData.didDrag = true; // indicate that we actually did drag the node
@@ -21170,7 +24041,7 @@ var cytoscape;
               var dEle = draggedElements[i];
 
               // now, add the elements to the drag layer if not done already
-              if( !r.hoverData.draggingEles ){ 
+              if( !r.hoverData.draggingEles ){
                 addNodeToDrag( dEle, { inDragLayer: true } );
               }
 
@@ -21179,7 +24050,7 @@ var cytoscape;
                 var dPos = dEle._private.position;
 
                 toTrigger.push( dEle );
-                
+
                 if( $$.is.number(disp[0]) && $$.is.number(disp[1]) ){
                   dPos.x += disp[0];
                   dPos.y += disp[1];
@@ -21198,13 +24069,13 @@ var cytoscape;
             }
 
             r.hoverData.draggingEles = true;
-            
+
             var tcol = (new $$.Collection(cy, toTrigger));
 
             tcol.updateCompoundBounds();
             tcol.trigger('position drag');
-            
-            r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+
+            needsRedraw[CR.DRAG] = true;
             r.redraw();
 
           } else { // otherwise save drag delta for when we actually start dragging so the relative grab pos is constant
@@ -21215,39 +24086,36 @@ var cytoscape;
         // prevent the dragging from triggering text selection on the page
         preventDefault = true;
       }
-      
+
       select[2] = pos[0]; select[3] = pos[1];
-      
-      if( preventDefault ){ 
+
+      if( preventDefault ){
         if(e.stopPropagation) e.stopPropagation();
           if(e.preventDefault) e.preventDefault();
           return false;
         }
     }, 1000/30, { trailing: true }), false);
-    
+
     r.registerBinding(window, 'mouseup', function(e) {
       // console.log('--\nmouseup', e)
 
       var capture = r.hoverData.capture;
       if (!capture) { return; }
       r.hoverData.capture = false;
-    
+
       var cy = r.data.cy; var pos = r.projectIntoViewport(e.clientX, e.clientY); var select = r.data.select;
-      var near = r.findNearestElement(pos[0], pos[1], true); 
+      var near = r.findNearestElement(pos[0], pos[1], true);
       var draggedElements = r.dragData.possibleDragElements; var down = r.hoverData.down;
       var shiftDown = e.shiftKey;
-      
+      var needsRedraw = r.data.canvasNeedsRedraw;
+
       if( r.data.bgActivePosistion ){
-        r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+        needsRedraw[CR.SELECT_BOX] = true;
         r.redraw();
       }
 
       r.data.bgActivePosistion = undefined; // not active bg now
       clearTimeout( r.bgActiveTimeout );
-
-      r.hoverData.cxtStarted = false;
-      r.hoverData.draggingEles = false;
-      r.hoverData.selecting = false;
 
       if( down ){
         down.unactivate();
@@ -21288,21 +24156,21 @@ var cytoscape;
         if ( (down == null) // not mousedown on node
           && !r.dragData.didDrag // didn't move the node around
           && !(Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) > 7 && select[4]) // not box selection
-          && !r.hoverData.dragging // not panning
+          && !r.hoverData.dragged // didn't pan
         ) {
 
           cy.$(function(){
             return this.selected();
           }).unselect();
-          
+
           if (draggedElements.length > 0) {
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+            needsRedraw[CR.NODE] = true;
           }
-          
+
           r.dragData.possibleDragElements = draggedElements = [];
         }
-      
-        
+
+
         // Mouseup event
         {
           // console.log('trigger mouseup et al');
@@ -21339,12 +24207,16 @@ var cytoscape;
             ;
           }
         }
-        
+
         // Click event
         {
           // console.log('trigger click et al');
 
-          if (Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) === 0) {
+          if(
+            Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) === 0
+            && !r.dragData.didDrag // didn't move a node around
+            && !r.hoverData.dragged // didn't pan
+          ){
             if (near != null) {
               near
                 .trigger( new $$.Event(e, {
@@ -21382,7 +24254,7 @@ var cytoscape;
         // Single selection
         if (near == down && !r.dragData.didDrag) {
           if (near != null && near._private.selectable) {
-            
+
             // console.log('single selection')
 
             if( r.hoverData.dragging ){
@@ -21395,28 +24267,28 @@ var cytoscape;
               }
             } else {
               if( !shiftDown ){
-                cy.$(':selected').not( near ).unselect();
+                cy.$(':selected').unmerge( near ).unselect();
                 near.select();
-              }               
+              }
             }
-            
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
-            
+
+            needsRedraw[CR.NODE] = true;
+
           }
-      
-        } 
-        
-        if ( cy.boxSelectionEnabled() &&  Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) > 7 && select[4] ) {         
+
+        }
+
+        if ( r.hoverData.selecting && cy.boxSelectionEnabled() &&  Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) > 7 && select[4] ) {
           var newlySelected = [];
           var box = r.getAllInBox( select[0], select[1], select[2], select[3] );
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+          needsRedraw[CR.SELECT_BOX] = true;
 
-          if( box.length > 0 ) { 
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+          if( box.length > 0 ) {
+            needsRedraw[CR.NODE] = true;
           }
 
-          for( var i = 0; i < box.length; i++ ){ 
+          for( var i = 0; i < box.length; i++ ){
             if( box[i]._private.selectable ){
               newlySelected.push( box[i] );
             }
@@ -21428,7 +24300,7 @@ var cytoscape;
             newlySelCol.select();
           } else {
             if( !shiftDown ){
-              cy.$(':selected').not( newlySelCol ).unselect();
+              cy.$(':selected').unmerge( newlySelCol ).unselect();
             }
 
             newlySelCol.select();
@@ -21436,69 +24308,59 @@ var cytoscape;
 
           // always need redraw in case eles unselectable
           r.redraw();
-          
+
         }
-        
+
         // Cancel drag pan
         if( r.hoverData.dragging ){
-          r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+          r.hoverData.dragging = false;
+          
+          needsRedraw[CR.SELECT_BOX] = true;
+          needsRedraw[CR.NODE] = true;
+          
           r.redraw();
         }
 
-        r.hoverData.dragging = false;
-        
         if (!select[4]) {
           // console.log('free at end', draggedElements)
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true; 
-          r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
-          
-          for (var i=0; i < draggedElements.length; i++) {
-            
-            if(draggedElements[i]._private.group === 'nodes') { 
-              draggedElements[i]._private.rscratch.inDragLayer = false;
-              draggedElements[i]._private.grabbed = false;
-              
-              var sEdges = draggedElements[i]._private.edges;
-              for( var j = 0; j < sEdges.length; j++ ){ sEdges[j]._private.rscratch.inDragLayer = false; }
+          needsRedraw[CR.DRAG] = true;
+          needsRedraw[CR.NODE] = true;
 
-              // for compound nodes, also remove related nodes and edges from the drag layer
-              updateAncestorsInDragLayer(draggedElements[i], { inDragLayer: false });
-              
-            } else if( draggedElements[i]._private.group === 'edges' ){
-              draggedElements[i]._private.rscratch.inDragLayer = false;
-            }
-            
-          }
+          freeDraggedElements( draggedElements );
 
           if( down ){ down.trigger('free'); }
 
   //        draggedElements = r.dragData.possibleDragElements = [];
-          
+
         }
-      
+
       } // else not right mouse
 
       select[4] = 0; r.hoverData.down = null;
-      
-      //r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true; 
-      
+
+      //r.data.canvasNeedsRedraw[CR.SELECT_BOX] = true;
+
 //      console.log('mu', pos[0], pos[1]);
 //      console.log('ss', select);
-      
+
+      r.hoverData.cxtStarted = false;
+      r.hoverData.draggingEles = false;
+      r.hoverData.selecting = false;
       r.dragData.didDrag = false;
+      r.hoverData.dragged = false;
       r.hoverData.dragDelta = [];
-      
+
     }, false);
 
-    var wheelHandler = function(e) { 
+    var wheelHandler = function(e) {
       if( r.scrollingPage ){ return; } // while scrolling, ignore wheel-to-zoom
 
       var cy = r.data.cy;
       var pos = r.projectIntoViewport(e.clientX, e.clientY);
       var rpos = [pos[0] * cy.zoom() + cy.pan().x,
                     pos[1] * cy.zoom() + cy.pan().y];
-      
+
       if( r.hoverData.draggingEles || r.hoverData.dragging || r.hoverData.cxtStarted || inBoxSelection() ){ // if pan dragging or cxt dragging, wheel movements make no zoom
         e.preventDefault();
         return;
@@ -21506,13 +24368,13 @@ var cytoscape;
 
       if( cy.panningEnabled() && cy.userPanningEnabled() && cy.zoomingEnabled() && cy.userZoomingEnabled() ){
         e.preventDefault();
-        
+
         r.data.wheelZooming = true;
         clearTimeout( r.data.wheelTimeout );
         r.data.wheelTimeout = setTimeout(function(){
           r.data.wheelZooming = false;
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+          r.data.canvasNeedsRedraw[CR.NODE] = true;
           r.redraw();
         }, 150);
 
@@ -21531,7 +24393,7 @@ var cytoscape;
       }
 
     };
-    
+
     // Functions to help with whether mouse wheel should trigger zooming
     // --
     r.registerBinding(r.data.container, 'wheel', wheelHandler, true);
@@ -21549,10 +24411,10 @@ var cytoscape;
         r.scrollingPage = false;
       }, 250);
     }, true);
-    
+
     // Functions to help with handling mouseout/mouseover on the Cytoscape container
           // Handle mouseout on Cytoscape container
-    r.registerBinding(r.data.container, 'mouseout', function(e) { 
+    r.registerBinding(r.data.container, 'mouseout', function(e) {
       var pos = r.projectIntoViewport(e.clientX, e.clientY);
 
       r.data.cy.trigger(new $$.Event(e, {
@@ -21560,8 +24422,8 @@ var cytoscape;
         cyPosition: { x: pos[0], y: pos[1] }
       }));
     }, false);
-    
-    r.registerBinding(r.data.container, 'mouseover', function(e) { 
+
+    r.registerBinding(r.data.container, 'mouseover', function(e) {
       var pos = r.projectIntoViewport(e.clientX, e.clientY);
 
       r.data.cy.trigger(new $$.Event(e, {
@@ -21569,7 +24431,7 @@ var cytoscape;
         cyPosition: { x: pos[0], y: pos[1] }
       }));
     }, false);
-    
+
     var f1x1, f1y1, f2x1, f2y1; // starting points for pinch-to-zoom
     var distance1, distance1Sq; // initial distance between finger 1 and finger 2 for pinch-to-zoom
     var center1, modelCenter1; // center point on start pinch to zoom
@@ -21592,20 +24454,21 @@ var cytoscape;
       if( e.target !== r.data.link ){
         e.preventDefault();
       }
-    
+
       r.touchData.capture = true;
       r.data.bgActivePosistion = undefined;
 
-      var cy = r.data.cy; 
+      var cy = r.data.cy;
       var nodes = r.getCachedNodes();
       var edges = r.getCachedEdges();
       var now = r.touchData.now;
       var earlier = r.touchData.earlier;
-      
+      var needsRedraw = r.data.canvasNeedsRedraw;
+
       if (e.touches[0]) { var pos = r.projectIntoViewport(e.touches[0].clientX, e.touches[0].clientY); now[0] = pos[0]; now[1] = pos[1]; }
       if (e.touches[1]) { var pos = r.projectIntoViewport(e.touches[1].clientX, e.touches[1].clientY); now[2] = pos[0]; now[3] = pos[1]; }
       if (e.touches[2]) { var pos = r.projectIntoViewport(e.touches[2].clientX, e.touches[2].clientY); now[4] = pos[0]; now[5] = pos[1]; }
-    
+
 
       // record starting points for pinch-to-zoom
       if( e.touches[1] ){
@@ -21629,11 +24492,11 @@ var cytoscape;
 
         f1x1 = e.touches[0].clientX - offsetLeft;
         f1y1 = e.touches[0].clientY - offsetTop;
-        
+
         f2x1 = e.touches[1].clientX - offsetLeft;
         f2y1 = e.touches[1].clientY - offsetTop;
 
-        twoFingersStartInside = 
+        twoFingersStartInside =
              0 <= f1x1 && f1x1 <= containerWidth
           && 0 <= f2x1 && f2x1 <= containerWidth
           && 0 <= f1y1 && f1y1 <= containerHeight
@@ -21646,7 +24509,7 @@ var cytoscape;
         distance1 = distance( f1x1, f1y1, f2x1, f2y1 );
         distance1Sq = distanceSq( f1x1, f1y1, f2x1, f2y1 );
         center1 = [ (f1x1 + f2x1)/2, (f1y1 + f2y1)/2 ];
-        modelCenter1 = [ 
+        modelCenter1 = [
           (center1[0] - pan.x) / zoom,
           (center1[1] - pan.y) / zoom
         ];
@@ -21667,21 +24530,21 @@ var cytoscape;
               cyPosition: { x: now[0], y: now[1] }
             }) );
             r.touchData.start = near1;
-          
+
           } else if( near2 && near2.isNode() ){
             near2.activate().trigger( new $$.Event(e, {
               type: 'cxttapstart',
               cyPosition: { x: now[0], y: now[1] }
             }) );
             r.touchData.start = near2;
-          
+
           } else {
             cy.trigger( new $$.Event(e, {
               type: 'cxttapstart',
               cyPosition: { x: now[0], y: now[1] }
             }) );
             r.touchData.start = null;
-          } 
+          }
 
           if( r.touchData.start ){ r.touchData.start._private.grabbed = false; }
           r.touchData.cxt = true;
@@ -21692,7 +24555,7 @@ var cytoscape;
 
           r.redraw();
           return;
-          
+
         }
 
         // console.log(center1);
@@ -21705,12 +24568,12 @@ var cytoscape;
       }
 
       // console.log('another tapstart')
-      
-      
+
+
       if (e.touches[2]) {
-      
+
       } else if (e.touches[1]) {
-        
+
       } else if (e.touches[0]) {
         var near = r.findNearestElement(now[0], now[1], true);
 
@@ -21718,13 +24581,13 @@ var cytoscape;
           near.activate();
 
           r.touchData.start = near;
-          
+
           if( near.isNode() && r.nodeIsDraggable(near) ){
 
             var draggedEles = r.dragData.touchDragEles = [];
-            
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
-            r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+
+            needsRedraw[CR.NODE] = true;
+            needsRedraw[CR.DRAG] = true;
 
             if( near.selected() ){
               // reset drag elements, since near will be added again
@@ -21749,7 +24612,7 @@ var cytoscape;
               cyPosition: { x: now[0], y: now[1] }
             }) );
           }
-          
+
           near
             .trigger(new $$.Event(e, {
               type: 'touchstart',
@@ -21785,22 +24648,22 @@ var cytoscape;
             y: pos[1]
           };
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+          needsRedraw[CR.SELECT_BOX] = true;
           r.redraw();
         }
-        
-        
+
+
         // Tap, taphold
         // -----
-        
+
         for (var i=0; i<now.length; i++) {
           earlier[i] = now[i];
           r.touchData.startPosition[i] = now[i];
         }
-        
+
         r.touchData.singleTouchMoved = false;
         r.touchData.singleTouchStartTime = +new Date();
-        
+
         clearTimeout( r.touchData.tapholdTimeout );
         r.touchData.tapholdTimeout = setTimeout(function() {
           if(
@@ -21829,28 +24692,30 @@ var cytoscape;
           }
         }, r.tapholdDuration);
       }
-      
+
       //r.redraw();
-      
+
     }, false);
-    
+
 // console.log = function(m){ $('#console').append('<div>'+m+'</div>'); };
 
     r.registerBinding(window, 'touchmove', $$.util.throttle(function(e) {
-    
+
       var select = r.data.select;
-      var capture = r.touchData.capture; //if (!capture) { return; }; 
+      var capture = r.touchData.capture; //if (!capture) { return; };
       if( capture ){ e.preventDefault(); }
-    
-      var cy = r.data.cy; 
+
+      var cy = r.data.cy;
       var now = r.touchData.now; var earlier = r.touchData.earlier;
       var zoom = cy.zoom();
       
+      var needsRedraw = r.data.canvasNeedsRedraw;
+
       if (e.touches[0]) { var pos = r.projectIntoViewport(e.touches[0].clientX, e.touches[0].clientY); now[0] = pos[0]; now[1] = pos[1]; }
       if (e.touches[1]) { var pos = r.projectIntoViewport(e.touches[1].clientX, e.touches[1].clientY); now[2] = pos[0]; now[3] = pos[1]; }
       if (e.touches[2]) { var pos = r.projectIntoViewport(e.touches[2].clientX, e.touches[2].clientY); now[4] = pos[0]; now[5] = pos[1]; }
       var disp = []; for (var j=0;j<now.length;j++) { disp[j] = now[j] - earlier[j]; }
-      
+
       var startPos = r.touchData.startPosition;
 
       var dx = now[0] - startPos[0];
@@ -21879,7 +24744,7 @@ var cytoscape;
           r.touchData.cxt = false;
           if( r.touchData.start ){ r.touchData.start.unactivate(); r.touchData.start = null; }
           r.data.bgActivePosistion = undefined;
-          r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+          needsRedraw[CR.SELECT_BOX] = true;
 
           var cxtEvt = new $$.Event(e, {
             type: 'cxttapend',
@@ -21892,15 +24757,15 @@ var cytoscape;
           }
         }
 
-      }  
+      }
 
-      if( capture && r.touchData.cxt ){ 
+      if( capture && r.touchData.cxt ){
         var cxtEvt = new $$.Event(e, {
           type: 'cxtdrag',
           cyPosition: { x: now[0], y: now[1] }
         });
         r.data.bgActivePosistion = undefined;
-        r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+        needsRedraw[CR.SELECT_BOX] = true;
 
         if( r.touchData.start ){
           r.touchData.start.trigger( cxtEvt );
@@ -21939,12 +24804,13 @@ var cytoscape;
 
         }
 
-      } else if( capture && e.touches[2] && cy.boxSelectionEnabled() ){ 
+      } else if( capture && e.touches[2] && cy.boxSelectionEnabled() ){
         r.data.bgActivePosistion = undefined;
         clearTimeout( this.threeFingerSelectTimeout );
         this.lastThreeTouch = +new Date();
+        r.touchData.selecting = true;
 
-        r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+        needsRedraw[CR.SELECT_BOX] = true;
 
         if( !select || select.length === 0 || select[0] === undefined ){
           select[0] = (now[0] + now[2] + now[4])/3;
@@ -21957,16 +24823,17 @@ var cytoscape;
         }
 
         select[4] = 1;
+        r.touchData.selecting = true;
 
         r.redraw();
 
       } else if ( capture && e.touches[1] && cy.zoomingEnabled() && cy.panningEnabled() && cy.userZoomingEnabled() && cy.userPanningEnabled() ) { // two fingers => pinch to zoom
         r.data.bgActivePosistion = undefined;
-        r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+        needsRedraw[CR.SELECT_BOX] = true;
 
         var draggedEles = r.dragData.touchDragEles;
-        if( draggedEles ){ 
-          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+        if( draggedEles ){
+          needsRedraw[CR.DRAG] = true;
 
           for( var i = 0; i < draggedEles.length; i++ ){
             draggedEles[i]._private.grabbed = false;
@@ -22040,15 +24907,18 @@ var cytoscape;
             var draggedEles = r.dragData.touchDragEles;
 
             if( draggedEles ){ for( var i = 0; i < draggedEles.length; i++ ){
-              draggedEles[i]._private.grabbed = false;
-              draggedEles[i]._private.rscratch.inDragLayer = false;
+              var dEi_p = draggedEles[i]._private;
+              
+              dEi_p.grabbed = false;
+              dEi_p.rscratch.inDragLayer = false;
             } }
 
-            r.touchData.start._private.active = false;
-            r.touchData.start._private.grabbed = false;
-            r.touchData.start._private.rscratch.inDragLayer = false;
+            var start_p = r.touchData.start._private;
+            start_p.active = false;
+            start_p.grabbed = false;
+            start_p.rscratch.inDragLayer = false;
 
-            r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+            needsRedraw[CR.DRAG] = true;
 
             r.touchData.start
               .trigger('free')
@@ -22062,7 +24932,7 @@ var cytoscape;
             cancelOnFailedZoom: true
           });
 
-          distance1 = distance2;  
+          distance1 = distance2;
           f1x1 = f1x2;
           f1y1 = f1y2;
           f2x1 = f2x2;
@@ -22070,7 +24940,7 @@ var cytoscape;
 
           r.pinching = true;
         }
-        
+
         // Re-project
         if (e.touches[0]) { var pos = r.projectIntoViewport(e.touches[0].clientX, e.touches[0].clientY); now[0] = pos[0]; now[1] = pos[1]; }
         if (e.touches[1]) { var pos = r.projectIntoViewport(e.touches[1].clientX, e.touches[1].clientY); now[2] = pos[0]; now[3] = pos[1]; }
@@ -22101,6 +24971,8 @@ var cytoscape;
 
                 if( justStartedDrag ){
                   addNodeToDrag( draggedEle, { inDragLayer: true } );
+                  
+                  needsRedraw[CR.NODE] = true;
 
                   var dragDelta = r.touchData.dragDelta;
 
@@ -22114,36 +24986,36 @@ var cytoscape;
             }
 
             var tcol = new $$.Collection(cy, draggedEle);
-            
+
             tcol.updateCompoundBounds();
             tcol.trigger('position drag');
 
             r.hoverData.draggingEles = true;
-            
-            r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
 
-            if( 
+            needsRedraw[CR.DRAG] = true;
+
+            if(
                  r.touchData.startPosition[0] == earlier[0]
               && r.touchData.startPosition[1] == earlier[1]
             ){
-              
-              r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+
+              needsRedraw[CR.NODE] = true;
             }
-            
+
             r.redraw();
           } else { // otherise keep track of drag delta for later
             var dragDelta = r.touchData.dragDelta = r.touchData.dragDelta || [];
 
             if( dragDelta.length === 0 ){
-              dragDelta.push(0);
-              dragDelta.push(0);
+              dragDelta.push( disp[0] );
+              dragDelta.push( disp[1] );
             } else {
               dragDelta[0] += disp[0];
               dragDelta[1] += disp[1];
             }
           }
         }
-        
+
         // Touchmove event
         {
 
@@ -22151,26 +25023,26 @@ var cytoscape;
             start.trigger( new $$.Event(e, {
               type: 'touchmove',
               cyPosition: { x: now[0], y: now[1] }
-            }) ); 
+            }) );
 
             start.trigger( new $$.Event(e, {
               type: 'tapdrag',
               cyPosition: { x: now[0], y: now[1] }
-            }) ); 
+            }) );
 
             start.trigger( new $$.Event(e, {
               type: 'vmousemove',
               cyPosition: { x: now[0], y: now[1] }
-            }) ); 
+            }) );
           }
-          
-          if (start == null) { 
 
-            if (near != null) { 
+          if (start == null) {
+
+            if (near != null) {
               near.trigger( new $$.Event(e, {
                 type: 'touchmove',
                 cyPosition: { x: now[0], y: now[1] }
-              }) ); 
+              }) );
 
               near.trigger( new $$.Event(e, {
                 type: 'tapdrag',
@@ -22183,21 +25055,21 @@ var cytoscape;
               }) );
             }
 
-            if (near == null) { 
+            if (near == null) {
               cy.trigger( new $$.Event(e, {
                 type: 'touchmove',
                 cyPosition: { x: now[0], y: now[1] }
-              }) ); 
+              }) );
 
               cy.trigger( new $$.Event(e, {
                 type: 'tapdrag',
                 cyPosition: { x: now[0], y: now[1] }
-              }) ); 
+              }) );
 
               cy.trigger( new $$.Event(e, {
                 type: 'vmousemove',
                 cyPosition: { x: now[0], y: now[1] }
-              }) ); 
+              }) );
             }
           }
 
@@ -22208,17 +25080,17 @@ var cytoscape;
 
           r.touchData.last = near;
         }
-        
+
         // Check to cancel taphold
         for (var i=0;i<now.length;i++) {
-          if (now[i] 
+          if (now[i]
             && r.touchData.startPosition[i]
             && Math.abs(now[i] - r.touchData.startPosition[i]) > 4) {
-            
+
             r.touchData.singleTouchMoved = true;
           }
         }
-        
+
         if(
             capture
             && ( start == null || start.isEdge() )
@@ -22250,11 +25122,11 @@ var cytoscape;
               };
             }
 
-            r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+            needsRedraw[CR.SELECT_BOX] = true;
 
             r.touchData.start = null;
           }
-          
+
           // Re-project
           var pos = r.projectIntoViewport(e.touches[0].clientX, e.touches[0].clientY);
           now[0] = pos[0]; now[1] = pos[1];
@@ -22263,9 +25135,9 @@ var cytoscape;
 
       for (var j=0; j<now.length; j++) { earlier[j] = now[j]; }
       //r.redraw();
-      
+
     }, 1000/30, { trailing: true }), false);
-    
+
     r.registerBinding(window, 'touchcancel', function(e) {
       var start = r.touchData.start;
 
@@ -22279,29 +25151,31 @@ var cytoscape;
     r.registerBinding(window, 'touchend', function(e) {
       var start = r.touchData.start;
 
-      var capture = r.touchData.capture; 
+      var capture = r.touchData.capture;
 
       if( capture ){
         r.touchData.capture = false;
       } else {
         return;
       }
-      
+
       e.preventDefault();
       var select = r.data.select;
 
       r.swipePanning = false;
       r.hoverData.draggingEles = false;
-      
-      var cy = r.data.cy; 
+
+      var cy = r.data.cy;
       var zoom = cy.zoom();
       var now = r.touchData.now;
       var earlier = r.touchData.earlier;
+      
+      var needsRedraw = r.data.canvasNeedsRedraw;
 
       if (e.touches[0]) { var pos = r.projectIntoViewport(e.touches[0].clientX, e.touches[0].clientY); now[0] = pos[0]; now[1] = pos[1]; }
       if (e.touches[1]) { var pos = r.projectIntoViewport(e.touches[1].clientX, e.touches[1].clientY); now[2] = pos[0]; now[3] = pos[1]; }
       if (e.touches[2]) { var pos = r.projectIntoViewport(e.touches[2].clientX, e.touches[2].clientY); now[4] = pos[0]; now[5] = pos[1]; }
-      
+
       if( start ){
         start.unactivate();
       }
@@ -22345,7 +25219,8 @@ var cytoscape;
       }
 
       // no more box selection if we don't have three fingers
-      if( !e.touches[2] && cy.boxSelectionEnabled() ){
+      if( !e.touches[2] && cy.boxSelectionEnabled() && r.touchData.selecting ){
+        r.touchData.selecting = false;
         clearTimeout( this.threeFingerSelectTimeout );
         //this.threeFingerSelectTimeout = setTimeout(function(){
           var newlySelected = [];
@@ -22357,10 +25232,10 @@ var cytoscape;
           select[3] = undefined;
           select[4] = 0;
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+          needsRedraw[CR.SELECT_BOX] = true;
 
           // console.log(box);
-          for( var i = 0; i< box.length; i++ ) { 
+          for( var i = 0; i< box.length; i++ ) {
             if( box[i]._private.selectable ){
               newlySelected.push( box[i] );
             }
@@ -22369,13 +25244,13 @@ var cytoscape;
           var newlySelCol = new $$.Collection( cy, newlySelected );
 
           if( cy.selectionType() === 'single' ){
-            cy.$(':selected').not( newlySelCol ).unselect();
+            cy.$(':selected').unmerge( newlySelCol ).unselect();
           }
 
           newlySelCol.select();
-          
-          if( newlySelCol.length > 0 ) { 
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+
+          if( newlySelCol.length > 0 ) {
+            needsRedraw[CR.NODE] = true;
           } else {
             r.redraw();
           }
@@ -22393,50 +25268,32 @@ var cytoscape;
 
       if (e.touches[2]) {
         r.data.bgActivePosistion = undefined;
-        r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+        needsRedraw[CR.SELECT_BOX] = true;
       } else if (e.touches[1]) {
-        
+
       } else if (e.touches[0]) {
-      
+
       // Last touch released
       } else if (!e.touches[0]) {
-        
+
         r.data.bgActivePosistion = undefined;
-        r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
+        needsRedraw[CR.SELECT_BOX] = true;
+        
+        var draggedEles = r.dragData.touchDragEles;
 
         if (start != null ) {
 
-          if( start._private.grabbed ){
-            start._private.grabbed = false;
+          var startWasGrabbed = start._private.grabbed;
+          
+          freeDraggedElements( draggedEles );
+
+          needsRedraw[CR.DRAG] = true;
+          needsRedraw[CR.NODE] = true;
+          
+          if( startWasGrabbed ){
             start.trigger('free');
-            start._private.rscratch.inDragLayer = false;
-          }
-          
-          var sEdges = start._private.edges;
-          for (var j=0;j<sEdges.length;j++) { sEdges[j]._private.rscratch.inDragLayer = false; }
-          updateAncestorsInDragLayer(start, false);
-          
-          if( start.selected() ){
-            var selectedNodes = cy.$('node:selected');
-
-            for( var k = 0; k < selectedNodes.length; k++ ){
-
-              var selectedNode = selectedNodes[k];
-              selectedNode._private.rscratch.inDragLayer = false;
-              selectedNode._private.grabbed = false;
-
-              var sEdges = selectedNode._private.edges;
-              for (var j=0; j<sEdges.length; j++) {
-                sEdges[j]._private.rscratch.inDragLayer = false;
-              }
-
-              updateAncestorsInDragLayer(selectedNode, false);
-            }
           }
 
-          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true; 
-          r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
-          
           start
             .trigger(new $$.Event(e, {
               type: 'touchend',
@@ -22451,15 +25308,15 @@ var cytoscape;
               cyPosition: { x: now[0], y: now[1] }
             }))
           ;
-          
+
           start.unactivate();
 
           r.touchData.start = null;
-          
+
         } else {
           var near = r.findNearestElement(now[0], now[1], true);
-        
-          if (near != null) { 
+
+          if (near != null) {
             near
               .trigger(new $$.Event(e, {
                 type: 'touchend',
@@ -22476,7 +25333,7 @@ var cytoscape;
             ;
           }
 
-          if (near == null) { 
+          if (near == null) {
             cy
               .trigger(new $$.Event(e, {
                 type: 'touchend',
@@ -22500,17 +25357,17 @@ var cytoscape;
         var dy2 = dy * dy;
         var dist2 = dx2 + dy2;
         var rdist2 = dist2 * zoom * zoom;
-        
+
         // Prepare to select the currently touched node, only if it hasn't been dragged past a certain distance
-        if (start != null 
+        if (start != null
             && !r.dragData.didDrag // didn't drag nodes around
-            && start._private.selectable 
+            && start._private.selectable
             && rdist2 < r.tapThreshold2
             && !r.pinching // pinch to zoom should not affect selection
         ) {
 
           if( cy.selectionType() === 'single' ){
-            cy.$(':selected').not( start ).unselect();
+            cy.$(':selected').unmerge( start ).unselect();
             start.select();
           } else {
             if( start.selected() ){
@@ -22522,10 +25379,10 @@ var cytoscape;
 
           updateStartStyle = true;
 
-          
-          r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+
+          needsRedraw[CR.NODE] = true;
         }
-        
+
         // Tap event, roughly same as mouse click event for touch
         if ( r.touchData.singleTouchMoved === false ) {
 
@@ -22552,18 +25409,18 @@ var cytoscape;
               }))
             ;
           }
-          
+
 //          console.log('tap');
         }
-        
+
         r.touchData.singleTouchMoved = true;
       }
-      
+
       for( var j = 0; j < now.length; j++ ){ earlier[j] = now[j]; }
 
       r.dragData.didDrag = false; // reset for next mousedown
 
-      if( e.touches[0] ){
+      if( e.touches.length === 0 ){
         r.touchData.dragDelta = [];
       }
 
@@ -22573,16 +25430,17 @@ var cytoscape;
 
       if( e.touches.length < 2 ){
         r.pinching = false;
-        r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+        needsRedraw[CR.NODE] = true;
         r.redraw();
       }
 
       //r.redraw();
-      
+
     }, false);
   };
 
 })( cytoscape );
+
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
@@ -22614,9 +25472,6 @@ var cytoscape;
     draw: function(context, centerX, centerY, width, height) {
       nodeShapes['ellipse'].drawPath(context, centerX, centerY, width, height);
       context.fill();
-      
-//      console.log('drawing ellipse');
-//      console.log(arguments);
     },
     
     drawPath: function(context, centerX, centerY, width, height) {
@@ -22688,116 +25543,60 @@ var cytoscape;
     }
   };
   
-  nodeShapes['triangle'] = {
-    points: $$.math.generateUnitNgonPointsFitToSquare(3, 0),
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['triangle'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['triangle'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return $$.math.polygonIntersectLine(
-        x, y,
-        nodeShapes['triangle'].points,
-        nodeX,
-        nodeY,
-        width / 2, height / 2,
-        padding);
-    
-      /*
-      polygonIntersectLine(x, y, basePoints, centerX, centerY, 
-        width, height, padding);
-      */
+  function generatePolygon( name, points ){
+    nodeShapes[name] = {
+      points: points,
       
+      draw: function(context, centerX, centerY, width, height) {
+        renderer.drawPolygon(context,
+          centerX, centerY,
+          width, height,
+          nodeShapes[name].points);
+      },
       
-      /*
-      return renderer.polygonIntersectLine(
-        node, width, height,
-        x, y, nodeShapes['triangle'].points);
-      */
-    },
-    
-    intersectBox: function(
-      x1, y1, x2, y2, width, height, centerX, centerY, padding) {
+      drawPath: function(context, centerX, centerY, width, height) {
+        renderer.drawPolygonPath(context,
+          centerX, centerY,
+          width, height,
+          nodeShapes[name].points);
+      },
       
-      var points = nodeShapes['triangle'].points;
+      intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
+        return $$.math.polygonIntersectLine(
+            x, y,
+            nodeShapes[name].points,
+            nodeX,
+            nodeY,
+            width / 2, height / 2,
+            padding);
+      },
       
-      return $$.math.boxIntersectPolygon(
+      intersectBox: function(
         x1, y1, x2, y2,
-        points, width, height, centerX, centerY, [0, -1], padding);
-    },
-    
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
+        width, height, centerX, 
+        centerY, padding) {
+        
+        var points = nodeShapes[name].points;
+        
+        return $$.math.boxIntersectPolygon(
+          x1, y1, x2, y2,
+          points, width, height, centerX, 
+          centerY, [0, -1], padding);
+      },
       
-      return $$.math.pointInsidePolygon(
-        x, y, nodeShapes['triangle'].points,
-        centerX, centerY, width, height,
-        [0, -1], padding);
-    }
-  };
+      checkPoint: function(
+        x, y, padding, width, height, centerX, centerY) {
+        
+        return $$.math.pointInsidePolygon(x, y, nodeShapes[name].points,
+          centerX, centerY, width, height, [0, -1], padding);
+      }
+    };
+  }
   
-  nodeShapes['square'] = {
-    points: $$.math.generateUnitNgonPointsFitToSquare(4, 0),
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['square'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['square'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return $$.math.polygonIntersectLine(
-          x, y,
-          nodeShapes['square'].points,
-          nodeX,
-          nodeY,
-          width / 2, height / 2,
-          padding);
-    },
-    
-    intersectBox: function(
-      x1, y1, x2, y2,
-      width, height, centerX, 
-      centerY, padding) {
-      
-      var points = nodeShapes['square'].points;
-      
-      return $$.math.boxIntersectPolygon(
-        x1, y1, x2, y2,
-        points, width, height, centerX, 
-        centerY, [0, -1], padding);
-    },
-    
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
-      
-      return $$.math.pointInsidePolygon(x, y, nodeShapes['square'].points,
-        centerX, centerY, width, height, [0, -1], padding);
-    }
-  };
+  generatePolygon( 'triangle', $$.math.generateUnitNgonPointsFitToSquare(3, 0) );
   
+  generatePolygon( 'square', $$.math.generateUnitNgonPointsFitToSquare(4, 0) );
   nodeShapes['rectangle'] = nodeShapes['square'];
-  
-  nodeShapes['octogon'] = {};
   
   nodeShapes['roundrectangle'] = {
     points: $$.math.generateUnitNgonPointsFitToSquare(4, 0),
@@ -22913,191 +25712,28 @@ var cytoscape;
     }
   };
   
-  nodeShapes['pentagon'] = {
-    points: $$.math.generateUnitNgonPointsFitToSquare(5, 0),
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height, nodeShapes['pentagon'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height, nodeShapes['pentagon'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return renderer.polygonIntersectLine(
-        x, y,
-        nodeShapes['pentagon'].points,
-        nodeX,
-        nodeY,
-        width / 2, height / 2,
-        padding);
-    },
-    
-    intersectBox: function(
-      x1, y1, x2, y2, width, height, centerX, centerY, padding) {
-      
-      var points = nodeShapes['pentagon'].points;
-      
-      return $$.math.boxIntersectPolygon(
-        x1, y1, x2, y2,
-        points, width, height, centerX, centerY, [0, -1], padding);
-    },
-    
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
-      
-      return $$.math.pointInsidePolygon(x, y, nodeShapes['pentagon'].points,
-        centerX, centerY, width, height, [0, -1], padding);
-    }
-  };
+  generatePolygon( 'diamond', [
+    0, 1,
+    1, 0,
+    0, -1,
+    -1, 0
+  ] );
   
-  nodeShapes['hexagon'] = {
-    points: $$.math.generateUnitNgonPointsFitToSquare(6, 0),
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['hexagon'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['hexagon'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return $$.math.polygonIntersectLine(
-        x, y,
-        nodeShapes['hexagon'].points,
-        nodeX,
-        nodeY,
-        width / 2, height / 2,
-        padding);
-    },
-    
-    intersectBox: function(
-        x1, y1, x2, y2, width, height, centerX, centerY, padding) {
-        
-      var points = nodeShapes['hexagon'].points;
-      
-      return $$.math.boxIntersectPolygon(
-        x1, y1, x2, y2,
-        points, width, height, centerX, centerY, [0, -1], padding);
-    },
-    
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
-      
-      return $$.math.pointInsidePolygon(x, y, nodeShapes['hexagon'].points,
-        centerX, centerY, width, height, [0, -1], padding);
-    }
-  };
+  generatePolygon( 'pentagon', $$.math.generateUnitNgonPointsFitToSquare(5, 0) );
   
-  nodeShapes['heptagon'] = {
-    points: $$.math.generateUnitNgonPointsFitToSquare(7, 0),
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['heptagon'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['heptagon'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return renderer.polygonIntersectLine(
-        x, y,
-        nodeShapes['heptagon'].points,
-        nodeX,
-        nodeY,
-        width / 2, height / 2,
-        padding);
-    },
-    
-    intersectBox: function(
-        x1, y1, x2, y2, width, height, centerX, centerY, padding) {
-      
-      var points = nodeShapes['heptagon'].points;
-      
-      return renderer.boxIntersectPolygon(
-        x1, y1, x2, y2,
-        points, width, height, centerX, centerY, [0, -1], padding);
-    },
-
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
-      
-      return $$.math.pointInsidePolygon(x, y, nodeShapes['heptagon'].points,
-        centerX, centerY, width, height, [0, -1], padding);
-    }
-  };
+  generatePolygon( 'hexagon', $$.math.generateUnitNgonPointsFitToSquare(6, 0) );
   
-  nodeShapes['octagon'] = {
-    points: $$.math.generateUnitNgonPointsFitToSquare(8, 0),
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['octagon'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['octagon'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return renderer.polygonIntersectLine(
-        x, y,
-        nodeShapes['octagon'].points,
-        nodeX,
-        nodeY,
-        width / 2, height / 2,
-        padding);
-    },
-    
-    intersectBox: function(
-        x1, y1, x2, y2, width, height, centerX, centerY, padding) {
-      
-      var points = nodeShapes['octagon'].points;
-      
-      return renderer.boxIntersectPolygon(
-          x1, y1, x2, y2,
-          points, width, height, centerX, centerY, [0, -1], padding);
-    },
-    
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
-      
-      return $$.math.pointInsidePolygon(x, y, nodeShapes['octagon'].points,
-        centerX, centerY, width, height, [0, -1], padding);
-    }
-  };
+  generatePolygon( 'heptagon', $$.math.generateUnitNgonPointsFitToSquare(7, 0) );
   
+  generatePolygon( 'octagon', $$.math.generateUnitNgonPointsFitToSquare(8, 0) );
+    
   var star5Points = new Array(20);
   {
     var outerPoints = $$.math.generateUnitNgonPoints(5, 0);
     var innerPoints = $$.math.generateUnitNgonPoints(5, Math.PI / 5);
     
-//    console.log(outerPoints);
-//    console.log(innerPoints);
+  //  console.log(outerPoints);
+  //  console.log(innerPoints);
     
     // Outer radius is 1; inner radius of star is smaller
     var innerRadius = 0.5 * (3 - Math.sqrt(5));
@@ -23116,55 +25752,26 @@ var cytoscape;
       star5Points[i*4+3] = innerPoints[i*2+1];
     }
     
-//    console.log(star5Points);
+  //  console.log(star5Points);
   }
 
   star5Points = $$.math.fitPolygonToSquare( star5Points );
   
-  nodeShapes['star5'] = nodeShapes['star'] = {
-    points: star5Points,
-    
-    draw: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygon(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['star5'].points);
-    },
-    
-    drawPath: function(context, centerX, centerY, width, height) {
-      renderer.drawPolygonPath(context,
-        centerX, centerY,
-        width, height,
-        nodeShapes['star5'].points);
-    },
-    
-    intersectLine: function(nodeX, nodeY, width, height, x, y, padding) {
-      return renderer.polygonIntersectLine(
-        x, y,
-        nodeShapes['star5'].points,
-        nodeX,
-        nodeY,
-        width / 2, height / 2,
-        padding);
-    },
-    
-    intersectBox: function(
-        x1, y1, x2, y2, width, height, centerX, centerY, padding) {
-      
-      var points = nodeShapes['star5'].points;
-      
-      return renderer.boxIntersectPolygon(
-          x1, y1, x2, y2,
-          points, width, height, centerX, centerY, [0, -1], padding);
-    },
-    
-    checkPoint: function(
-      x, y, padding, width, height, centerX, centerY) {
-      
-      return $$.math.pointInsidePolygon(x, y, nodeShapes['star5'].points,
-        centerX, centerY, width, height, [0, -1], padding);
-    }
-  };
+  generatePolygon( 'star', star5Points );
+  
+  generatePolygon( 'vee', [
+    -1, -1,
+    0, -0.333,
+    1, -1,
+    0, 1
+  ] );
+  
+  generatePolygon( 'rhomboid', [
+    -1, -1,
+    0.333, -1,
+    1, 1,
+    -0.333, 1
+  ] );
 
 })( cytoscape );
 
@@ -23537,6 +26144,7 @@ var cytoscape;
     directed: false, // whether the tree is directed downwards (or edges can point in any direction if false)
     padding: 30, // padding on fit
     circle: false, // put depths in concentric circles if true, put depths top down if false
+    spacingFactor: 1.75, // positive spacing factor, larger => more space between nodes (N.B. n/a if causes overlap)
     boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
     avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
     roots: undefined, // the roots of the trees
@@ -23804,7 +26412,7 @@ var cytoscape;
         
         minDistance = Math.max(minDistance, w, h);
       }
-      minDistance *= 1.75; // just to have some nice spacing
+      minDistance *= options.spacingFactor; // just to have some nice spacing
     }
 
     // get the weighted percent for an element based on its connectivity to other levels
@@ -23815,14 +26423,15 @@ var cytoscape;
       }
 
       var eleDepth = ele._private.scratch.breadthfirst.depth;
-      var neighbors = ele.neighborhood().nodes();
+      var neighbors = ele.neighborhood().nodes().not(':parent');
       var percent = 0;
       var samples = 0;
 
       for( var i = 0; i < neighbors.length; i++ ){
         var neighbor = neighbors[i];
-        var index = neighbor._private.scratch.breadthfirst.index;
-        var depth = neighbor._private.scratch.breadthfirst.depth;
+        var bf = neighbor._private.scratch.breadthfirst;
+        var index = bf.index;
+        var depth = bf.depth;
         var nDepth = depths[depth].length;
 
         if( eleDepth > depth || eleDepth === 0 ){ // only get influenced by elements above
@@ -23877,16 +26486,12 @@ var cytoscape;
       var index = info.index;
       var depthSize = depths[depth].length;
 
-      if( options.strictHierarchy ){
-        depthSize = biggestDepthSize;
-      }
-
       var distanceX = Math.max( bb.w / (depthSize + 1), minDistance );
       var distanceY = Math.max( bb.h / (depths.length + 1), minDistance );
       var radiusStepSize = Math.min( bb.w / 2 / depths.length, bb.h / 2 / depths.length );
       radiusStepSize = Math.max( radiusStepSize, minDistance );
 
-      if( options.strictHierarchy && !options.circle ){
+      if( !options.circle ){
         
         var epos = {
           x: center.x + (index + 1 - (depthSize + 1)/2) * distanceX,
@@ -23897,20 +26502,20 @@ var cytoscape;
           return epos;
         }
 
-        var succs = successors[ ele.id() ];
-        if( succs ){
-          epos.x = 0;
-
-          for( var i = 0 ; i < succs.length; i++ ){
-            var spos = pos[ succs[i].id() ];
-            
-            epos.x += spos.x;
-          }
-
-          epos.x /= succs.length;
-        } else {
-          //debugger;
-        }
+        // var succs = successors[ ele.id() ];
+        // if( succs ){
+        //   epos.x = 0;
+        // 
+        //   for( var i = 0 ; i < succs.length; i++ ){
+        //     var spos = pos[ succs[i].id() ];
+        //     
+        //     epos.x += spos.x;
+        //   }
+        // 
+        //   epos.x /= succs.length;
+        // } else {
+        //   //debugger;
+        // }
 
         return epos;
 
@@ -23971,6 +26576,7 @@ var cytoscape;
     radius: undefined, // the radius of the circle
     startAngle: 3/2 * Math.PI, // the position of the first node
     counterclockwise: false, // whether the layout should go counterclockwise (true) or clockwise (false)
+    sort: undefined, // a sorting function to order the nodes; e.g. function(a, b){ return a.data('weight') - b.data('weight') }
     animate: false, // whether to transition the node positions
     animationDuration: 500, // duration of animation in ms if enabled
     ready: undefined, // callback on layoutready
@@ -23989,6 +26595,10 @@ var cytoscape;
     var eles = options.eles;
       
     var nodes = eles.nodes().not(':parent');
+
+    if( options.sort ){
+      nodes = nodes.sort( options.sort );
+    }
     
     var bb = $$.util.makeBoundingBox( options.boundingBox ? options.boundingBox : {
       x1: 0, y1: 0, w: cy.width(), h: cy.height()
@@ -24055,7 +26665,7 @@ var cytoscape;
 
   // default layout options
   var defaults = {
-    animate: false, // whether to show the layout as it's running
+    animate: true, // whether to show the layout as it's running
     refresh: 1, // number of ticks per frame; higher is faster but more jerky
     maxSimulationTime: 4000, // max length in ms to run the layout
     ungrabifyWhileSimulating: false, // so you can't drag nodes during layout
@@ -24100,6 +26710,8 @@ var cytoscape;
   ColaLayout.prototype.run = function(){
     var layout = this;
     var options = this.options;
+    
+    layout.manuallyStopped = false;
 
     $$.util.require('cola', function(cola){
 
@@ -24168,8 +26780,6 @@ var cytoscape;
       };
 
       var onDone = function(){
-        layout.manuallyStopped = false;
-
         if( options.ungrabifyWhileSimulating ){
           grabbableNodes.grabify();
         }
@@ -24198,7 +26808,7 @@ var cytoscape;
         ticksPerFrame = Math.max( 1, ticksPerFrame ); // at least 1
       }
 
-      var adaptor = cola.adaptor({
+      var adaptor = layout.adaptor = cola.adaptor({
         trigger: function( e ){ // on sim event
           switch( e.type ){
             case 'tick':
@@ -24209,7 +26819,7 @@ var cytoscape;
 
             case 'end': 
               updateNodePositions();
-              if( !options.infinite || layout.manuallyStopped ){ onDone(); }           
+              if( !options.infinite ){ onDone(); }           
               break;
           }
         },
@@ -24218,6 +26828,12 @@ var cytoscape;
           var skip = 0;
 
           var inftick = function(){
+            if( layout.manuallyStopped ){
+              onDone();
+              
+              return true;
+            }
+            
             var ret = tick();
 
             if( ret && options.infinite ){ // resume layout if done
@@ -24231,11 +26847,11 @@ var cytoscape;
             var ret;
 
             // skip ticks to slow down layout for debugging
-            var thisSkip = skip;
-            skip = (skip + 1) % tickSkip;
-            if( thisSkip !== 0 ){
-              return false;
-            }
+            // var thisSkip = skip;
+            // skip = (skip + 1) % tickSkip;
+            // if( thisSkip !== 0 ){
+            //   return false;
+            // }
 
             for( var i = 0; i < ticksPerFrame && !ret; i++ ){
               ret = ret || inftick(); // pick up true ret vals => sim done
@@ -24259,7 +26875,7 @@ var cytoscape;
 
         on: function( type, listener ){}, // dummy; not needed
 
-        drag: function(){} // TODO
+        drag: function(){} // not needed for our case
       });
       layout.adaptor = adaptor;
 
@@ -24479,17 +27095,19 @@ var cytoscape;
         adaptor.flowLayout( flow.axis , flow.minSeparation );
       }
 
+      layout.trigger({ type: 'layoutstart', layout: layout });
+
       adaptor
         .avoidOverlaps( options.avoidOverlap )
         .handleDisconnected( options.handleDisconnected )
         .start( options.unconstrIter, options.userConstIter, options.allConstIter)
       ;
 
-      layout.trigger({ type: 'layoutstart', layout: layout });
-
       if( !options.infinite ){
         setTimeout(function(){
-          adaptor.stop();
+          if( !layout.manuallyStopped ){
+            adaptor.stop();
+          }
         }, options.maxSimulationTime);
       }
 
@@ -24512,6 +27130,7 @@ var cytoscape;
   $$('layout', 'cola', ColaLayout);
 
 })(cytoscape);
+
 ;(function($$){ 'use strict';
   
   var defaults = {
@@ -24524,8 +27143,8 @@ var cytoscape;
     avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
     height: undefined, // height of layout area (overrides container height)
     width: undefined, // width of layout area (overrides container width)
-    concentric: function(){ // returns numeric value for each node, placing higher nodes in levels towards the centre
-      return this.degree();
+    concentric: function(node){ // returns numeric value for each node, placing higher nodes in levels towards the centre
+      return node.degree();
     },
     levelWidth: function(nodes){ // the variation of concentric values in each level
       return nodes.maxDegree() / 4;
@@ -24567,14 +27186,14 @@ var cytoscape;
       var value;
       
       // calculate the node value
-      value = options.concentric.call(node);
+      value = options.concentric.apply(node, [ node ]);
       nodeValues.push({
         value: value,
         node: node
       });
 
       // for style mapping
-      node._private.layoutData.concentric = value;
+      node._private.scratch.concentric = value;
     }
 
     // in case we used the `concentric` in style
@@ -24640,7 +27259,7 @@ var cytoscape;
 
       for( var j = 0; j < level.length; j++ ){
         var val = level[j];
-        var theta = options.startAngle + (options.counterclockwise ? 1 : -1) * dTheta * j;
+        var theta = options.startAngle + (options.counterclockwise ? -1 : 1) * dTheta * j;
 
         var p = {
           x: center.x + r * Math.cos(theta),
@@ -24789,7 +27408,7 @@ var cytoscape;
 
     var mainLoop = function(i){
       if( layout.stopped ){
-        logDebug("Layout manually stopped. Stopping computation in step " + i);
+        // logDebug("Layout manually stopped. Stopping computation in step " + i);
         return false;
       }
 
@@ -24798,10 +27417,10 @@ var cytoscape;
       
       // Update temperature
       layoutInfo.temperature = layoutInfo.temperature * options.coolingFactor;
-      logDebug("New temperature: " + layoutInfo.temperature);
+      // logDebug("New temperature: " + layoutInfo.temperature);
 
       if (layoutInfo.temperature < options.minTemp) {
-        logDebug("Temperature drop below minimum threshold. Stopping computation in step " + i);
+        // logDebug("Temperature drop below minimum threshold. Stopping computation in step " + i);
         return false;
       }
 
@@ -25021,9 +27640,9 @@ var cytoscape;
         depth++;
       }
 
-      logDebug('LCA of nodes ' + tempEdge.sourceId + ' and ' + tempEdge.targetId +  
-         ". Index: " + lca + " Contents: " + lcaGraph.toString() + 
-         ". Depth: " + depth);
+      // logDebug('LCA of nodes ' + tempEdge.sourceId + ' and ' + tempEdge.targetId +  
+        //  ". Index: " + lca + " Contents: " + lcaGraph.toString() + 
+        //  ". Depth: " + depth);
 
       // Update idealLength
       idealLength *= depth * options.nestingFactor;
@@ -25206,8 +27825,8 @@ var cytoscape;
    * @arg options    : Layout options
    */
   var refreshPositions = function(layoutInfo, cy, options) {  
-    var s = 'Refreshing positions';
-    logDebug(s);
+    // var s = 'Refreshing positions';
+    // logDebug(s);
 
     var layout = layoutInfo.layout;
     var nodes = options.eles.nodes();
@@ -25231,9 +27850,9 @@ var cytoscape;
 
     nodes.positions(function(i, ele) {
       var lnode = layoutInfo.layoutNodes[layoutInfo.idToIndex[ele.data('id')]];
-      s = "Node: " + lnode.id + ". Refreshed position: (" + 
-      lnode.positionX + ", " + lnode.positionY + ").";
-      logDebug(s);
+      // s = "Node: " + lnode.id + ". Refreshed position: (" + 
+      // lnode.positionX + ", " + lnode.positionY + ").";
+      // logDebug(s);
 
       if( options.boundingBox ){ // then add extra bounding box constraint
         var pctX = (lnode.positionX - coseBB.x1) / coseBB.w;
@@ -25253,8 +27872,8 @@ var cytoscape;
 
     // Trigger layoutReady only on first call
     if (true !== layoutInfo.ready) {
-      s = 'Triggering layoutready';
-      logDebug(s);
+      // s = 'Triggering layoutready';
+      // logDebug(s);
       layoutInfo.ready = true;
       layout.one('layoutready', options.ready);
       layout.trigger({ type: 'layoutready', layout: this });
@@ -25269,10 +27888,10 @@ var cytoscape;
    * @arg options    : Layout options
    */
   var step = function(layoutInfo, cy, options, step) {  
-    var s = "\n\n###############################";
-    s += "\nSTEP: " + step;
-    s += "\n###############################\n";
-    logDebug(s);
+    // var s = "\n\n###############################";
+    // s += "\nSTEP: " + step;
+    // s += "\n###############################\n";
+    // logDebug(s);
 
     // Calculate node repulsions
     calculateNodeForces(layoutInfo, cy, options);
@@ -25293,14 +27912,14 @@ var cytoscape;
   var calculateNodeForces = function(layoutInfo, cy, options) {
     // Go through each of the graphs in graphSet
     // Nodes only repel each other if they belong to the same graph
-    var s = 'calculateNodeForces';
-    logDebug(s);
+    // var s = 'calculateNodeForces';
+    // logDebug(s);
     for (var i = 0; i < layoutInfo.graphSet.length; i ++) {
       var graph    = layoutInfo.graphSet[i];
       var numNodes = graph.length;
 
-      s = "Set: " + graph.toString();
-      logDebug(s);
+      // s = "Set: " + graph.toString();
+      // logDebug(s);
 
       // Now get all the pairs of nodes 
       // Only get each pair once, (A, B) = (B, A)
@@ -25319,36 +27938,36 @@ var cytoscape;
    * @brief : Compute the node repulsion forces between a pair of nodes
    */
   var nodeRepulsion = function(node1, node2, layoutInfo, cy, options) {
-    var s = "Node repulsion. Node1: " + node1.id + " Node2: " + node2.id;
+    // var s = "Node repulsion. Node1: " + node1.id + " Node2: " + node2.id;
 
     // Get direction of line connecting both node centers
     var directionX = node2.positionX - node1.positionX;
     var directionY = node2.positionY - node1.positionY;
-    s += "\ndirectionX: " + directionX + ", directionY: " + directionY;
+    // s += "\ndirectionX: " + directionX + ", directionY: " + directionY;
 
     // If both centers are the same, apply a random force
     if (0 === directionX && 0 === directionY) {
-      s += "\nNodes have the same position.";
+      // s += "\nNodes have the same position.";
       return; // TODO
     }
 
     var overlap = nodesOverlap(node1, node2, directionX, directionY);
     
     if (overlap > 0) {
-      s += "\nNodes DO overlap.";
-      s += "\nOverlap: " + overlap;
+      // s += "\nNodes DO overlap.";
+      // s += "\nOverlap: " + overlap;
       // If nodes overlap, repulsion force is proportional 
       // to the overlap
       var force    = options.nodeOverlap * overlap;
 
       // Compute the module and components of the force vector
       var distance = Math.sqrt(directionX * directionX + directionY * directionY);
-      s += "\nDistance: " + distance;
+      // s += "\nDistance: " + distance;
       var forceX   = force * directionX / distance;
       var forceY   = force * directionY / distance;
 
     } else {
-      s += "\nNodes do NOT overlap.";
+      // s += "\nNodes do NOT overlap.";
       // If there's no overlap, force is inversely proportional 
       // to squared distance
 
@@ -25361,7 +27980,7 @@ var cytoscape;
       var distanceY   = point2.y - point1.y;
       var distanceSqr = distanceX * distanceX + distanceY * distanceY;
       var distance    = Math.sqrt(distanceSqr);
-      s += "\nDistance: " + distance;
+      // s += "\nDistance: " + distance;
 
       // Compute the module and components of the force vector
       var force  = options.nodeRepulsion / distanceSqr;
@@ -25375,8 +27994,8 @@ var cytoscape;
     node2.offsetX += forceX;
     node2.offsetY += forceY;
 
-    s += "\nForceX: " + forceX + " ForceY: " + forceY;
-    logDebug(s);
+    // s += "\nForceX: " + forceX + " ForceY: " + forceY;
+    // logDebug(s);
 
     return;
   };
@@ -25396,17 +28015,17 @@ var cytoscape;
     var dirSlope     = dY / dX;
     var nodeSlope    = H / W;
 
-    var s = 'Computing clipping point of node ' + node.id + 
-      " . Height:  " + H + ", Width: " + W + 
-      "\nDirection " + dX + ", " + dY; 
-    
+    // var s = 'Computing clipping point of node ' + node.id + 
+    //   " . Height:  " + H + ", Width: " + W + 
+    //   "\nDirection " + dX + ", " + dY; 
+    // 
     // Compute intersection
     var res = {};
     do {
       // Case: Vertical direction (up)
       if (0 === dX && 0 < dY) {
         res.x = X;
-        s += "\nUp direction";
+        // s += "\nUp direction";
         res.y = Y + H / 2;
         break;
       }
@@ -25415,7 +28034,7 @@ var cytoscape;
       if (0 === dX && 0 > dY) {
         res.x = X;
         res.y = Y + H / 2;
-        s += "\nDown direction";
+        // s += "\nDown direction";
         break;
       }      
 
@@ -25425,7 +28044,7 @@ var cytoscape;
       dirSlope <= nodeSlope) {
         res.x = X + W / 2;
         res.y = Y + (W * dY / 2 / dX);
-        s += "\nRightborder";
+        // s += "\nRightborder";
         break;
       }
 
@@ -25435,7 +28054,7 @@ var cytoscape;
       dirSlope <= nodeSlope) {
         res.x = X - W / 2;
         res.y = Y - (W * dY / 2 / dX);
-        s += "\nLeftborder";
+        // s += "\nLeftborder";
         break;
       }
 
@@ -25445,7 +28064,7 @@ var cytoscape;
         dirSlope >= nodeSlope )) {
         res.x = X + (H * dX / 2 / dY);
         res.y = Y + H / 2;
-        s += "\nTop border";
+        // s += "\nTop border";
         break;
       }
 
@@ -25455,14 +28074,14 @@ var cytoscape;
         dirSlope >= nodeSlope )) {
         res.x = X - (H * dX / 2 / dY);
         res.y = Y - H / 2;
-        s += "\nBottom border";
+        // s += "\nBottom border";
         break;
       }
 
     } while (false);
 
-    s += "\nClipping point found at " + res.x + ", " + res.y;
-    logDebug(s);
+    // s += "\nClipping point found at " + res.x + ", " + res.y;
+    // logDebug(s);
     return res;
   };
 
@@ -25541,9 +28160,9 @@ var cytoscape;
       target.offsetX -= forceX;
       target.offsetY -= forceY;
 
-      var s = 'Edge force between nodes ' + source.id + ' and ' + target.id;
-      s += "\nDistance: " + l + " Force: (" + forceX + ", " + forceY + ")";
-      logDebug(s);
+      // var s = 'Edge force between nodes ' + source.id + ' and ' + target.id;
+      // s += "\nDistance: " + l + " Force: (" + forceX + ", " + forceY + ")";
+      // logDebug(s);
     }
   };
 
@@ -25552,14 +28171,14 @@ var cytoscape;
    * @brief : Computes gravity forces for all nodes
    */
   var calculateGravityForces = function(layoutInfo, cy, options) {
-    var s = 'calculateGravityForces';
-    logDebug(s);
+    // var s = 'calculateGravityForces';
+    // logDebug(s);
     for (var i = 0; i < layoutInfo.graphSet.length; i ++) {
       var graph    = layoutInfo.graphSet[i];
       var numNodes = graph.length;
 
-      s = "Set: " + graph.toString();
-      logDebug(s);
+      // s = "Set: " + graph.toString();
+      // logDebug(s);
           
       // Compute graph center
       if (0 === i) {
@@ -25572,13 +28191,13 @@ var cytoscape;
         var centerX = parent.positionX;
         var centerY = parent.positionY;
       }
-      s = "Center found at: " + centerX + ", " + centerY;
-      logDebug(s);
+      // s = "Center found at: " + centerX + ", " + centerY;
+      // logDebug(s);
 
       // Apply force to all nodes in graph
       for (var j = 0; j < numNodes; j++) {
         var node = layoutInfo.layoutNodes[layoutInfo.idToIndex[graph[j]]];
-        s = "Node: " + node.id;
+        // s = "Node: " + node.id;
         var dx = centerX - node.positionX;
         var dy = centerY - node.positionY;
         var d  = Math.sqrt(dx * dx + dy * dy);
@@ -25587,11 +28206,11 @@ var cytoscape;
           var fy = options.gravity * dy / d;
           node.offsetX += fx;
           node.offsetY += fy;
-          s += ": Applied force: " + fx + ", " + fy;
+          // s += ": Applied force: " + fx + ", " + fy;
         } else {
-          s += ": skypped since it's too close to center";
+          // s += ": skypped since it's too close to center";
         }
-        logDebug(s);
+        // logDebug(s);
       }
     }
   };
@@ -25610,7 +28229,7 @@ var cytoscape;
     var start = 0;   // Points to the start the queue
     var end   = -1;  // Points to the end of the queue
 
-    logDebug('propagateForces');
+    // logDebug('propagateForces');
 
     // Start by visiting the nodes in the root graph
     queue.push.apply(queue, layoutInfo.graphSet[0]);
@@ -25629,10 +28248,10 @@ var cytoscape;
       var offX = node.offsetX;
       var offY = node.offsetY;
 
-      var s = "Propagating offset from parent node : " + node.id + 
-        ". OffsetX: " + offX + ". OffsetY: " + offY;
-      s += "\n Children: " + children.toString();
-      logDebug(s);
+      // var s = "Propagating offset from parent node : " + node.id + 
+      //   ". OffsetX: " + offX + ". OffsetY: " + offY;
+      // s += "\n Children: " + children.toString();
+      // logDebug(s);
       
       for (var i = 0; i < children.length; i++) {
         var childNode = layoutInfo.layoutNodes[layoutInfo.idToIndex[children[i]]];
@@ -25657,14 +28276,14 @@ var cytoscape;
    *          the accumulated forces
    */
   var updatePositions = function(layoutInfo, cy, options) {
-    var s = 'Updating positions';
-    logDebug(s);
+    // var s = 'Updating positions';
+    // logDebug(s);
 
     // Reset boundaries for compound nodes
     for (var i = 0; i < layoutInfo.nodeSize; i++) {
       var n = layoutInfo.layoutNodes[i];
       if (0 < n.children.length) {
-        logDebug("Resetting boundaries of compound node: " + n.id);
+        // logDebug("Resetting boundaries of compound node: " + n.id);
         n.maxX = undefined;
         n.minX = undefined;
         n.maxY = undefined;
@@ -25676,11 +28295,11 @@ var cytoscape;
       var n = layoutInfo.layoutNodes[i];
       if (0 < n.children.length) {
         // No need to set compound node position
-        logDebug("Skipping position update of node: " + n.id);
+        // logDebug("Skipping position update of node: " + n.id);
         continue;
       }
-      s = "Node: " + n.id + " Previous position: (" + 
-      n.positionX + ", " + n.positionY + ")."; 
+      // s = "Node: " + n.id + " Previous position: (" + 
+      // n.positionX + ", " + n.positionY + ")."; 
 
       // Limit displacement in order to improve stability
       var tempForce = limitForce(n.offsetX, n.offsetY, layoutInfo.temperature);
@@ -25692,8 +28311,8 @@ var cytoscape;
       n.maxX    = n.positionX + n.width; 
       n.minY    = n.positionY - n.height; 
       n.maxY    = n.positionY + n.height; 
-      s += " New Position: (" + n.positionX + ", " + n.positionY + ").";
-      logDebug(s);
+      // s += " New Position: (" + n.positionX + ", " + n.positionY + ").";
+      // logDebug(s);
 
       // Update ancestry boudaries
       updateAncestryBoundaries(n, layoutInfo);
@@ -25707,10 +28326,10 @@ var cytoscape;
         n.positionY = (n.maxY + n.minY) / 2;
         n.width     = n.maxX - n.minX;
         n.height    = n.maxY - n.minY;
-        s = "Updating position, size of compound node " + n.id;
-        s += "\nPositionX: " + n.positionX + ", PositionY: " + n.positionY;
-        s += "\nWidth: " + n.width + ", Height: " + n.height;
-        logDebug(s);
+        // s = "Updating position, size of compound node " + n.id;
+        // s += "\nPositionX: " + n.positionX + ", PositionY: " + n.positionY;
+        // s += "\nWidth: " + n.width + ", Height: " + n.height;
+        // logDebug(s);
       }
     }  
   };
@@ -25722,7 +28341,7 @@ var cytoscape;
    8          Preserves force direction. 
    */
   var limitForce = function(forceX, forceY, max) {
-    var s = "Limiting force: (" + forceX + ", " + forceY + "). Max: " + max;
+    // var s = "Limiting force: (" + forceX + ", " + forceY + "). Max: " + max;
     var force = Math.sqrt(forceX * forceX + forceY * forceY);
 
     if (force > max) {
@@ -25738,8 +28357,8 @@ var cytoscape;
       };
     }
 
-    s += ".\nResult: (" + res.x + ", " + res.y + ")";
-    logDebug(s);
+    // s += ".\nResult: (" + res.x + ", " + res.y + ")";
+    // logDebug(s);
 
     return res;
   };
@@ -25750,12 +28369,12 @@ var cytoscape;
    *          sizes, since they should bound all their subnodes.
    */
   var updateAncestryBoundaries = function(node, layoutInfo) {
-    var s = "Propagating new position/size of node " + node.id;
+    // var s = "Propagating new position/size of node " + node.id;
     var parentId = node.parentId;
     if (null == parentId) {
       // If there's no parent, we are done
-      s += ". No parent node.";
-      logDebug(s);
+      // s += ". No parent node.";
+      // logDebug(s);
       return;
     }
 
@@ -25767,38 +28386,38 @@ var cytoscape;
     if (null == p.maxX || node.maxX + p.padRight > p.maxX) {
       p.maxX = node.maxX + p.padRight;
       flag = true;
-      s += "\nNew maxX for parent node " + p.id + ": " + p.maxX;
+      // s += "\nNew maxX for parent node " + p.id + ": " + p.maxX;
     }
 
     // MinX
     if (null == p.minX || node.minX - p.padLeft < p.minX) {
       p.minX = node.minX - p.padLeft;
       flag = true;
-      s += "\nNew minX for parent node " + p.id + ": " + p.minX;
+      // s += "\nNew minX for parent node " + p.id + ": " + p.minX;
     }
 
     // MaxY
     if (null == p.maxY || node.maxY + p.padBottom > p.maxY) {
       p.maxY = node.maxY + p.padBottom;
       flag = true;
-      s += "\nNew maxY for parent node " + p.id + ": " + p.maxY;
+      // s += "\nNew maxY for parent node " + p.id + ": " + p.maxY;
     }
 
     // MinY
     if (null == p.minY || node.minY - p.padTop < p.minY) {
       p.minY = node.minY - p.padTop;
       flag = true;
-      s += "\nNew minY for parent node " + p.id + ": " + p.minY;
+      // s += "\nNew minY for parent node " + p.id + ": " + p.minY;
     }
 
     // If updated boundaries, propagate changes upward
     if (flag) {
-      logDebug(s);
+      // logDebug(s);
       return updateAncestryBoundaries(p, layoutInfo);
     } 
 
-    s += ". No changes in boundaries/position of parent node " + p.id;  
-    logDebug(s);
+    // s += ". No changes in boundaries/position of parent node " + p.id;  
+    // logDebug(s);
     return;
   };
 
@@ -25806,17 +28425,18 @@ var cytoscape;
   /**
    * @brief : Logs a debug message in JS console, if DEBUG is ON
    */
-  var logDebug = function(text) {
-    if (DEBUG) {
-      console.debug(text);
-    }
-  };
+  // var logDebug = function(text) {
+  //   if (DEBUG) {
+  //     console.debug(text);
+  //   }
+  // };
 
 
   // register the layout
   $$('layout', 'cose', CoseLayout);
 
 })(cytoscape);
+
 ;(function($$){ 'use strict';
 
   // default layout options
@@ -25827,6 +28447,7 @@ var cytoscape;
     rankSep: undefined, // the separation between adjacent nodes in the same rank
     rankDir: undefined, // 'TB' for top to bottom flow, 'LR' for left to right
     minLen: function( edge ){ return 1; }, // number of ranks to keep between the source and target of the edge
+    edgeWeight: function( edge ){ return 1; }, // higher weight edges are generally made shorter and straighter than lower weight edges
     
     // general layout options
     fit: true, // whether to fit to viewport
@@ -25854,58 +28475,84 @@ var cytoscape;
       var cy = options.cy; // cy is automatically populated for us in the constructor
       var eles = options.eles;
 
+      var getVal = function( ele, val ){
+        return $$.is.fn(val) ? val.apply( ele, [ ele ] ) : val;
+      };
+
       var bb = $$.util.makeBoundingBox( options.boundingBox ? options.boundingBox : {
         x1: 0, y1: 0, w: cy.width(), h: cy.height()
       } );
 
-      var g = new dagre.Digraph();
+      var g = new dagre.graphlib.Graph({
+        multigraph: true,
+        compound: true
+      });
+
+      var gObj = {};
+      var setGObj = function( name, val ){
+        if( val != null ){
+          gObj[ name ] = val;
+        }
+      };
+      
+      setGObj( 'nodesep', options.nodeSep );
+      setGObj( 'edgesep', options.edgeSep );
+      setGObj( 'ranksep', options.rankSep );
+      setGObj( 'rankdir', options.rankDir );
+
+      g.setGraph( gObj );
+
+      g.setDefaultEdgeLabel(function() { return {}; });
+      g.setDefaultNodeLabel(function() { return {}; });
 
       // add nodes to dagre
-      var nodes = eles.nodes().not(':parent');
+      var nodes = eles.nodes();
       for( var i = 0; i < nodes.length; i++ ){
         var node = nodes[i];
 
-        g.addNode( node.id(), {
+        g.setNode( node.id(), {
           width: node.width(),
-          height: node.height()
+          height: node.height(),
+          name: node.id()
         } );
+
+        // console.log( g.node(node.id()) );
+      }
+
+      // set compound parents
+      for( var i = 0; i < nodes.length; i++ ){
+        var node = nodes[i];
+
+        if( node.isChild() ){
+          g.setParent( node.id(), node.parent().id() );
+        }
       }
 
       // add edges to dagre
-      var edges = eles.edges().stdFilter(function( e ){
-        return !e.source().is(':parent') && !e.target().is(':parent');
+      var edges = eles.edges().stdFilter(function( edge ){
+        return !edge.source().isParent() && !edge.target().isParent(); // dagre can't handle edges on compound nodes
       });
       for( var i = 0; i < edges.length; i++ ){
         var edge = edges[i];
 
-        g.addEdge( edge.id(), edge.source().id(), edge.target().id(), {
-          minLen: $$.is.fn(options.minLen) ? options.minLen.apply( edge, [ edge ] ) : options.minLen
-        } );
+        g.setEdge( edge.source().id(), edge.target().id(), {
+          minlen: getVal( edge, options.minLen ),
+          weight: getVal( edge, options.edgeWeight ),
+          name: edge.id()
+        }, edge.id() );
+
+        // console.log( g.edge(edge.source().id(), edge.target().id(), edge.id()) );
       }
 
-      var d = dagre.layout();
+      dagre.layout( g );
 
-      if( options.nodeSep ){
-        d.nodeSep( options.nodeSep );
-      }
+      var gNodeIds = g.nodes();
+      for( var i = 0; i < gNodeIds.length; i++ ){
+        var id = gNodeIds[i];
+        var n = g.node( id );
 
-      if( options.edgeSep ){
-        d.edgeSep( options.edgeSep );
-      }
-      
-      if( options.rankSep ){
-        d.rankSep( options.rankSep );
-      }
-
-      if( options.rankDir ){
-        d.rankDir( options.rankDir );
-      }
-        
-      d = d.run(g);
-
-      d.eachNode(function(id, n) {
         cy.getElementById(id).scratch().dagre = n;
-      });
+      }
 
       var dagreBB;
 
@@ -25959,6 +28606,7 @@ var cytoscape;
   $$('layout', 'dagre', DagreLayout);
 
 })(cytoscape);
+
 ;(function($$){ 'use strict';
   
   var defaults = {
@@ -25969,6 +28617,7 @@ var cytoscape;
     rows: undefined, // force num of rows in the grid
     columns: undefined, // force num of cols in the grid
     position: function( node ){}, // returns { row, col } for element
+    sort: undefined, // a sorting function to order the nodes; e.g. function(a, b){ return a.data('weight') - b.data('weight') }
     animate: false, // whether to transition the node positions
     animationDuration: 500, // duration of animation in ms if enabled
     ready: undefined, // callback on layoutready
@@ -25986,6 +28635,10 @@ var cytoscape;
     var cy = params.cy;
     var eles = options.eles;
     var nodes = eles.nodes().not(':parent');
+
+    if( options.sort ){
+      nodes = nodes.sort( options.sort );
+    }
     
     var bb = $$.util.makeBoundingBox( options.boundingBox ? options.boundingBox : {
       x1: 0, y1: 0, w: cy.width(), h: cy.height()
@@ -26338,6 +28991,477 @@ var cytoscape;
   
 })(cytoscape);
 
+;( function( $$ ){ 'use strict';
+
+  /*
+   * This layout combines several algorithms:
+   *
+   * - It generates an initial position of the nodes by using the
+   *   Fruchterman-Reingold algorithm (doi:10.1002/spe.4380211102)
+   *
+   * - Finally it eliminates overlaps by using the method described by
+   *   Gansner and North (doi:10.1007/3-540-37623-2_28)
+   */
+
+  var defaults = {
+    animate: true, // whether to show the layout as it's running
+    ready: undefined, // Callback on layoutready
+    stop: undefined, // Callback on layoutstop
+    fit: true, // Reset viewport to fit default simulationBounds
+    minDist: 20, // Minimum distance between nodes
+    padding: 20, // Padding
+    expandingFactor: -1.0, // If the network does not satisfy the minDist
+    // criterium then it expands the network of this amount
+    // If it is set to -1.0 the amount of expansion is automatically
+    // calculated based on the minDist, the aspect ratio and the
+    // number of nodes
+    maxFruchtermanReingoldIterations: 50, // Maximum number of initial force-directed iterations
+    maxExpandIterations: 4, // Maximum number of expanding iterations
+    boundingBox: undefined // Constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+  };
+
+  function SpreadLayout( options ) {
+    this.options = $$.util.extend( {}, defaults, options );
+  }
+
+  function cellCentroid( cell ) {
+    var hes = cell.halfedges;
+    var area = 0,
+      x = 0,
+      y = 0;
+    var p1, p2, f;
+
+    for( var i = 0; i < hes.length; ++i ) {
+      p1 = hes[ i ].getEndpoint();
+      p2 = hes[ i ].getStartpoint();
+
+      area += p1.x * p2.y;
+      area -= p1.y * p2.x;
+
+      f = p1.x * p2.y - p2.x * p1.y;
+      x += ( p1.x + p2.x ) * f;
+      y += ( p1.y + p2.y ) * f;
+    }
+
+    area /= 2;
+    f = area * 6;
+    return {
+      x: x / f,
+      y: y / f
+    };
+  }
+
+  function sitesDistance( ls, rs ) {
+    var dx = ls.x - rs.x;
+    var dy = ls.y - rs.y;
+    return Math.sqrt( dx * dx + dy * dy );
+  }
+
+  SpreadLayout.prototype.run = function() {
+
+    var layout = this;
+    // var self = this;
+    var options = this.options;
+
+    $$.util.requires(['foograph', 'Voronoi'], function(foograph, Voronoi){
+
+      var cy = options.cy;
+      // var allNodes = cy.nodes();
+      var nodes = cy.nodes();
+      //var allEdges = cy.edges();
+      var edges = cy.edges();
+      var cWidth = cy.width();
+      var cHeight = cy.height();
+      var simulationBounds = options.boundingBox ? $$.util.makeBoundingBox( options.boundingBox ) : null;
+      var padding = options.padding;
+      var simBBFactor = Math.max( 1, Math.log(nodes.length) * 0.8 );
+      
+      if( nodes.length < 100 ){
+        simBBFactor /= 2;
+      }
+
+      layout.trigger( {
+        type: 'layoutstart',
+        layout: layout
+      } );
+
+      var simBB = {
+        x1: 0,
+        y1: 0,
+        x2: cWidth * simBBFactor,
+        y2: cHeight * simBBFactor
+      };
+
+      if( simulationBounds ) {
+        simBB.x1 = simulationBounds.x1;
+        simBB.y1 = simulationBounds.y1;
+        simBB.x2 = simulationBounds.x2;
+        simBB.y2 = simulationBounds.y2;
+      }
+
+      simBB.x1 += padding;
+      simBB.y1 += padding;
+      simBB.x2 -= padding;
+      simBB.y2 -= padding;
+
+      var width = simBB.x2 - simBB.x1;
+      var height = simBB.y2 - simBB.y1;
+
+      // Get start time
+      var startTime = Date.now();
+
+      // layout doesn't work with just 1 node
+      if( nodes.size() <= 1 ) {
+        nodes.positions( {
+          x: Math.round( ( simBB.x1 + simBB.x2 ) / 2 ),
+          y: Math.round( ( simBB.y1 + simBB.y2 ) / 2 )
+        } );
+
+        if( options.fit ) {
+          cy.fit( options.padding );
+        }
+
+        // Get end time
+        var endTime = Date.now();
+        console.info( "Layout on " + nodes.size() + " nodes took " + ( endTime - startTime ) + " ms" );
+
+        layout.one( "layoutready", options.ready );
+        layout.trigger( "layoutready" );
+
+        layout.one( "layoutstop", options.stop );
+        layout.trigger( "layoutstop" );
+
+        return;
+      }
+
+      // First I need to create the data structure to pass to the worker
+      var pData = {
+        'width': width,
+        'height': height,
+        'minDist': options.minDist,
+        'expFact': options.expandingFactor,
+        'expIt': 0,
+        'maxExpIt': options.maxExpandIterations,
+        'vertices': [],
+        'edges': [],
+        'startTime': startTime,
+        'maxFruchtermanReingoldIterations': options.maxFruchtermanReingoldIterations
+      };
+
+      nodes.each(
+        function( i, node ) {
+          var nodeId = this._private.data.id;
+          pData[ 'vertices' ].push( {
+            id: nodeId,
+            x: 0,
+            y: 0
+          } );
+        } );
+
+      edges.each(
+        function() {
+          var srcNodeId = this.source().id();
+          var tgtNodeId = this.target().id();
+          pData[ 'edges' ].push( {
+            src: srcNodeId,
+            tgt: tgtNodeId
+          } );
+        } );
+
+      //Decleration
+      var t1 = $$.Thread();
+      // And to add the required scripts
+      //EXTERNAL 1
+      t1.require( foograph, 'foograph' );
+      //EXTERNAL 2
+      t1.require( Voronoi );
+
+      //Local function
+      t1.require( sitesDistance );
+      t1.require( cellCentroid );
+
+      function setPositions( pData ){ //console.log('set posns')
+        // First we retrieve the important data
+        // var expandIteration = pData[ 'expIt' ];
+        var dataVertices = pData[ 'vertices' ];
+        var vertices = [];
+        for( var i = 0; i < dataVertices.length; ++i ) {
+          var dv = dataVertices[ i ];
+          vertices[ dv.id ] = {
+            x: dv.x,
+            y: dv.y
+          };
+        }
+        /*
+         * FINALLY:
+         *
+         * We position the nodes based on the calculation
+         */
+        nodes.positions(
+          function( i, node ) {
+            var id = node._private.data.id;
+            // var pos = node._private.position;
+            var vertex = vertices[ id ];
+
+            return {
+              x: Math.round( simBB.x1 + vertex.x ),
+              y: Math.round( simBB.y1 + vertex.y )
+            };
+          } );
+
+        if( options.fit ) {
+          cy.fit( options.padding );
+        }
+
+        cy.nodes().rtrigger( "position" );
+      }
+
+      var didLayoutReady = false;
+      t1.on('message', function(e){
+        var pData = e.message; //console.log('message', e)
+
+        if( !options.animate ){
+          return;
+        }
+
+        setPositions( pData );
+
+        if( !didLayoutReady ){
+          layout.trigger( "layoutready" );
+
+          didLayoutReady = true;
+        }
+      });
+
+      layout.one( "layoutready", options.ready );
+
+      t1.pass( pData ).run( function( pData ) {
+        
+        foograph = eval('foograph');
+        Voronoi = eval('Voronoi');
+        
+        // I need to retrieve the important data
+        var lWidth = pData[ 'width' ];
+        var lHeight = pData[ 'height' ];
+        var lMinDist = pData[ 'minDist' ];
+        var lExpFact = pData[ 'expFact' ];
+        var lMaxExpIt = pData[ 'maxExpIt' ];
+        var lMaxFruchtermanReingoldIterations = pData[ 'maxFruchtermanReingoldIterations' ];
+
+        // Prepare the data to output
+        var savePositions = function(){
+          pData[ 'width' ] = lWidth;
+          pData[ 'height' ] = lHeight;
+          pData[ 'expIt' ] = expandIteration;
+          pData[ 'expFact' ] = lExpFact;
+
+          pData[ 'vertices' ] = [];
+          for( var i = 0; i < fv.length; ++i ) {
+            pData[ 'vertices' ].push( {
+              id: fv[ i ].label,
+              x: fv[ i ].x,
+              y: fv[ i ].y
+            } );
+          }
+        };
+
+        var messagePositions = function(){
+          broadcast( pData );
+        };
+
+        /*
+         * FIRST STEP: Application of the Fruchterman-Reingold algorithm
+         *
+         * We use the version implemented by the foograph library
+         *
+         * Ref.: https://code.google.com/p/foograph/
+         */
+
+        // We need to create an instance of a graph compatible with the library
+        var frg = new foograph.Graph( "FRgraph", false );
+
+        var frgNodes = {};
+
+        // Then we have to add the vertices
+        var dataVertices = pData[ 'vertices' ];
+        for( var ni = 0; ni < dataVertices.length; ++ni ) {
+          var id = dataVertices[ ni ][ 'id' ];
+          var v = new foograph.Vertex( id, Math.round( Math.random() * lHeight ), Math.round( Math.random() * lHeight ) );
+          frgNodes[ id ] = v;
+          frg.insertVertex( v );
+        }
+
+        var dataEdges = pData[ 'edges' ];
+        for( var ei = 0; ei < dataEdges.length; ++ei ) {
+          var srcNodeId = dataEdges[ ei ][ 'src' ];
+          var tgtNodeId = dataEdges[ ei ][ 'tgt' ];
+          frg.insertEdge( "", 1, frgNodes[ srcNodeId ], frgNodes[ tgtNodeId ] );
+        }
+
+        var fv = frg.vertices;
+
+        // Then we apply the layout
+        var iterations = lMaxFruchtermanReingoldIterations;
+        var frLayoutManager = new foograph.ForceDirectedVertexLayout( lWidth, lHeight, iterations, false, lMinDist );
+
+        frLayoutManager.callback = function(){
+          savePositions();
+          messagePositions();
+        };
+
+        frLayoutManager.layout( frg );
+
+        savePositions();
+        messagePositions();
+
+        /*
+         * SECOND STEP: Tiding up of the graph.
+         *
+         * We use the method described by Gansner and North, based on Voronoi
+         * diagrams.
+         *
+         * Ref: doi:10.1007/3-540-37623-2_28
+         */
+
+        // We calculate the Voronoi diagram dor the position of the nodes
+        var voronoi = new Voronoi();
+        var bbox = {
+          xl: 0,
+          xr: lWidth,
+          yt: 0,
+          yb: lHeight
+        };
+        var vSites = [];
+        for( var i = 0; i < fv.length; ++i ) {
+          vSites[ fv[ i ].label ] = fv[ i ];
+        }
+
+        function checkMinDist( ee ) {
+          var infractions = 0;
+          // Then we check if the minimum distance is satisfied
+          for( var eei = 0; eei < ee.length; ++eei ) {
+            var e = ee[ eei ];
+            if( ( e.lSite != null ) && ( e.rSite != null ) && sitesDistance( e.lSite, e.rSite ) < lMinDist ) {
+              ++infractions;
+            }
+          }
+          return infractions;
+        }
+
+        var diagram = voronoi.compute( fv, bbox );
+
+        // Then we reposition the nodes at the centroid of their Voronoi cells
+        var cells = diagram.cells;
+        for( var i = 0; i < cells.length; ++i ) {
+          var cell = cells[ i ];
+          var site = cell.site;
+          var centroid = cellCentroid( cell );
+          var currv = vSites[ site.label ];
+          currv.x = centroid.x;
+          currv.y = centroid.y;
+        }
+
+        if( lExpFact < 0.0 ) {
+          // Calculates the expanding factor
+          lExpFact = Math.max( 0.05, Math.min( 0.10, lMinDist / Math.sqrt( ( lWidth * lHeight ) / fv.length ) * 0.5 ) );
+          //console.info("Expanding factor is " + (options.expandingFactor * 100.0) + "%");
+        }
+
+        var prevInfractions = checkMinDist( diagram.edges );
+        //console.info("Initial infractions " + prevInfractions);
+
+        var bStop = ( prevInfractions <= 0 );
+
+        var voronoiIteration = 0;
+        var expandIteration = 0;
+
+        // var initWidth = lWidth;
+
+        while( !bStop ) {
+          ++voronoiIteration;
+          for( var it = 0; it <= 4; ++it ) {
+            voronoi.recycle( diagram );
+            diagram = voronoi.compute( fv, bbox );
+
+            // Then we reposition the nodes at the centroid of their Voronoi cells
+            cells = diagram.cells;
+            for( var i = 0; i < cells.length; ++i ) {
+              var cell = cells[ i ];
+              var site = cell.site;
+              var centroid = cellCentroid( cell );
+              var currv = vSites[ site.label ];
+              currv.x = centroid.x;
+              currv.y = centroid.y;
+            }
+          }
+
+          var currInfractions = checkMinDist( diagram.edges );
+          //console.info("Current infractions " + currInfractions);
+
+          if( currInfractions <= 0 ) {
+            bStop = true;
+          } else {
+            if( currInfractions >= prevInfractions || voronoiIteration >= 4 ) {
+              if( expandIteration >= lMaxExpIt ) {
+                bStop = true;
+              } else {
+                lWidth += lWidth * lExpFact;
+                lHeight += lHeight * lExpFact;
+                bbox = {
+                  xl: 0,
+                  xr: lWidth,
+                  yt: 0,
+                  yb: lHeight
+                };
+                ++expandIteration;
+                voronoiIteration = 0;
+                //console.info("Expanded to ("+width+","+height+")");
+              }
+            }
+          }
+          prevInfractions = currInfractions;
+
+          savePositions();
+          messagePositions();
+        }
+
+        savePositions();
+        return pData;
+
+      } ).then( function( pData ) {
+        // var expandIteration = pData[ 'expIt' ];
+        var dataVertices = pData[ 'vertices' ];
+
+        setPositions( pData );
+
+        // Get end time
+        var startTime = pData[ 'startTime' ];
+        var endTime = new Date();
+        console.info( "Layout on " + dataVertices.length + " nodes took " + ( endTime - startTime ) + " ms" );
+
+        layout.one( "layoutstop", options.stop );
+
+        if( !options.animate ){
+          layout.trigger( "layoutready" );
+        }
+
+        layout.trigger( "layoutstop" );
+
+        t1.stop();
+      } );
+
+    });
+
+    return this;
+  }; // run
+
+  SpreadLayout.prototype.stop = function() {};
+
+  $$( 'layout', 'spread', SpreadLayout );
+
+
+} )( cytoscape );
+
 ;(function($$){ 'use strict';
   
   var defaults = {
@@ -26595,14 +29719,16 @@ var cytoscape;
   
 })( cytoscape );
 
-},{}],13:[function(require,module,exports){
+}).call(this,require('_process'),"/node_modules/cytoscape/dist")
+
+},{"_process":8,"child_process":4,"os":6,"path":7}],17:[function(require,module,exports){
 (function (global){
 /**
  * @license
- * lodash 3.6.0 (Custom Build) <https://lodash.com/>
+ * lodash 3.9.3 (Custom Build) <https://lodash.com/>
  * Build: `lodash modern -d -o ./index.js`
  * Copyright 2012-2015 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.8.2 <http://underscorejs.org/LICENSE>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <https://lodash.com/license>
  */
@@ -26612,7 +29738,7 @@ var cytoscape;
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '3.6.0';
+  var VERSION = '3.9.3';
 
   /** Used to compose bitmasks for wrapper metadata. */
   var BIND_FLAG = 1,
@@ -26686,30 +29812,10 @@ var cytoscape;
       reEvaluate = /<%([\s\S]+?)%>/g,
       reInterpolate = /<%=([\s\S]+?)%>/g;
 
-  /**
-   * Used to match [combining diacritical marks](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks).
-   */
-  var reComboMarks = /[\u0300-\u036f\ufe20-\ufe23]/g;
-
-  /**
-   * Used to match [ES template delimiters](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-template-literal-lexical-components).
-   */
-  var reEsTemplate = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g;
-
-  /** Used to match `RegExp` flags from their coerced string values. */
-  var reFlags = /\w*$/;
-
-  /** Used to detect hexadecimal string values. */
-  var reHexPrefix = /^0[xX]/;
-
-  /** Used to detect host constructors (Safari > 5). */
-  var reHostCtor = /^\[object .+?Constructor\]$/;
-
-  /** Used to match latin-1 supplementary letters (excluding mathematical operators). */
-  var reLatin1 = /[\xc0-\xd6\xd8-\xde\xdf-\xf6\xf8-\xff]/g;
-
-  /** Used to ensure capturing order of template delimiters. */
-  var reNoMatch = /($^)/;
+  /** Used to match property names within property paths. */
+  var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\n\\]|\\.)*?\1)\]/,
+      reIsPlainProp = /^\w*$/,
+      rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\n\\]|\\.)*?)\2)\]/g;
 
   /**
    * Used to match `RegExp` [special characters](http://www.regular-expressions.info/characters.html#special).
@@ -26718,6 +29824,33 @@ var cytoscape;
    */
   var reRegExpChars = /[.*+?^${}()|[\]\/\\]/g,
       reHasRegExpChars = RegExp(reRegExpChars.source);
+
+  /** Used to match [combining diacritical marks](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks). */
+  var reComboMark = /[\u0300-\u036f\ufe20-\ufe23]/g;
+
+  /** Used to match backslashes in property paths. */
+  var reEscapeChar = /\\(\\)?/g;
+
+  /** Used to match [ES template delimiters](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-template-literal-lexical-components). */
+  var reEsTemplate = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g;
+
+  /** Used to match `RegExp` flags from their coerced string values. */
+  var reFlags = /\w*$/;
+
+  /** Used to detect hexadecimal string values. */
+  var reHasHexPrefix = /^0[xX]/;
+
+  /** Used to detect host constructors (Safari > 5). */
+  var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+  /** Used to detect unsigned integer values. */
+  var reIsUint = /^\d+$/;
+
+  /** Used to match latin-1 supplementary letters (excluding mathematical operators). */
+  var reLatin1 = /[\xc0-\xd6\xd8-\xde\xdf-\xf6\xf8-\xff]/g;
+
+  /** Used to ensure capturing order of template delimiters. */
+  var reNoMatch = /($^)/;
 
   /** Used to match unescaped characters in compiled string literals. */
   var reUnescapedString = /['\n\r\u2028\u2029\\]/g;
@@ -26747,9 +29880,8 @@ var cytoscape;
     'Array', 'ArrayBuffer', 'Date', 'Error', 'Float32Array', 'Float64Array',
     'Function', 'Int8Array', 'Int16Array', 'Int32Array', 'Math', 'Number',
     'Object', 'RegExp', 'Set', 'String', '_', 'clearTimeout', 'document',
-    'isFinite', 'parseInt', 'setTimeout', 'TypeError', 'Uint8Array',
-    'Uint8ClampedArray', 'Uint16Array', 'Uint32Array', 'WeakMap',
-    'window'
+    'isFinite', 'parseFloat', 'parseInt', 'setTimeout', 'TypeError', 'Uint8Array',
+    'Uint8ClampedArray', 'Uint16Array', 'Uint32Array', 'WeakMap', 'window'
   ];
 
   /** Used to make template sourceURLs easier to identify. */
@@ -26856,7 +29988,7 @@ var cytoscape;
   var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
 
   /** Detect free variable `global` from Node.js. */
-  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global;
+  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
 
   /** Detect free variable `self`. */
   var freeSelf = objectTypes[typeof self] && self && self.Object && self;
@@ -26870,7 +30002,7 @@ var cytoscape;
   /**
    * Used as a reference to the global object.
    *
-   * The `this` value is used if it is the global object to avoid Greasemonkey's
+   * The `this` value is used if it's the global object to avoid Greasemonkey's
    * restricted `window` object, otherwise the `window` object is used.
    */
   var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
@@ -26882,19 +30014,28 @@ var cytoscape;
    * sorts them in ascending order without guaranteeing a stable sort.
    *
    * @private
-   * @param {*} value The value to compare to `other`.
-   * @param {*} other The value to compare to `value`.
+   * @param {*} value The value to compare.
+   * @param {*} other The other value to compare.
    * @returns {number} Returns the sort order indicator for `value`.
    */
   function baseCompareAscending(value, other) {
     if (value !== other) {
-      var valIsReflexive = value === value,
+      var valIsNull = value === null,
+          valIsUndef = value === undefined,
+          valIsReflexive = value === value;
+
+      var othIsNull = other === null,
+          othIsUndef = other === undefined,
           othIsReflexive = other === other;
 
-      if (value > other || !valIsReflexive || (typeof value == 'undefined' && othIsReflexive)) {
+      if ((value > other && !othIsNull) || !valIsReflexive ||
+          (valIsNull && !othIsUndef && othIsReflexive) ||
+          (valIsUndef && othIsReflexive)) {
         return 1;
       }
-      if (value < other || !othIsReflexive || (typeof other == 'undefined' && valIsReflexive)) {
+      if ((value < other && !valIsNull) || !othIsReflexive ||
+          (othIsNull && !valIsUndef && valIsReflexive) ||
+          (othIsUndef && valIsReflexive)) {
         return -1;
       }
     }
@@ -26962,7 +30103,7 @@ var cytoscape;
   }
 
   /**
-   * Converts `value` to a string if it is not one. An empty string is returned
+   * Converts `value` to a string if it's not one. An empty string is returned
    * for `null` or `undefined` values.
    *
    * @private
@@ -26974,17 +30115,6 @@ var cytoscape;
       return value;
     }
     return value == null ? '' : (value + '');
-  }
-
-  /**
-   * Used by `_.max` and `_.min` as the default callback for string values.
-   *
-   * @private
-   * @param {string} string The string to inspect.
-   * @returns {number} Returns the code unit of the first character of the string.
-   */
-  function charAtCallback(string) {
-    return string.charCodeAt(0);
   }
 
   /**
@@ -27037,7 +30167,7 @@ var cytoscape;
    * Used by `_.sortByOrder` to compare multiple properties of each element
    * in a collection and stable sort them in the following order:
    *
-   * If orders is unspecified, sort in ascending order for all properties.
+   * If `orders` is unspecified, sort in ascending order for all properties.
    * Otherwise, for each property, sort in ascending order if its corresponding value in
    * orders is true, and descending order if false.
    *
@@ -27309,13 +30439,10 @@ var cytoscape;
         stringProto = String.prototype;
 
     /** Used to detect DOM support. */
-    var document = (document = context.window) && document.document;
+    var document = (document = context.window) ? document.document : null;
 
     /** Used to resolve the decompiled source of functions. */
     var fnToString = Function.prototype.toString;
-
-    /** Used to the length of n-tuples for `_.unzip`. */
-    var getLength = baseProperty('length');
 
     /** Used to check objects for own properties. */
     var hasOwnProperty = objectProto.hasOwnProperty;
@@ -27333,25 +30460,25 @@ var cytoscape;
     var oldDash = context._;
 
     /** Used to detect if a method is native. */
-    var reNative = RegExp('^' +
-      escapeRegExp(objToString)
-      .replace(/toString|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+    var reIsNative = RegExp('^' +
+      escapeRegExp(fnToString.call(hasOwnProperty))
+      .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
     );
 
     /** Native method references. */
-    var ArrayBuffer = isNative(ArrayBuffer = context.ArrayBuffer) && ArrayBuffer,
-        bufferSlice = isNative(bufferSlice = ArrayBuffer && new ArrayBuffer(0).slice) && bufferSlice,
+    var ArrayBuffer = getNative(context, 'ArrayBuffer'),
+        bufferSlice = getNative(ArrayBuffer && new ArrayBuffer(0), 'slice'),
         ceil = Math.ceil,
         clearTimeout = context.clearTimeout,
         floor = Math.floor,
-        getPrototypeOf = isNative(getPrototypeOf = Object.getPrototypeOf) && getPrototypeOf,
+        getPrototypeOf = getNative(Object, 'getPrototypeOf'),
+        parseFloat = context.parseFloat,
         push = arrayProto.push,
-        propertyIsEnumerable = objectProto.propertyIsEnumerable,
-        Set = isNative(Set = context.Set) && Set,
+        Set = getNative(context, 'Set'),
         setTimeout = context.setTimeout,
         splice = arrayProto.splice,
-        Uint8Array = isNative(Uint8Array = context.Uint8Array) && Uint8Array,
-        WeakMap = isNative(WeakMap = context.WeakMap) && WeakMap;
+        Uint8Array = getNative(context, 'Uint8Array'),
+        WeakMap = getNative(context, 'WeakMap');
 
     /** Used to clone array buffers. */
     var Float64Array = (function() {
@@ -27359,21 +30486,21 @@ var cytoscape;
       // where the array buffer's `byteLength` is not a multiple of the typed
       // array's `BYTES_PER_ELEMENT`.
       try {
-        var func = isNative(func = context.Float64Array) && func,
+        var func = getNative(context, 'Float64Array'),
             result = new func(new ArrayBuffer(10), 0, 1) && func;
       } catch(e) {}
-      return result;
+      return result || null;
     }());
 
     /* Native method references for those with the same name as other `lodash` methods. */
-    var nativeIsArray = isNative(nativeIsArray = Array.isArray) && nativeIsArray,
-        nativeCreate = isNative(nativeCreate = Object.create) && nativeCreate,
+    var nativeCreate = getNative(Object, 'create'),
+        nativeIsArray = getNative(Array, 'isArray'),
         nativeIsFinite = context.isFinite,
-        nativeKeys = isNative(nativeKeys = Object.keys) && nativeKeys,
+        nativeKeys = getNative(Object, 'keys'),
         nativeMax = Math.max,
         nativeMin = Math.min,
-        nativeNow = isNative(nativeNow = Date.now) && nativeNow,
-        nativeNumIsFinite = isNative(nativeNumIsFinite = Number.isFinite) && nativeNumIsFinite,
+        nativeNow = getNative(Date, 'now'),
+        nativeNumIsFinite = getNative(Number, 'isFinite'),
         nativeParseInt = context.parseInt,
         nativeRandom = Math.random;
 
@@ -27382,8 +30509,8 @@ var cytoscape;
         POSITIVE_INFINITY = Number.POSITIVE_INFINITY;
 
     /** Used as references for the maximum length and index of an array. */
-    var MAX_ARRAY_LENGTH = Math.pow(2, 32) - 1,
-        MAX_ARRAY_INDEX =  MAX_ARRAY_LENGTH - 1,
+    var MAX_ARRAY_LENGTH = 4294967295,
+        MAX_ARRAY_INDEX = MAX_ARRAY_LENGTH - 1,
         HALF_MAX_ARRAY_LENGTH = MAX_ARRAY_LENGTH >>> 1;
 
     /** Used as the size, in bytes, of each `Float64Array` element. */
@@ -27393,7 +30520,7 @@ var cytoscape;
      * Used as the [maximum length](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.max_safe_integer)
      * of an array-like value.
      */
-    var MAX_SAFE_INTEGER = Math.pow(2, 53) - 1;
+    var MAX_SAFE_INTEGER = 9007199254740991;
 
     /** Used to store function metadata. */
     var metaMap = WeakMap && new WeakMap;
@@ -27442,30 +30569,31 @@ var cytoscape;
      * `filter`, `flatten`, `flattenDeep`, `flow`, `flowRight`, `forEach`,
      * `forEachRight`, `forIn`, `forInRight`, `forOwn`, `forOwnRight`, `functions`,
      * `groupBy`, `indexBy`, `initial`, `intersection`, `invert`, `invoke`, `keys`,
-     * `keysIn`, `map`, `mapValues`, `matches`, `matchesProperty`, `memoize`, `merge`,
-     * `mixin`, `negate`, `noop`, `omit`, `once`, `pairs`, `partial`, `partialRight`,
-     * `partition`, `pick`, `plant`, `pluck`, `property`, `propertyOf`, `pull`,
-     * `pullAt`, `push`, `range`, `rearg`, `reject`, `remove`, `rest`, `reverse`,
-     * `shuffle`, `slice`, `sort`, `sortBy`, `sortByAll`, `sortByOrder`, `splice`,
-     * `spread`, `take`, `takeRight`, `takeRightWhile`, `takeWhile`, `tap`,
-     * `throttle`, `thru`, `times`, `toArray`, `toPlainObject`, `transform`,
-     * `union`, `uniq`, `unshift`, `unzip`, `values`, `valuesIn`, `where`,
-     * `without`, `wrap`, `xor`, `zip`, and `zipObject`
+     * `keysIn`, `map`, `mapKeys`, `mapValues`, `matches`, `matchesProperty`,
+     * `memoize`, `merge`, `method`, `methodOf`, `mixin`, `negate`, `omit`, `once`,
+     * `pairs`, `partial`, `partialRight`, `partition`, `pick`, `plant`, `pluck`,
+     * `property`, `propertyOf`, `pull`, `pullAt`, `push`, `range`, `rearg`,
+     * `reject`, `remove`, `rest`, `restParam`, `reverse`, `set`, `shuffle`,
+     * `slice`, `sort`, `sortBy`, `sortByAll`, `sortByOrder`, `splice`, `spread`,
+     * `take`, `takeRight`, `takeRightWhile`, `takeWhile`, `tap`, `throttle`,
+     * `thru`, `times`, `toArray`, `toPlainObject`, `transform`, `union`, `uniq`,
+     * `unshift`, `unzip`, `unzipWith`, `values`, `valuesIn`, `where`, `without`,
+     * `wrap`, `xor`, `zip`, `zipObject`, `zipWith`
      *
      * The wrapper methods that are **not** chainable by default are:
      * `add`, `attempt`, `camelCase`, `capitalize`, `clone`, `cloneDeep`, `deburr`,
      * `endsWith`, `escape`, `escapeRegExp`, `every`, `find`, `findIndex`, `findKey`,
-     * `findLast`, `findLastIndex`, `findLastKey`, `findWhere`, `first`, `has`,
-     * `identity`, `includes`, `indexOf`, `inRange`, `isArguments`, `isArray`,
-     * `isBoolean`, `isDate`, `isElement`, `isEmpty`, `isEqual`, `isError`,
-     * `isFinite`,`isFunction`, `isMatch`, `isNative`, `isNaN`, `isNull`, `isNumber`,
+     * `findLast`, `findLastIndex`, `findLastKey`, `findWhere`, `first`, `get`,
+     * `gt`, `gte`, `has`, `identity`, `includes`, `indexOf`, `inRange`, `isArguments`,
+     * `isArray`, `isBoolean`, `isDate`, `isElement`, `isEmpty`, `isEqual`, `isError`,
+     * `isFinite` `isFunction`, `isMatch`, `isNative`, `isNaN`, `isNull`, `isNumber`,
      * `isObject`, `isPlainObject`, `isRegExp`, `isString`, `isUndefined`,
-     * `isTypedArray`, `join`, `kebabCase`, `last`, `lastIndexOf`, `max`, `min`,
-     * `noConflict`, `now`, `pad`, `padLeft`, `padRight`, `parseInt`, `pop`,
-     * `random`, `reduce`, `reduceRight`, `repeat`, `result`, `runInContext`,
-     * `shift`, `size`, `snakeCase`, `some`, `sortedIndex`, `sortedLastIndex`,
-     * `startCase`, `startsWith`, `sum`, `template`, `trim`, `trimLeft`,
-     * `trimRight`, `trunc`, `unescape`, `uniqueId`, `value`, and `words`
+     * `isTypedArray`, `join`, `kebabCase`, `last`, `lastIndexOf`, `lt`, `lte`,
+     * `max`, `min`, `noConflict`, `noop`, `now`, `pad`, `padLeft`, `padRight`,
+     * `parseInt`, `pop`, `random`, `reduce`, `reduceRight`, `repeat`, `result`,
+     * `runInContext`, `shift`, `size`, `snakeCase`, `some`, `sortedIndex`,
+     * `sortedLastIndex`, `startCase`, `startsWith`, `sum`, `template`, `trim`,
+     * `trimLeft`, `trimRight`, `trunc`, `unescape`, `uniqueId`, `value`, and `words`
      *
      * The wrapper method `sample` will return a wrapped value when `n` is provided,
      * otherwise an unwrapped value is returned.
@@ -27480,8 +30608,8 @@ var cytoscape;
      * var wrapped = _([1, 2, 3]);
      *
      * // returns an unwrapped value
-     * wrapped.reduce(function(sum, n) {
-     *   return sum + n;
+     * wrapped.reduce(function(total, n) {
+     *   return total + n;
      * });
      * // => 6
      *
@@ -27541,24 +30669,12 @@ var cytoscape;
     var support = lodash.support = {};
 
     (function(x) {
+      var Ctor = function() { this.x = x; },
+          object = { '0': x, 'length': x },
+          props = [];
 
-      /**
-       * Detect if functions can be decompiled by `Function#toString`
-       * (all but Firefox OS certified apps, older Opera mobile browsers, and
-       * the PlayStation 3; forced `false` for Windows 8 apps).
-       *
-       * @memberOf _.support
-       * @type boolean
-       */
-      support.funcDecomp = /\bthis\b/.test(function() { return this; });
-
-      /**
-       * Detect if `Function#name` is supported (all but IE).
-       *
-       * @memberOf _.support
-       * @type boolean
-       */
-      support.funcNames = typeof Function.name == 'string';
+      Ctor.prototype = { 'valueOf': x, 'y': x };
+      for (var key in new Ctor) { props.push(key); }
 
       /**
        * Detect if the DOM is supported.
@@ -27571,25 +30687,7 @@ var cytoscape;
       } catch(e) {
         support.dom = false;
       }
-
-      /**
-       * Detect if `arguments` object indexes are non-enumerable.
-       *
-       * In Firefox < 4, IE < 9, PhantomJS, and Safari < 5.1 `arguments` object
-       * indexes are non-enumerable. Chrome < 25 and Node.js < 0.11.0 treat
-       * `arguments` object indexes as non-enumerable and fail `hasOwnProperty`
-       * checks for indexes that exceed their function's formal parameters with
-       * associated values of `0`.
-       *
-       * @memberOf _.support
-       * @type boolean
-       */
-      try {
-        support.nonEnumArgs = !propertyIsEnumerable.call(arguments, 1);
-      } catch(e) {
-        support.nonEnumArgs = true;
-      }
-    }(0, 0));
+    }(1, 0));
 
     /**
      * By default, the template delimiters used by lodash are like those in
@@ -27836,7 +30934,7 @@ var cytoscape;
     }
 
     /**
-     * Adds `value` to `key` of the cache.
+     * Sets `value` to `key` of the cache.
      *
      * @private
      * @name set
@@ -27988,6 +31086,35 @@ var cytoscape;
     }
 
     /**
+     * A specialized version of `baseExtremum` for arrays which invokes `iteratee`
+     * with one argument: (value).
+     *
+     * @private
+     * @param {Array} array The array to iterate over.
+     * @param {Function} iteratee The function invoked per iteration.
+     * @param {Function} comparator The function used to compare values.
+     * @param {*} exValue The initial extremum value.
+     * @returns {*} Returns the extremum value.
+     */
+    function arrayExtremum(array, iteratee, comparator, exValue) {
+      var index = -1,
+          length = array.length,
+          computed = exValue,
+          result = computed;
+
+      while (++index < length) {
+        var value = array[index],
+            current = +iteratee(value);
+
+        if (comparator(current, computed)) {
+          computed = current;
+          result = value;
+        }
+      }
+      return result;
+    }
+
+    /**
      * A specialized version of `_.filter` for arrays without support for callback
      * shorthands and `this` binding.
      *
@@ -28027,48 +31154,6 @@ var cytoscape;
 
       while (++index < length) {
         result[index] = iteratee(array[index], index, array);
-      }
-      return result;
-    }
-
-    /**
-     * A specialized version of `_.max` for arrays without support for iteratees.
-     *
-     * @private
-     * @param {Array} array The array to iterate over.
-     * @returns {*} Returns the maximum value.
-     */
-    function arrayMax(array) {
-      var index = -1,
-          length = array.length,
-          result = NEGATIVE_INFINITY;
-
-      while (++index < length) {
-        var value = array[index];
-        if (value > result) {
-          result = value;
-        }
-      }
-      return result;
-    }
-
-    /**
-     * A specialized version of `_.min` for arrays without support for iteratees.
-     *
-     * @private
-     * @param {Array} array The array to iterate over.
-     * @returns {*} Returns the minimum value.
-     */
-    function arrayMin(array) {
-      var index = -1,
-          length = array.length,
-          result = POSITIVE_INFINITY;
-
-      while (++index < length) {
-        var value = array[index];
-        if (value < result) {
-          result = value;
-        }
       }
       return result;
     }
@@ -28169,13 +31254,13 @@ var cytoscape;
      * @returns {*} Returns the value to assign to the destination object.
      */
     function assignDefaults(objectValue, sourceValue) {
-      return typeof objectValue == 'undefined' ? sourceValue : objectValue;
+      return objectValue === undefined ? sourceValue : objectValue;
     }
 
     /**
      * Used by `_.template` to customize its `_.assign` use.
      *
-     * **Note:** This method is like `assignDefaults` except that it ignores
+     * **Note:** This function is like `assignDefaults` except that it ignores
      * inherited property values when checking if a property is `undefined`.
      *
      * @private
@@ -28186,27 +31271,25 @@ var cytoscape;
      * @returns {*} Returns the value to assign to the destination object.
      */
     function assignOwnDefaults(objectValue, sourceValue, key, object) {
-      return (typeof objectValue == 'undefined' || !hasOwnProperty.call(object, key))
+      return (objectValue === undefined || !hasOwnProperty.call(object, key))
         ? sourceValue
         : objectValue;
     }
 
     /**
-     * The base implementation of `_.assign` without support for argument juggling,
-     * multiple sources, and `this` binding `customizer` functions.
+     * A specialized version of `_.assign` for customizing assigned values without
+     * support for argument juggling, multiple sources, and `this` binding `customizer`
+     * functions.
      *
      * @private
      * @param {Object} object The destination object.
      * @param {Object} source The source object.
-     * @param {Function} [customizer] The function to customize assigning values.
-     * @returns {Object} Returns the destination object.
+     * @param {Function} customizer The function to customize assigned values.
+     * @returns {Object} Returns `object`.
      */
-    function baseAssign(object, source, customizer) {
-      var props = keys(source);
-      if (!customizer) {
-        return baseCopy(source, object, props);
-      }
+    function assignWith(object, source, customizer) {
       var index = -1,
+          props = keys(source),
           length = props.length;
 
       while (++index < length) {
@@ -28215,7 +31298,7 @@ var cytoscape;
             result = customizer(value, source[key], key, object, source);
 
         if ((result === result ? (result !== value) : (value === value)) ||
-            (typeof value == 'undefined' && !(key in object))) {
+            (value === undefined && !(key in object))) {
           object[key] = result;
         }
       }
@@ -28223,47 +31306,60 @@ var cytoscape;
     }
 
     /**
-     * The base implementation of `_.at` without support for strings and individual
-     * key arguments.
+     * The base implementation of `_.assign` without support for argument juggling,
+     * multiple sources, and `customizer` functions.
+     *
+     * @private
+     * @param {Object} object The destination object.
+     * @param {Object} source The source object.
+     * @returns {Object} Returns `object`.
+     */
+    function baseAssign(object, source) {
+      return source == null
+        ? object
+        : baseCopy(source, keys(source), object);
+    }
+
+    /**
+     * The base implementation of `_.at` without support for string collections
+     * and individual key arguments.
      *
      * @private
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {number[]|string[]} [props] The property names or indexes of elements to pick.
+     * @param {number[]|string[]} props The property names or indexes of elements to pick.
      * @returns {Array} Returns the new array of picked elements.
      */
     function baseAt(collection, props) {
       var index = -1,
-          length = collection.length,
-          isArr = isLength(length),
+          isNil = collection == null,
+          isArr = !isNil && isArrayLike(collection),
+          length = isArr ? collection.length : 0,
           propsLength = props.length,
           result = Array(propsLength);
 
       while(++index < propsLength) {
         var key = props[index];
         if (isArr) {
-          key = parseFloat(key);
           result[index] = isIndex(key, length) ? collection[key] : undefined;
         } else {
-          result[index] = collection[key];
+          result[index] = isNil ? undefined : collection[key];
         }
       }
       return result;
     }
 
     /**
-     * Copies the properties of `source` to `object`.
+     * Copies properties of `source` to `object`.
      *
      * @private
      * @param {Object} source The object to copy properties from.
-     * @param {Object} [object={}] The object to copy properties to.
      * @param {Array} props The property names to copy.
+     * @param {Object} [object={}] The object to copy properties to.
      * @returns {Object} Returns `object`.
      */
-    function baseCopy(source, object, props) {
-      if (!props) {
-        props = object;
-        object = {};
-      }
+    function baseCopy(source, props, object) {
+      object || (object = {});
+
       var index = -1,
           length = props.length;
 
@@ -28287,7 +31383,7 @@ var cytoscape;
     function baseCallback(func, thisArg, argCount) {
       var type = typeof func;
       if (type == 'function') {
-        return typeof thisArg == 'undefined'
+        return thisArg === undefined
           ? func
           : bindCallback(func, thisArg, argCount);
       }
@@ -28297,9 +31393,9 @@ var cytoscape;
       if (type == 'object') {
         return baseMatches(func);
       }
-      return typeof thisArg == 'undefined'
-        ? baseProperty(func + '')
-        : baseMatchesProperty(func + '', thisArg);
+      return thisArg === undefined
+        ? property(func)
+        : baseMatchesProperty(func, thisArg);
     }
 
     /**
@@ -28321,7 +31417,7 @@ var cytoscape;
       if (customizer) {
         result = object ? customizer(value, key, object) : customizer(value);
       }
-      if (typeof result != 'undefined') {
+      if (result !== undefined) {
         return result;
       }
       if (!isObject(value)) {
@@ -28340,7 +31436,7 @@ var cytoscape;
         if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
           result = initCloneObject(isFunc ? {} : value);
           if (!isDeep) {
-            return baseCopy(value, result, keys(value));
+            return baseAssign(result, value);
           }
         } else {
           return cloneableTags[tag]
@@ -28378,14 +31474,14 @@ var cytoscape;
      * @returns {Object} Returns the new object.
      */
     var baseCreate = (function() {
-      function Object() {}
+      function object() {}
       return function(prototype) {
         if (isObject(prototype)) {
-          Object.prototype = prototype;
-          var result = new Object;
-          Object.prototype = null;
+          object.prototype = prototype;
+          var result = new object;
+          object.prototype = null;
         }
-        return result || context.Object();
+        return result || {};
       };
     }());
 
@@ -28495,6 +31591,32 @@ var cytoscape;
     }
 
     /**
+     * Gets the extremum value of `collection` invoking `iteratee` for each value
+     * in `collection` to generate the criterion by which the value is ranked.
+     * The `iteratee` is invoked with three arguments: (value, index|key, collection).
+     *
+     * @private
+     * @param {Array|Object|string} collection The collection to iterate over.
+     * @param {Function} iteratee The function invoked per iteration.
+     * @param {Function} comparator The function used to compare values.
+     * @param {*} exValue The initial extremum value.
+     * @returns {*} Returns the extremum value.
+     */
+    function baseExtremum(collection, iteratee, comparator, exValue) {
+      var computed = exValue,
+          result = computed;
+
+      baseEach(collection, function(value, index, collection) {
+        var current = +iteratee(value, index, collection);
+        if (comparator(current, computed) || (current === exValue && current === result)) {
+          computed = current;
+          result = value;
+        }
+      });
+      return result;
+    }
+
+    /**
      * The base implementation of `_.fill` without an iteratee call guard.
      *
      * @private
@@ -28511,7 +31633,7 @@ var cytoscape;
       if (start < 0) {
         start = -start > length ? 0 : (length + start);
       }
-      end = (typeof end == 'undefined' || end > length) ? length : (+end || 0);
+      end = (end === undefined || end > length) ? length : (+end || 0);
       if (end < 0) {
         end += length;
       }
@@ -28573,8 +31695,8 @@ var cytoscape;
      *
      * @private
      * @param {Array} array The array to flatten.
-     * @param {boolean} isDeep Specify a deep flatten.
-     * @param {boolean} isStrict Restrict flattening to arrays and `arguments` objects.
+     * @param {boolean} [isDeep] Specify a deep flatten.
+     * @param {boolean} [isStrict] Restrict flattening to arrays-like objects.
      * @returns {Array} Returns the new flattened array.
      */
     function baseFlatten(array, isDeep, isStrict) {
@@ -28585,8 +31707,8 @@ var cytoscape;
 
       while (++index < length) {
         var value = array[index];
-
-        if (isObjectLike(value) && isLength(value.length) && (isArray(value) || isArguments(value))) {
+        if (isObjectLike(value) && isArrayLike(value) &&
+            (isStrict || isArray(value) || isArguments(value))) {
           if (isDeep) {
             // Recursively flatten arrays (susceptible to call stack limits).
             value = baseFlatten(value, isDeep, isStrict);
@@ -28594,7 +31716,6 @@ var cytoscape;
           var valIndex = -1,
               valLength = value.length;
 
-          result.length += valLength;
           while (++valIndex < valLength) {
             result[++resIndex] = value[valIndex];
           }
@@ -28608,7 +31729,7 @@ var cytoscape;
     /**
      * The base implementation of `baseForIn` and `baseForOwn` which iterates
      * over `object` properties returned by `keysFunc` invoking `iteratee` for
-     * each property. Iterator functions may exit iteration early by explicitly
+     * each property. Iteratee functions may exit iteration early by explicitly
      * returning `false`.
      *
      * @private
@@ -28695,6 +31816,32 @@ var cytoscape;
     }
 
     /**
+     * The base implementation of `get` without support for string paths
+     * and default values.
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @param {Array} path The path of the property to get.
+     * @param {string} [pathKey] The key representation of path.
+     * @returns {*} Returns the resolved value.
+     */
+    function baseGet(object, path, pathKey) {
+      if (object == null) {
+        return;
+      }
+      if (pathKey !== undefined && pathKey in toObject(object)) {
+        path = [pathKey];
+      }
+      var index = 0,
+          length = path.length;
+
+      while (object != null && index < length) {
+        object = object[path[index++]];
+      }
+      return (index && index == length) ? object : undefined;
+    }
+
+    /**
      * The base implementation of `_.isEqual` without support for `this` binding
      * `customizer` functions.
      *
@@ -28708,18 +31855,10 @@ var cytoscape;
      * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
      */
     function baseIsEqual(value, other, customizer, isLoose, stackA, stackB) {
-      // Exit early for identical values.
       if (value === other) {
-        // Treat `+0` vs. `-0` as not equal.
-        return value !== 0 || (1 / value == 1 / other);
+        return true;
       }
-      var valType = typeof value,
-          othType = typeof other;
-
-      // Exit early for unlike primitive values.
-      if ((valType != 'function' && valType != 'object' && othType != 'function' && othType != 'object') ||
-          value == null || other == null) {
-        // Return `false` unless both values are `NaN`.
+      if (value == null || other == null || (!isObject(value) && !isObjectLike(other))) {
         return value !== value && other !== other;
       }
       return baseIsEqualDeep(value, other, baseIsEqual, customizer, isLoose, stackA, stackB);
@@ -28762,27 +31901,23 @@ var cytoscape;
           othIsArr = isTypedArray(other);
         }
       }
-      var objIsObj = (objTag == objectTag || (isLoose && objTag == funcTag)),
-          othIsObj = (othTag == objectTag || (isLoose && othTag == funcTag)),
+      var objIsObj = objTag == objectTag,
+          othIsObj = othTag == objectTag,
           isSameTag = objTag == othTag;
 
       if (isSameTag && !(objIsArr || objIsObj)) {
         return equalByTag(object, other, objTag);
       }
-      if (isLoose) {
-        if (!isSameTag && !(objIsObj && othIsObj)) {
-          return false;
-        }
-      } else {
-        var valWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'),
-            othWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
+      if (!isLoose) {
+        var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'),
+            othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
 
-        if (valWrapped || othWrapped) {
-          return equalFunc(valWrapped ? object.value() : object, othWrapped ? other.value() : other, customizer, isLoose, stackA, stackB);
+        if (objIsWrapped || othIsWrapped) {
+          return equalFunc(objIsWrapped ? object.value() : object, othIsWrapped ? other.value() : other, customizer, isLoose, stackA, stackB);
         }
-        if (!isSameTag) {
-          return false;
-        }
+      }
+      if (!isSameTag) {
+        return false;
       }
       // Assume cyclic values are equal.
       // For more information on detecting circular references see https://es5.github.io/#JO.
@@ -28813,41 +31948,43 @@ var cytoscape;
      *
      * @private
      * @param {Object} object The object to inspect.
-     * @param {Array} props The source property names to match.
-     * @param {Array} values The source values to match.
-     * @param {Array} strictCompareFlags Strict comparison flags for source values.
+     * @param {Array} matchData The propery names, values, and compare flags to match.
      * @param {Function} [customizer] The function to customize comparing objects.
      * @returns {boolean} Returns `true` if `object` is a match, else `false`.
      */
-    function baseIsMatch(object, props, values, strictCompareFlags, customizer) {
-      var index = -1,
-          length = props.length,
+    function baseIsMatch(object, matchData, customizer) {
+      var index = matchData.length,
+          length = index,
           noCustomizer = !customizer;
 
-      while (++index < length) {
-        if ((noCustomizer && strictCompareFlags[index])
-              ? values[index] !== object[props[index]]
-              : !(props[index] in object)
+      if (object == null) {
+        return !length;
+      }
+      object = toObject(object);
+      while (index--) {
+        var data = matchData[index];
+        if ((noCustomizer && data[2])
+              ? data[1] !== object[data[0]]
+              : !(data[0] in object)
             ) {
           return false;
         }
       }
-      index = -1;
       while (++index < length) {
-        var key = props[index],
+        data = matchData[index];
+        var key = data[0],
             objValue = object[key],
-            srcValue = values[index];
+            srcValue = data[1];
 
-        if (noCustomizer && strictCompareFlags[index]) {
-          var result = typeof objValue != 'undefined' || (key in object);
-        } else {
-          result = customizer ? customizer(objValue, srcValue, key) : undefined;
-          if (typeof result == 'undefined') {
-            result = baseIsEqual(srcValue, objValue, customizer, true);
+        if (noCustomizer && data[2]) {
+          if (objValue === undefined && !(key in object)) {
+            return false;
           }
-        }
-        if (!result) {
-          return false;
+        } else {
+          var result = customizer ? customizer(objValue, srcValue, key) : undefined;
+          if (!(result === undefined ? baseIsEqual(srcValue, objValue, customizer, true) : result)) {
+            return false;
+          }
         }
       }
       return true;
@@ -28863,9 +32000,11 @@ var cytoscape;
      * @returns {Array} Returns the new mapped array.
      */
     function baseMap(collection, iteratee) {
-      var result = [];
+      var index = -1,
+          result = isArrayLike(collection) ? Array(collection.length) : [];
+
       baseEach(collection, function(value, key, collection) {
-        result.push(iteratee(value, key, collection));
+        result[++index] = iteratee(value, key, collection);
       });
       return result;
     }
@@ -28878,54 +32017,54 @@ var cytoscape;
      * @returns {Function} Returns the new function.
      */
     function baseMatches(source) {
-      var props = keys(source),
-          length = props.length;
+      var matchData = getMatchData(source);
+      if (matchData.length == 1 && matchData[0][2]) {
+        var key = matchData[0][0],
+            value = matchData[0][1];
 
-      if (!length) {
-        return constant(true);
-      }
-      if (length == 1) {
-        var key = props[0],
-            value = source[key];
-
-        if (isStrictComparable(value)) {
-          return function(object) {
-            return object != null && object[key] === value &&
-              (typeof value != 'undefined' || (key in toObject(object)));
-          };
-        }
-      }
-      var values = Array(length),
-          strictCompareFlags = Array(length);
-
-      while (length--) {
-        value = source[props[length]];
-        values[length] = value;
-        strictCompareFlags[length] = isStrictComparable(value);
+        return function(object) {
+          if (object == null) {
+            return false;
+          }
+          return object[key] === value && (value !== undefined || (key in toObject(object)));
+        };
       }
       return function(object) {
-        return object != null && baseIsMatch(toObject(object), props, values, strictCompareFlags);
+        return baseIsMatch(object, matchData);
       };
     }
 
     /**
-     * The base implementation of `_.matchesProperty` which does not coerce `key`
-     * to a string.
+     * The base implementation of `_.matchesProperty` which does not clone `srcValue`.
      *
      * @private
-     * @param {string} key The key of the property to get.
-     * @param {*} value The value to compare.
+     * @param {string} path The path of the property to get.
+     * @param {*} srcValue The value to compare.
      * @returns {Function} Returns the new function.
      */
-    function baseMatchesProperty(key, value) {
-      if (isStrictComparable(value)) {
-        return function(object) {
-          return object != null && object[key] === value &&
-            (typeof value != 'undefined' || (key in toObject(object)));
-        };
-      }
+    function baseMatchesProperty(path, srcValue) {
+      var isArr = isArray(path),
+          isCommon = isKey(path) && isStrictComparable(srcValue),
+          pathKey = (path + '');
+
+      path = toPath(path);
       return function(object) {
-        return object != null && baseIsEqual(value, object[key], null, true);
+        if (object == null) {
+          return false;
+        }
+        var key = pathKey;
+        object = toObject(object);
+        if ((isArr || !isCommon) && !(key in object)) {
+          object = path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+          if (object == null) {
+            return false;
+          }
+          key = last(path);
+          object = toObject(object);
+        }
+        return object[key] === srcValue
+          ? (srcValue !== undefined || (key in object))
+          : baseIsEqual(srcValue, object[key], undefined, true);
       };
     }
 
@@ -28939,29 +32078,37 @@ var cytoscape;
      * @param {Function} [customizer] The function to customize merging properties.
      * @param {Array} [stackA=[]] Tracks traversed source objects.
      * @param {Array} [stackB=[]] Associates values with source counterparts.
-     * @returns {Object} Returns the destination object.
+     * @returns {Object} Returns `object`.
      */
     function baseMerge(object, source, customizer, stackA, stackB) {
       if (!isObject(object)) {
         return object;
       }
-      var isSrcArr = isLength(source.length) && (isArray(source) || isTypedArray(source));
-      (isSrcArr ? arrayEach : baseForOwn)(source, function(srcValue, key, source) {
+      var isSrcArr = isArrayLike(source) && (isArray(source) || isTypedArray(source)),
+          props = isSrcArr ? null : keys(source);
+
+      arrayEach(props || source, function(srcValue, key) {
+        if (props) {
+          key = srcValue;
+          srcValue = source[key];
+        }
         if (isObjectLike(srcValue)) {
           stackA || (stackA = []);
           stackB || (stackB = []);
-          return baseMergeDeep(object, source, key, baseMerge, customizer, stackA, stackB);
+          baseMergeDeep(object, source, key, baseMerge, customizer, stackA, stackB);
         }
-        var value = object[key],
-            result = customizer ? customizer(value, srcValue, key, object, source) : undefined,
-            isCommon = typeof result == 'undefined';
+        else {
+          var value = object[key],
+              result = customizer ? customizer(value, srcValue, key, object, source) : undefined,
+              isCommon = result === undefined;
 
-        if (isCommon) {
-          result = srcValue;
-        }
-        if ((isSrcArr || typeof result != 'undefined') &&
-            (isCommon || (result === result ? (result !== value) : (value === value)))) {
-          object[key] = result;
+          if (isCommon) {
+            result = srcValue;
+          }
+          if ((result !== undefined || (isSrcArr && !(key in object))) &&
+              (isCommon || (result === result ? (result !== value) : (value === value)))) {
+            object[key] = result;
+          }
         }
       });
       return object;
@@ -28994,14 +32141,14 @@ var cytoscape;
       }
       var value = object[key],
           result = customizer ? customizer(value, srcValue, key, object, source) : undefined,
-          isCommon = typeof result == 'undefined';
+          isCommon = result === undefined;
 
       if (isCommon) {
         result = srcValue;
-        if (isLength(srcValue.length) && (isArray(srcValue) || isTypedArray(srcValue))) {
+        if (isArrayLike(srcValue) && (isArray(srcValue) || isTypedArray(srcValue))) {
           result = isArray(value)
             ? value
-            : ((value && value.length) ? arrayCopy(value) : []);
+            : (isArrayLike(value) ? arrayCopy(value) : []);
         }
         else if (isPlainObject(srcValue) || isArguments(srcValue)) {
           result = isArguments(value)
@@ -29026,7 +32173,7 @@ var cytoscape;
     }
 
     /**
-     * The base implementation of `_.property` which does not coerce `key` to a string.
+     * The base implementation of `_.property` without support for deep paths.
      *
      * @private
      * @param {string} key The key of the property to get.
@@ -29036,6 +32183,42 @@ var cytoscape;
       return function(object) {
         return object == null ? undefined : object[key];
       };
+    }
+
+    /**
+     * A specialized version of `baseProperty` which supports deep paths.
+     *
+     * @private
+     * @param {Array|string} path The path of the property to get.
+     * @returns {Function} Returns the new function.
+     */
+    function basePropertyDeep(path) {
+      var pathKey = (path + '');
+      path = toPath(path);
+      return function(object) {
+        return baseGet(object, path, pathKey);
+      };
+    }
+
+    /**
+     * The base implementation of `_.pullAt` without support for individual
+     * index arguments and capturing the removed elements.
+     *
+     * @private
+     * @param {Array} array The array to modify.
+     * @param {number[]} indexes The indexes of elements to remove.
+     * @returns {Array} Returns `array`.
+     */
+    function basePullAt(array, indexes) {
+      var length = array ? indexes.length : 0;
+      while (length--) {
+        var index = indexes[length];
+        if (index != previous && isIndex(index)) {
+          var previous = index;
+          splice.call(array, index, 1);
+        }
+      }
+      return array;
     }
 
     /**
@@ -29104,7 +32287,7 @@ var cytoscape;
       if (start < 0) {
         start = -start > length ? 0 : (length + start);
       }
-      end = (typeof end == 'undefined' || end > length) ? length : (+end || 0);
+      end = (end === undefined || end > length) ? length : (+end || 0);
       if (end < 0) {
         end += length;
       }
@@ -29163,23 +32346,19 @@ var cytoscape;
      *
      * @private
      * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {string[]} props The property names to sort by.
-     * @param {boolean[]} orders The sort orders of `props`.
+     * @param {Function[]|Object[]|string[]} iteratees The iteratees to sort by.
+     * @param {boolean[]} orders The sort orders of `iteratees`.
      * @returns {Array} Returns the new sorted array.
      */
-    function baseSortByOrder(collection, props, orders) {
-      var index = -1,
-          length = collection.length,
-          result = isLength(length) ? Array(length) : [];
+    function baseSortByOrder(collection, iteratees, orders) {
+      var callback = getCallback(),
+          index = -1;
 
-      baseEach(collection, function(value) {
-        var length = props.length,
-            criteria = Array(length);
+      iteratees = arrayMap(iteratees, function(iteratee) { return callback(iteratee); });
 
-        while (length--) {
-          criteria[length] = value == null ? undefined : value[props[length]];
-        }
-        result[++index] = { 'criteria': criteria, 'index': index, 'value': value };
+      var result = baseMap(collection, function(value) {
+        var criteria = arrayMap(iteratees, function(iteratee) { return iteratee(value); });
+        return { 'criteria': criteria, 'index': ++index, 'value': value };
       });
 
       return baseSortBy(result, function(object, other) {
@@ -29259,7 +32438,7 @@ var cytoscape;
     /**
      * The base implementation of `_.values` and `_.valuesIn` which creates an
      * array of `object` property values corresponding to the property names
-     * returned by `keysFunc`.
+     * of `props`.
      *
      * @private
      * @param {Object} object The object to query.
@@ -29346,7 +32525,7 @@ var cytoscape;
           var mid = (low + high) >>> 1,
               computed = array[mid];
 
-          if (retHighest ? (computed <= value) : (computed < value)) {
+          if ((retHighest ? (computed <= value) : (computed < value)) && computed !== null) {
             low = mid + 1;
           } else {
             high = mid;
@@ -29376,17 +32555,23 @@ var cytoscape;
       var low = 0,
           high = array ? array.length : 0,
           valIsNaN = value !== value,
-          valIsUndef = typeof value == 'undefined';
+          valIsNull = value === null,
+          valIsUndef = value === undefined;
 
       while (low < high) {
         var mid = floor((low + high) / 2),
             computed = iteratee(array[mid]),
+            isDef = computed !== undefined,
             isReflexive = computed === computed;
 
         if (valIsNaN) {
           var setLow = isReflexive || retHighest;
+        } else if (valIsNull) {
+          setLow = isReflexive && isDef && (retHighest || computed != null);
         } else if (valIsUndef) {
-          setLow = isReflexive && (retHighest || typeof computed != 'undefined');
+          setLow = isReflexive && (retHighest || isDef);
+        } else if (computed == null) {
+          setLow = false;
         } else {
           setLow = retHighest ? (computed <= value) : (computed < value);
         }
@@ -29413,7 +32598,7 @@ var cytoscape;
       if (typeof func != 'function') {
         return identity;
       }
-      if (typeof thisArg == 'undefined') {
+      if (thisArg === undefined) {
         return func;
       }
       switch (argCount) {
@@ -29517,12 +32702,12 @@ var cytoscape;
       while (++argsIndex < argsLength) {
         result[argsIndex] = args[argsIndex];
       }
-      var pad = argsIndex;
+      var offset = argsIndex;
       while (++rightIndex < rightLength) {
-        result[pad + rightIndex] = partials[rightIndex];
+        result[offset + rightIndex] = partials[rightIndex];
       }
       while (++holdersIndex < holdersLength) {
-        result[pad + holders[holdersIndex]] = args[argsIndex++];
+        result[offset + holders[holdersIndex]] = args[argsIndex++];
       }
       return result;
     }
@@ -29573,38 +32758,32 @@ var cytoscape;
      * @returns {Function} Returns the new assigner function.
      */
     function createAssigner(assigner) {
-      return function() {
-        var args = arguments,
-            length = args.length,
-            object = args[0];
+      return restParam(function(object, sources) {
+        var index = -1,
+            length = object == null ? 0 : sources.length,
+            customizer = length > 2 ? sources[length - 2] : undefined,
+            guard = length > 2 ? sources[2] : undefined,
+            thisArg = length > 1 ? sources[length - 1] : undefined;
 
-        if (length < 2 || object == null) {
-          return object;
-        }
-        var customizer = args[length - 2],
-            thisArg = args[length - 1],
-            guard = args[3];
-
-        if (length > 3 && typeof customizer == 'function') {
+        if (typeof customizer == 'function') {
           customizer = bindCallback(customizer, thisArg, 5);
           length -= 2;
         } else {
-          customizer = (length > 2 && typeof thisArg == 'function') ? thisArg : null;
+          customizer = typeof thisArg == 'function' ? thisArg : undefined;
           length -= (customizer ? 1 : 0);
         }
-        if (guard && isIterateeCall(args[1], args[2], guard)) {
-          customizer = length == 3 ? null : customizer;
-          length = 2;
+        if (guard && isIterateeCall(sources[0], sources[1], guard)) {
+          customizer = length < 3 ? undefined : customizer;
+          length = 1;
         }
-        var index = 0;
         while (++index < length) {
-          var source = args[index];
+          var source = sources[index];
           if (source) {
             assigner(object, source, customizer);
           }
         }
         return object;
-      };
+      });
     }
 
     /**
@@ -29617,7 +32796,7 @@ var cytoscape;
      */
     function createBaseEach(eachFunc, fromRight) {
       return function(collection, iteratee) {
-        var length = collection ? collection.length : 0;
+        var length = collection ? getLength(collection) : 0;
         if (!isLength(length)) {
           return eachFunc(collection, iteratee);
         }
@@ -29719,8 +32898,20 @@ var cytoscape;
      */
     function createCtorWrapper(Ctor) {
       return function() {
+        // Use a `switch` statement to work with class constructors.
+        // See https://people.mozilla.org/~jorendorff/es6-draft.html#sec-ecmascript-function-objects-call-thisargument-argumentslist
+        // for more details.
+        var args = arguments;
+        switch (args.length) {
+          case 0: return new Ctor;
+          case 1: return new Ctor(args[0]);
+          case 2: return new Ctor(args[0], args[1]);
+          case 3: return new Ctor(args[0], args[1], args[2]);
+          case 4: return new Ctor(args[0], args[1], args[2], args[3]);
+          case 5: return new Ctor(args[0], args[1], args[2], args[3], args[4]);
+        }
         var thisBinding = baseCreate(Ctor.prototype),
-            result = Ctor.apply(thisBinding, arguments);
+            result = Ctor.apply(thisBinding, args);
 
         // Mimic the constructor's `return` behavior.
         // See https://es5.github.io/#x13.2.2 for more details.
@@ -29751,32 +32942,24 @@ var cytoscape;
      * Creates a `_.max` or `_.min` function.
      *
      * @private
-     * @param {Function} arrayFunc The function to get the extremum value from an array.
-     * @param {boolean} [isMin] Specify returning the minimum, instead of the maximum,
-     *  extremum value.
+     * @param {Function} comparator The function used to compare values.
+     * @param {*} exValue The initial extremum value.
      * @returns {Function} Returns the new extremum function.
      */
-    function createExtremum(arrayFunc, isMin) {
+    function createExtremum(comparator, exValue) {
       return function(collection, iteratee, thisArg) {
         if (thisArg && isIterateeCall(collection, iteratee, thisArg)) {
           iteratee = null;
         }
-        var func = getCallback(),
-            noIteratee = iteratee == null;
-
-        if (!(func === baseCallback && noIteratee)) {
-          noIteratee = false;
-          iteratee = func(iteratee, thisArg, 3);
-        }
-        if (noIteratee) {
-          var isArr = isArray(collection);
-          if (!isArr && isString(collection)) {
-            iteratee = charAtCallback;
-          } else {
-            return arrayFunc(isArr ? collection : toIterable(collection));
+        iteratee = getCallback(iteratee, thisArg, 3);
+        if (iteratee.length == 1) {
+          collection = toIterable(collection);
+          var result = arrayExtremum(collection, iteratee, comparator, exValue);
+          if (!(collection.length && result === exValue)) {
+            return result;
           }
         }
-        return extremumBy(collection, iteratee, isMin);
+        return baseExtremum(collection, iteratee, comparator, exValue);
       };
     }
 
@@ -29796,7 +32979,7 @@ var cytoscape;
           return index > -1 ? collection[index] : undefined;
         }
         return baseFind(collection, predicate, eachFunc);
-      }
+      };
     }
 
     /**
@@ -29839,11 +33022,8 @@ var cytoscape;
      */
     function createFlow(fromRight) {
       return function() {
-        var length = arguments.length;
-        if (!length) {
-          return function() { return arguments[0]; };
-        }
         var wrapper,
+            length = arguments.length,
             index = fromRight ? length : -1,
             leftIndex = 0,
             funcs = Array(length);
@@ -29853,16 +33033,18 @@ var cytoscape;
           if (typeof func != 'function') {
             throw new TypeError(FUNC_ERROR_TEXT);
           }
-          var funcName = wrapper ? '' : getFuncName(func);
-          wrapper = funcName == 'wrapper' ? new LodashWrapper([]) : wrapper;
+          if (!wrapper && LodashWrapper.prototype.thru && getFuncName(func) == 'wrapper') {
+            wrapper = new LodashWrapper([]);
+          }
         }
         index = wrapper ? -1 : length;
         while (++index < length) {
           func = funcs[index];
-          funcName = getFuncName(func);
 
-          var data = funcName == 'wrapper' ? getData(func) : null;
-          if (data && isLaziable(data[0])) {
+          var funcName = getFuncName(func),
+              data = funcName == 'wrapper' ? getData(func) : null;
+
+          if (data && isLaziable(data[0]) && data[1] == (ARY_FLAG | CURRY_FLAG | PARTIAL_FLAG | REARG_FLAG) && !data[4].length && data[9] == 1) {
             wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);
           } else {
             wrapper = (func.length == 1 && isLaziable(func)) ? wrapper[funcName]() : wrapper.thru(func);
@@ -29874,7 +33056,7 @@ var cytoscape;
             return wrapper.plant(args[0]).value();
           }
           var index = 0,
-              result = funcs[index].apply(this, args);
+              result = length ? funcs[index].apply(this, args) : args[0];
 
           while (++index < length) {
             result = funcs[index].call(this, result);
@@ -29894,7 +33076,7 @@ var cytoscape;
      */
     function createForEach(arrayFunc, eachFunc) {
       return function(collection, iteratee, thisArg) {
-        return (typeof iteratee == 'function' && typeof thisArg == 'undefined' && isArray(collection))
+        return (typeof iteratee == 'function' && thisArg === undefined && isArray(collection))
           ? arrayFunc(collection, iteratee)
           : eachFunc(collection, bindCallback(iteratee, thisArg, 3));
       };
@@ -29909,7 +33091,7 @@ var cytoscape;
      */
     function createForIn(objectFunc) {
       return function(object, iteratee, thisArg) {
-        if (typeof iteratee != 'function' || typeof thisArg != 'undefined') {
+        if (typeof iteratee != 'function' || thisArg !== undefined) {
           iteratee = bindCallback(iteratee, thisArg, 3);
         }
         return objectFunc(object, iteratee, keysIn);
@@ -29925,10 +33107,32 @@ var cytoscape;
      */
     function createForOwn(objectFunc) {
       return function(object, iteratee, thisArg) {
-        if (typeof iteratee != 'function' || typeof thisArg != 'undefined') {
+        if (typeof iteratee != 'function' || thisArg !== undefined) {
           iteratee = bindCallback(iteratee, thisArg, 3);
         }
         return objectFunc(object, iteratee);
+      };
+    }
+
+    /**
+     * Creates a function for `_.mapKeys` or `_.mapValues`.
+     *
+     * @private
+     * @param {boolean} [isMapKeys] Specify mapping keys instead of values.
+     * @returns {Function} Returns the new map function.
+     */
+    function createObjectMapper(isMapKeys) {
+      return function(object, iteratee, thisArg) {
+        var result = {};
+        iteratee = getCallback(iteratee, thisArg, 3);
+
+        baseForOwn(object, function(value, key, object) {
+          var mapped = iteratee(value, key, object);
+          key = isMapKeys ? mapped : key;
+          value = isMapKeys ? value : mapped;
+          result[key] = value;
+        });
+        return result;
       };
     }
 
@@ -29942,7 +33146,7 @@ var cytoscape;
     function createPadDir(fromRight) {
       return function(string, length, chars) {
         string = baseToString(string);
-        return string && ((fromRight ? string : '') + createPadding(string, length, chars) + (fromRight ? '' : string));
+        return (fromRight ? string : '') + createPadding(string, length, chars) + (fromRight ? '' : string);
       };
     }
 
@@ -29972,7 +33176,7 @@ var cytoscape;
     function createReduce(arrayFunc, eachFunc) {
       return function(collection, iteratee, accumulator, thisArg) {
         var initFromArray = arguments.length < 3;
-        return (typeof iteratee == 'function' && typeof thisArg == 'undefined' && isArray(collection))
+        return (typeof iteratee == 'function' && thisArg === undefined && isArray(collection))
           ? arrayFunc(collection, iteratee, accumulator, initFromArray)
           : baseReduce(collection, getCallback(iteratee, thisArg, 4), accumulator, initFromArray, eachFunc);
       };
@@ -30001,10 +33205,8 @@ var cytoscape;
           isBindKey = bitmask & BIND_KEY_FLAG,
           isCurry = bitmask & CURRY_FLAG,
           isCurryBound = bitmask & CURRY_BOUND_FLAG,
-          isCurryRight = bitmask & CURRY_RIGHT_FLAG;
-
-      var Ctor = !isBindKey && createCtorWrapper(func),
-          key = func;
+          isCurryRight = bitmask & CURRY_RIGHT_FLAG,
+          Ctor = isBindKey ? null : createCtorWrapper(func);
 
       function wrapper() {
         // Avoid `arguments` object use disqualifying optimizations by
@@ -30051,17 +33253,18 @@ var cytoscape;
             return result;
           }
         }
-        var thisBinding = isBind ? thisArg : this;
-        if (isBindKey) {
-          func = thisBinding[key];
-        }
+        var thisBinding = isBind ? thisArg : this,
+            fn = isBindKey ? thisBinding[func] : func;
+
         if (argPos) {
           args = reorder(args, argPos);
         }
         if (isAry && ary < args.length) {
           args.length = ary;
         }
-        var fn = (this && this !== root && this instanceof wrapper) ? (Ctor || createCtorWrapper(func)) : func;
+        if (this && this !== root && this instanceof wrapper) {
+          fn = Ctor || createCtorWrapper(func);
+        }
         return fn.apply(thisBinding, args);
       }
       return wrapper;
@@ -30135,10 +33338,10 @@ var cytoscape;
      */
     function createSortedIndex(retHighest) {
       return function(array, value, iteratee, thisArg) {
-        var func = getCallback(iteratee);
-        return (func === baseCallback && iteratee == null)
+        var callback = getCallback(iteratee);
+        return (iteratee == null && callback === baseCallback)
           ? binaryIndex(array, value, retHighest)
-          : binaryIndexBy(array, value, func(iteratee, thisArg, 1), retHighest);
+          : binaryIndexBy(array, value, callback(iteratee, thisArg, 1), retHighest);
       };
     }
 
@@ -30224,40 +33427,35 @@ var cytoscape;
     function equalArrays(array, other, equalFunc, customizer, isLoose, stackA, stackB) {
       var index = -1,
           arrLength = array.length,
-          othLength = other.length,
-          result = true;
+          othLength = other.length;
 
       if (arrLength != othLength && !(isLoose && othLength > arrLength)) {
         return false;
       }
-      // Deep compare the contents, ignoring non-numeric properties.
-      while (result && ++index < arrLength) {
+      // Ignore non-index properties.
+      while (++index < arrLength) {
         var arrValue = array[index],
-            othValue = other[index];
+            othValue = other[index],
+            result = customizer ? customizer(isLoose ? othValue : arrValue, isLoose ? arrValue : othValue, index) : undefined;
 
-        result = undefined;
-        if (customizer) {
-          result = isLoose
-            ? customizer(othValue, arrValue, index)
-            : customizer(arrValue, othValue, index);
-        }
-        if (typeof result == 'undefined') {
-          // Recursively compare arrays (susceptible to call stack limits).
-          if (isLoose) {
-            var othIndex = othLength;
-            while (othIndex--) {
-              othValue = other[othIndex];
-              result = (arrValue && arrValue === othValue) || equalFunc(arrValue, othValue, customizer, isLoose, stackA, stackB);
-              if (result) {
-                break;
-              }
-            }
-          } else {
-            result = (arrValue && arrValue === othValue) || equalFunc(arrValue, othValue, customizer, isLoose, stackA, stackB);
+        if (result !== undefined) {
+          if (result) {
+            continue;
           }
+          return false;
+        }
+        // Recursively compare arrays (susceptible to call stack limits).
+        if (isLoose) {
+          if (!arraySome(other, function(othValue) {
+                return arrValue === othValue || equalFunc(arrValue, othValue, customizer, isLoose, stackA, stackB);
+              })) {
+            return false;
+          }
+        } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, customizer, isLoose, stackA, stackB))) {
+          return false;
         }
       }
-      return !!result;
+      return true;
     }
 
     /**
@@ -30288,8 +33486,7 @@ var cytoscape;
           // Treat `NaN` vs. `NaN` as equal.
           return (object != +object)
             ? other != +other
-            // But, treat `-0` vs. `+0` as not equal.
-            : (object == 0 ? ((1 / object) == (1 / other)) : object == +other);
+            : object == +other;
 
         case regexpTag:
         case stringTag:
@@ -30323,29 +33520,22 @@ var cytoscape;
       if (objLength != othLength && !isLoose) {
         return false;
       }
-      var skipCtor = isLoose,
-          index = -1;
-
-      while (++index < objLength) {
-        var key = objProps[index],
-            result = isLoose ? key in other : hasOwnProperty.call(other, key);
-
-        if (result) {
-          var objValue = object[key],
-              othValue = other[key];
-
-          result = undefined;
-          if (customizer) {
-            result = isLoose
-              ? customizer(othValue, objValue, key)
-              : customizer(objValue, othValue, key);
-          }
-          if (typeof result == 'undefined') {
-            // Recursively compare objects (susceptible to call stack limits).
-            result = (objValue && objValue === othValue) || equalFunc(objValue, othValue, customizer, isLoose, stackA, stackB);
-          }
+      var index = objLength;
+      while (index--) {
+        var key = objProps[index];
+        if (!(isLoose ? key in other : hasOwnProperty.call(other, key))) {
+          return false;
         }
-        if (!result) {
+      }
+      var skipCtor = isLoose;
+      while (++index < objLength) {
+        key = objProps[index];
+        var objValue = object[key],
+            othValue = other[key],
+            result = customizer ? customizer(isLoose ? othValue : objValue, isLoose? objValue : othValue, key) : undefined;
+
+        // Recursively compare objects (susceptible to call stack limits).
+        if (!(result === undefined ? equalFunc(objValue, othValue, customizer, isLoose, stackA, stackB) : result)) {
           return false;
         }
         skipCtor || (skipCtor = key == 'constructor');
@@ -30363,34 +33553,6 @@ var cytoscape;
         }
       }
       return true;
-    }
-
-    /**
-     * Gets the extremum value of `collection` invoking `iteratee` for each value
-     * in `collection` to generate the criterion by which the value is ranked.
-     * The `iteratee` is invoked with three arguments: (value, index, collection).
-     *
-     * @private
-     * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {Function} iteratee The function invoked per iteration.
-     * @param {boolean} [isMin] Specify returning the minimum, instead of the
-     *  maximum, extremum value.
-     * @returns {*} Returns the extremum value.
-     */
-    function extremumBy(collection, iteratee, isMin) {
-      var exValue = isMin ? POSITIVE_INFINITY : NEGATIVE_INFINITY,
-          computed = exValue,
-          result = computed;
-
-      baseEach(collection, function(value, index, collection) {
-        var current = iteratee(value, index, collection);
-        if ((isMin ? (current < computed) : (current > computed)) ||
-            (current === exValue && current === result)) {
-          computed = current;
-          result = value;
-        }
-      });
-      return result;
     }
 
     /**
@@ -30426,29 +33588,20 @@ var cytoscape;
      * @param {Function} func The function to query.
      * @returns {string} Returns the function name.
      */
-    var getFuncName = (function() {
-      if (!support.funcNames) {
-        return constant('');
-      }
-      if (constant.name == 'constant') {
-        return baseProperty('name');
-      }
-      return function(func) {
-        var result = func.name,
-            array = realNames[result],
-            length = array ? array.length : 0;
+    function getFuncName(func) {
+      var result = func.name,
+          array = realNames[result],
+          length = array ? array.length : 0;
 
-        while (length--) {
-          var data = array[length],
-              otherFunc = data.func;
-
-          if (otherFunc == null || otherFunc == func) {
-            return data.name;
-          }
+      while (length--) {
+        var data = array[length],
+            otherFunc = data.func;
+        if (otherFunc == null || otherFunc == func) {
+          return data.name;
         }
-        return result;
-      };
-    }());
+      }
+      return result;
+    }
 
     /**
      * Gets the appropriate "indexOf" function. If the `_.indexOf` method is
@@ -30463,6 +33616,48 @@ var cytoscape;
       var result = lodash.indexOf || indexOf;
       result = result === indexOf ? baseIndexOf : result;
       return collection ? result(collection, target, fromIndex) : result;
+    }
+
+    /**
+     * Gets the "length" property value of `object`.
+     *
+     * **Note:** This function is used to avoid a [JIT bug](https://bugs.webkit.org/show_bug.cgi?id=142792)
+     * that affects Safari on at least iOS 8.1-8.3 ARM64.
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @returns {*} Returns the "length" value.
+     */
+    var getLength = baseProperty('length');
+
+    /**
+     * Gets the propery names, values, and compare flags of `object`.
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @returns {Array} Returns the match data of `object`.
+     */
+    function getMatchData(object) {
+      var result = pairs(object),
+          length = result.length;
+
+      while (length--) {
+        result[length][2] = isStrictComparable(result[length][1]);
+      }
+      return result;
+    }
+
+    /**
+     * Gets the native function at `key` of `object`.
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @param {string} key The key of the method to get.
+     * @returns {*} Returns the function if it's native, else `undefined`.
+     */
+    function getNative(object, key) {
+      var value = object == null ? undefined : object[key];
+      return isNative(value) ? value : undefined;
     }
 
     /**
@@ -30533,7 +33728,6 @@ var cytoscape;
      * **Note:** This function only supports cloning values with tags of
      * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
      *
-     *
      * @private
      * @param {Object} object The object to clone.
      * @param {string} tag The `toStringTag` of the object to clone.
@@ -30568,6 +33762,36 @@ var cytoscape;
     }
 
     /**
+     * Invokes the method at `path` on `object`.
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @param {Array|string} path The path of the method to invoke.
+     * @param {Array} args The arguments to invoke the method with.
+     * @returns {*} Returns the result of the invoked method.
+     */
+    function invokePath(object, path, args) {
+      if (object != null && !isKey(path, object)) {
+        path = toPath(path);
+        object = path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+        path = last(path);
+      }
+      var func = object == null ? object : object[path];
+      return func == null ? undefined : func.apply(object, args);
+    }
+
+    /**
+     * Checks if `value` is array-like.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+     */
+    function isArrayLike(value) {
+      return value != null && isLength(getLength(value));
+    }
+
+    /**
      * Checks if `value` is a valid array-like index.
      *
      * @private
@@ -30576,7 +33800,7 @@ var cytoscape;
      * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
      */
     function isIndex(value, length) {
-      value = +value;
+      value = (typeof value == 'number' || reIsUint.test(value)) ? +value : -1;
       length = length == null ? MAX_SAFE_INTEGER : length;
       return value > -1 && value % 1 == 0 && value < length;
     }
@@ -30595,17 +33819,33 @@ var cytoscape;
         return false;
       }
       var type = typeof index;
-      if (type == 'number') {
-        var length = object.length,
-            prereq = isLength(length) && isIndex(index, length);
-      } else {
-        prereq = type == 'string' && index in object;
-      }
-      if (prereq) {
+      if (type == 'number'
+          ? (isArrayLike(object) && isIndex(index, object.length))
+          : (type == 'string' && index in object)) {
         var other = object[index];
         return value === value ? (value === other) : (other !== other);
       }
       return false;
+    }
+
+    /**
+     * Checks if `value` is a property name and not a property path.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @param {Object} [object] The object to query keys on.
+     * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
+     */
+    function isKey(value, object) {
+      var type = typeof value;
+      if ((type == 'string' && reIsPlainProp.test(value)) || type == 'number') {
+        return true;
+      }
+      if (isArray(value)) {
+        return false;
+      }
+      var result = !reIsDeepProp.test(value);
+      return result || (object != null && value in toObject(object));
     }
 
     /**
@@ -30617,7 +33857,15 @@ var cytoscape;
      */
     function isLaziable(func) {
       var funcName = getFuncName(func);
-      return !!funcName && func === lodash[funcName] && funcName in LazyWrapper.prototype;
+      if (!(funcName in LazyWrapper.prototype)) {
+        return false;
+      }
+      var other = lodash[funcName];
+      if (func === other) {
+        return true;
+      }
+      var data = getData(other);
+      return !!data && func === data[0];
     }
 
     /**
@@ -30642,7 +33890,7 @@ var cytoscape;
      *  equality comparisons, else `false`.
      */
     function isStrictComparable(value) {
-      return value === value && (value === 0 ? ((1 / value) > 0) : !isObject(value));
+      return value === value && !isObject(value);
     }
 
     /**
@@ -30716,8 +33964,8 @@ var cytoscape;
     }
 
     /**
-     * A specialized version of `_.pick` that picks `object` properties specified
-     * by the `props` array.
+     * A specialized version of `_.pick` which picks `object` properties specified
+     * by `props`.
      *
      * @private
      * @param {Object} object The source object.
@@ -30741,7 +33989,7 @@ var cytoscape;
     }
 
     /**
-     * A specialized version of `_.pick` that picks `object` properties `predicate`
+     * A specialized version of `_.pick` which picks `object` properties `predicate`
      * returns truthy for.
      *
      * @private
@@ -30843,7 +34091,7 @@ var cytoscape;
       baseForIn(value, function(subValue, key) {
         result = key;
       });
-      return typeof result == 'undefined' || hasOwnProperty.call(value, result);
+      return result === undefined || hasOwnProperty.call(value, result);
     }
 
     /**
@@ -30851,17 +34099,16 @@ var cytoscape;
      * own enumerable property names of `object`.
      *
      * @private
-     * @param {Object} object The object to inspect.
+     * @param {Object} object The object to query.
      * @returns {Array} Returns the array of property names.
      */
     function shimKeys(object) {
       var props = keysIn(object),
           propsLength = props.length,
-          length = propsLength && object.length,
-          support = lodash.support;
+          length = propsLength && object.length;
 
-      var allowIndexes = length && isLength(length) &&
-        (isArray(object) || (support.nonEnumArgs && isArguments(object)));
+      var allowIndexes = !!length && isLength(length) &&
+        (isArray(object) || isArguments(object));
 
       var index = -1,
           result = [];
@@ -30876,7 +34123,7 @@ var cytoscape;
     }
 
     /**
-     * Converts `value` to an array-like object if it is not one.
+     * Converts `value` to an array-like object if it's not one.
      *
      * @private
      * @param {*} value The value to process.
@@ -30886,14 +34133,14 @@ var cytoscape;
       if (value == null) {
         return [];
       }
-      if (!isLength(value.length)) {
+      if (!isArrayLike(value)) {
         return values(value);
       }
       return isObject(value) ? value : Object(value);
     }
 
     /**
-     * Converts `value` to an object if it is not one.
+     * Converts `value` to an object if it's not one.
      *
      * @private
      * @param {*} value The value to process.
@@ -30901,6 +34148,24 @@ var cytoscape;
      */
     function toObject(value) {
       return isObject(value) ? value : Object(value);
+    }
+
+    /**
+     * Converts `value` to property path array if it's not one.
+     *
+     * @private
+     * @param {*} value The value to process.
+     * @returns {Array} Returns the property path array.
+     */
+    function toPath(value) {
+      if (isArray(value)) {
+        return value;
+      }
+      var result = [];
+      baseToString(value).replace(rePropName, function(match, number, quote, string) {
+        result.push(quote ? string.replace(reEscapeChar, '$1') : (number || match));
+      });
+      return result;
     }
 
     /**
@@ -30985,12 +34250,9 @@ var cytoscape;
     }
 
     /**
-     * Creates an array excluding all values of the provided arrays using
-     * `SameValueZero` for equality comparisons.
-     *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
+     * Creates an array of unique `array` values not included in the other
+     * provided arrays using [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons.
      *
      * @static
      * @memberOf _
@@ -31004,7 +34266,7 @@ var cytoscape;
      * // => [1, 3]
      */
     var difference = restParam(function(array, values) {
-      return (isArray(array) || isArguments(array))
+      return isArrayLike(array)
         ? baseDifference(array, baseFlatten(values, false, true))
         : [];
     });
@@ -31399,13 +34661,10 @@ var cytoscape;
 
     /**
      * Gets the index at which the first occurrence of `value` is found in `array`
-     * using `SameValueZero` for equality comparisons. If `fromIndex` is negative,
-     * it is used as the offset from the end of `array`. If `array` is sorted
-     * providing `true` for `fromIndex` performs a faster binary search.
-     *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
+     * using [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons. If `fromIndex` is negative, it is used as the offset
+     * from the end of `array`. If `array` is sorted providing `true` for `fromIndex`
+     * performs a faster binary search.
      *
      * @static
      * @memberOf _
@@ -31465,12 +34724,9 @@ var cytoscape;
     }
 
     /**
-     * Creates an array of unique values in all provided arrays using `SameValueZero`
+     * Creates an array of unique values that are included in all of the provided
+     * arrays using [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
      * for equality comparisons.
-     *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
      *
      * @static
      * @memberOf _
@@ -31481,36 +34737,31 @@ var cytoscape;
      * _.intersection([1, 2], [4, 2], [2, 1]);
      * // => [2]
      */
-    function intersection() {
-      var args = [],
-          argsIndex = -1,
-          argsLength = arguments.length,
-          caches = [],
+    var intersection = restParam(function(arrays) {
+      var othLength = arrays.length,
+          othIndex = othLength,
+          caches = Array(length),
           indexOf = getIndexOf(),
-          isCommon = indexOf == baseIndexOf;
+          isCommon = indexOf == baseIndexOf,
+          result = [];
 
-      while (++argsIndex < argsLength) {
-        var value = arguments[argsIndex];
-        if (isArray(value) || isArguments(value)) {
-          args.push(value);
-          caches.push((isCommon && value.length >= 120) ? createCache(argsIndex && value) : null);
-        }
+      while (othIndex--) {
+        var value = arrays[othIndex] = isArrayLike(value = arrays[othIndex]) ? value : [];
+        caches[othIndex] = (isCommon && value.length >= 120) ? createCache(othIndex && value) : null;
       }
-      argsLength = args.length;
-      var array = args[0],
+      var array = arrays[0],
           index = -1,
           length = array ? array.length : 0,
-          result = [],
           seen = caches[0];
 
       outer:
       while (++index < length) {
         value = array[index];
         if ((seen ? cacheIndexOf(seen, value) : indexOf(result, value, 0)) < 0) {
-          argsIndex = argsLength;
-          while (--argsIndex) {
-            var cache = caches[argsIndex];
-            if ((cache ? cacheIndexOf(cache, value) : indexOf(args[argsIndex], value, 0)) < 0) {
+          var othIndex = othLength;
+          while (--othIndex) {
+            var cache = caches[othIndex];
+            if ((cache ? cacheIndexOf(cache, value) : indexOf(arrays[othIndex], value, 0)) < 0) {
               continue outer;
             }
           }
@@ -31521,7 +34772,7 @@ var cytoscape;
         }
       }
       return result;
-    }
+    });
 
     /**
      * Gets the last element of `array`.
@@ -31594,14 +34845,11 @@ var cytoscape;
     }
 
     /**
-     * Removes all provided values from `array` using `SameValueZero` for equality
-     * comparisons.
+     * Removes all provided values from `array` using
+     * [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons.
      *
-     * **Notes:**
-     *  - Unlike `_.without`, this method mutates `array`
-     *  - [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     *    comparisons are like strict equality comparisons, e.g. `===`, except
-     *    that `NaN` matches `NaN`
+     * **Note:** Unlike `_.without`, this method mutates `array`.
      *
      * @static
      * @memberOf _
@@ -31665,20 +34913,10 @@ var cytoscape;
      * // => [10, 20]
      */
     var pullAt = restParam(function(array, indexes) {
-      array || (array = []);
       indexes = baseFlatten(indexes);
 
-      var length = indexes.length,
-          result = baseAt(array, indexes);
-
-      indexes.sort(baseCompareAscending);
-      while (length--) {
-        var index = parseFloat(indexes[length]);
-        if (index != previous && isIndex(index)) {
-          var previous = index;
-          splice.call(array, index, 1);
-        }
-      }
+      var result = baseAt(array, indexes);
+      basePullAt(array, indexes.sort(baseCompareAscending));
       return result;
     });
 
@@ -31722,19 +34960,23 @@ var cytoscape;
      * // => [2, 4]
      */
     function remove(array, predicate, thisArg) {
+      var result = [];
+      if (!(array && array.length)) {
+        return result;
+      }
       var index = -1,
-          length = array ? array.length : 0,
-          result = [];
+          indexes = [],
+          length = array.length;
 
       predicate = getCallback(predicate, thisArg, 3);
       while (++index < length) {
         var value = array[index];
         if (predicate(value, index, array)) {
           result.push(value);
-          splice.call(array, index--, 1);
-          length--;
+          indexes.push(index);
         }
       }
+      basePullAt(array, indexes);
       return result;
     }
 
@@ -31759,7 +35001,7 @@ var cytoscape;
     /**
      * Creates a slice of `array` from `start` up to, but not including, `end`.
      *
-     * **Note:** This function is used instead of `Array#slice` to support node
+     * **Note:** This method is used instead of `Array#slice` to support node
      * lists in IE < 9 and to ensure dense arrays are returned.
      *
      * @static
@@ -32036,12 +35278,9 @@ var cytoscape;
     }
 
     /**
-     * Creates an array of unique values, in order, of the provided arrays using
-     * `SameValueZero` for equality comparisons.
-     *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
+     * Creates an array of unique values, in order, from all of the provided arrays
+     * using [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons.
      *
      * @static
      * @memberOf _
@@ -32058,12 +35297,14 @@ var cytoscape;
     });
 
     /**
-     * Creates a duplicate-value-free version of an array using `SameValueZero`
-     * for equality comparisons. Providing `true` for `isSorted` performs a faster
-     * search algorithm for sorted arrays. If an iteratee function is provided it
-     * is invoked for each value in the array to generate the criterion by which
-     * uniqueness is computed. The `iteratee` is bound to `thisArg` and invoked
-     * with three arguments: (value, index, array).
+     * Creates a duplicate-free version of an array, using
+     * [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons, in which only the first occurence of each element
+     * is kept. Providing `true` for `isSorted` performs a faster search algorithm
+     * for sorted arrays. If an iteratee function is provided it is invoked for
+     * each element in the array to generate the criterion by which uniqueness
+     * is computed. The `iteratee` is bound to `thisArg` and invoked with three
+     * arguments: (value, index, array).
      *
      * If a property name is provided for `iteratee` the created `_.property`
      * style callback returns the property value of the given element.
@@ -32076,10 +35317,6 @@ var cytoscape;
      * callback returns `true` for elements that have the properties of the given
      * object, else `false`.
      *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
-     *
      * @static
      * @memberOf _
      * @alias unique
@@ -32091,8 +35328,8 @@ var cytoscape;
      * @returns {Array} Returns the new duplicate-value-free array.
      * @example
      *
-     * _.uniq([1, 2, 1]);
-     * // => [1, 2]
+     * _.uniq([2, 1, 2]);
+     * // => [2, 1]
      *
      * // using `isSorted`
      * _.uniq([1, 1, 2], true);
@@ -32118,9 +35355,9 @@ var cytoscape;
         iteratee = isIterateeCall(array, isSorted, thisArg) ? null : isSorted;
         isSorted = false;
       }
-      var func = getCallback();
-      if (!(func === baseCallback && iteratee == null)) {
-        iteratee = func(iteratee, thisArg, 3);
+      var callback = getCallback();
+      if (!(iteratee == null && callback === baseCallback)) {
+        iteratee = callback(iteratee, thisArg, 3);
       }
       return (isSorted && getIndexOf() == baseIndexOf)
         ? sortedUniq(array, iteratee)
@@ -32129,7 +35366,7 @@ var cytoscape;
 
     /**
      * This method is like `_.zip` except that it accepts an array of grouped
-     * elements and creates an array regrouping the elements to their pre-`_.zip`
+     * elements and creates an array regrouping the elements to their pre-zip
      * configuration.
      *
      * @static
@@ -32146,10 +35383,19 @@ var cytoscape;
      * // => [['fred', 'barney'], [30, 40], [true, false]]
      */
     function unzip(array) {
+      if (!(array && array.length)) {
+        return [];
+      }
       var index = -1,
-          length = (array && array.length && arrayMax(arrayMap(array, getLength))) >>> 0,
-          result = Array(length);
+          length = 0;
 
+      array = arrayFilter(array, function(group) {
+        if (isArrayLike(group)) {
+          length = nativeMax(group.length, length);
+          return true;
+        }
+      });
+      var result = Array(length);
       while (++index < length) {
         result[index] = arrayMap(array, baseProperty(index));
       }
@@ -32157,12 +35403,44 @@ var cytoscape;
     }
 
     /**
-     * Creates an array excluding all provided values using `SameValueZero` for
-     * equality comparisons.
+     * This method is like `_.unzip` except that it accepts an iteratee to specify
+     * how regrouped values should be combined. The `iteratee` is bound to `thisArg`
+     * and invoked with four arguments: (accumulator, value, index, group).
      *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
+     * @static
+     * @memberOf _
+     * @category Array
+     * @param {Array} array The array of grouped elements to process.
+     * @param {Function} [iteratee] The function to combine regrouped values.
+     * @param {*} [thisArg] The `this` binding of `iteratee`.
+     * @returns {Array} Returns the new array of regrouped elements.
+     * @example
+     *
+     * var zipped = _.zip([1, 2], [10, 20], [100, 200]);
+     * // => [[1, 10, 100], [2, 20, 200]]
+     *
+     * _.unzipWith(zipped, _.add);
+     * // => [3, 30, 300]
+     */
+    function unzipWith(array, iteratee, thisArg) {
+      var length = array ? array.length : 0;
+      if (!length) {
+        return [];
+      }
+      var result = unzip(array);
+      if (iteratee == null) {
+        return result;
+      }
+      iteratee = bindCallback(iteratee, thisArg, 4);
+      return arrayMap(result, function(group) {
+        return arrayReduce(group, iteratee, undefined, true);
+      });
+    }
+
+    /**
+     * Creates an array excluding all provided values using
+     * [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons.
      *
      * @static
      * @memberOf _
@@ -32176,13 +35454,13 @@ var cytoscape;
      * // => [3]
      */
     var without = restParam(function(array, values) {
-      return (isArray(array) || isArguments(array))
+      return isArrayLike(array)
         ? baseDifference(array, values)
         : [];
     });
 
     /**
-     * Creates an array that is the [symmetric difference](https://en.wikipedia.org/wiki/Symmetric_difference)
+     * Creates an array of unique values that is the [symmetric difference](https://en.wikipedia.org/wiki/Symmetric_difference)
      * of the provided arrays.
      *
      * @static
@@ -32201,7 +35479,7 @@ var cytoscape;
 
       while (++index < length) {
         var array = arguments[index];
-        if (isArray(array) || isArguments(array)) {
+        if (isArrayLike(array)) {
           var result = result
             ? baseDifference(result, array).concat(baseDifference(array, result))
             : array;
@@ -32266,6 +35544,38 @@ var cytoscape;
       }
       return result;
     }
+
+    /**
+     * This method is like `_.zip` except that it accepts an iteratee to specify
+     * how grouped values should be combined. The `iteratee` is bound to `thisArg`
+     * and invoked with four arguments: (accumulator, value, index, group).
+     *
+     * @static
+     * @memberOf _
+     * @category Array
+     * @param {...Array} [arrays] The arrays to process.
+     * @param {Function} [iteratee] The function to combine grouped values.
+     * @param {*} [thisArg] The `this` binding of `iteratee`.
+     * @returns {Array} Returns the new array of grouped elements.
+     * @example
+     *
+     * _.zipWith([1, 2], [10, 20], [100, 200], _.add);
+     * // => [111, 222]
+     */
+    var zipWith = restParam(function(arrays) {
+      var length = arrays.length,
+          iteratee = length > 2 ? arrays[length - 2] : undefined,
+          thisArg = length > 1 ? arrays[length - 1] : undefined;
+
+      if (length > 2 && typeof iteratee == 'function') {
+        length -= 2;
+      } else {
+        iteratee = (length > 1 && typeof thisArg == 'function') ? (--length, thisArg) : undefined;
+        thisArg = undefined;
+      }
+      arrays.length = length;
+      return unzipWith(arrays, iteratee, thisArg);
+    });
 
     /*------------------------------------------------------------------------*/
 
@@ -32542,10 +35852,6 @@ var cytoscape;
      * // => ['barney', 'pebbles']
      */
     var at = restParam(function(collection, props) {
-      var length = collection ? collection.length : 0;
-      if (isLength(length)) {
-        collection = toIterable(collection);
-      }
       return baseAt(collection, baseFlatten(props));
     });
 
@@ -32647,7 +35953,7 @@ var cytoscape;
       if (thisArg && isIterateeCall(collection, predicate, thisArg)) {
         predicate = null;
       }
-      if (typeof predicate != 'function' || typeof thisArg != 'undefined') {
+      if (typeof predicate != 'function' || thisArg !== undefined) {
         predicate = getCallback(predicate, thisArg, 3);
       }
       return func(collection, predicate);
@@ -32817,10 +36123,10 @@ var cytoscape;
     /**
      * Iterates over elements of `collection` invoking `iteratee` for each element.
      * The `iteratee` is bound to `thisArg` and invoked with three arguments:
-     * (value, index|key, collection). Iterator functions may exit iteration early
+     * (value, index|key, collection). Iteratee functions may exit iteration early
      * by explicitly returning `false`.
      *
-     * **Note:** As with other "Collections" methods, objects with a `length` property
+     * **Note:** As with other "Collections" methods, objects with a "length" property
      * are iterated like arrays. To avoid this behavior `_.forIn` or `_.forOwn`
      * may be used for object iteration.
      *
@@ -32918,13 +36224,10 @@ var cytoscape;
     });
 
     /**
-     * Checks if `value` is in `collection` using `SameValueZero` for equality
-     * comparisons. If `fromIndex` is negative, it is used as the offset from
-     * the end of `collection`.
-     *
-     * **Note:** [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
-     * comparisons are like strict equality comparisons, e.g. `===`, except that
-     * `NaN` matches `NaN`.
+     * Checks if `value` is in `collection` using
+     * [`SameValueZero`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-samevaluezero)
+     * for equality comparisons. If `fromIndex` is negative, it is used as the offset
+     * from the end of `collection`.
      *
      * @static
      * @memberOf _
@@ -32950,7 +36253,7 @@ var cytoscape;
      * // => true
      */
     function includes(collection, target, fromIndex, guard) {
-      var length = collection ? collection.length : 0;
+      var length = collection ? getLength(collection) : 0;
       if (!isLength(length)) {
         collection = values(collection);
         length = collection.length;
@@ -33019,16 +36322,16 @@ var cytoscape;
     });
 
     /**
-     * Invokes the method named by `methodName` on each element in `collection`,
-     * returning an array of the results of each invoked method. Any additional
-     * arguments are provided to each invoked method. If `methodName` is a function
-     * it is invoked for, and `this` bound to, each element in `collection`.
+     * Invokes the method at `path` of each element in `collection`, returning
+     * an array of the results of each invoked method. Any additional arguments
+     * are provided to each invoked method. If `methodName` is a function it is
+     * invoked for, and `this` bound to, each element in `collection`.
      *
      * @static
      * @memberOf _
      * @category Collection
      * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {Function|string} methodName The name of the method to invoke or
+     * @param {Array|Function|string} path The path of the method to invoke or
      *  the function invoked per iteration.
      * @param {...*} [args] The arguments to invoke the method with.
      * @returns {Array} Returns the array of results.
@@ -33040,15 +36343,15 @@ var cytoscape;
      * _.invoke([123, 456], String.prototype.split, '');
      * // => [['1', '2', '3'], ['4', '5', '6']]
      */
-    var invoke = restParam(function(collection, methodName, args) {
+    var invoke = restParam(function(collection, path, args) {
       var index = -1,
-          isFunc = typeof methodName == 'function',
-          length = collection ? collection.length : 0,
-          result = isLength(length) ? Array(length) : [];
+          isFunc = typeof path == 'function',
+          isProp = isKey(path),
+          result = isArrayLike(collection) ? Array(collection.length) : [];
 
       baseEach(collection, function(value) {
-        var func = isFunc ? methodName : (value != null && value[methodName]);
-        result[++index] = func ? func.apply(value, args) : undefined;
+        var func = isFunc ? path : ((isProp && value != null) ? value[path] : null);
+        result[++index] = func ? func.apply(value, args) : invokePath(value, path, args);
       });
       return result;
     });
@@ -33069,14 +36372,15 @@ var cytoscape;
      * callback returns `true` for elements that have the properties of the given
      * object, else `false`.
      *
-     * Many lodash methods are guarded to work as interatees for methods like
+     * Many lodash methods are guarded to work as iteratees for methods like
      * `_.every`, `_.filter`, `_.map`, `_.mapValues`, `_.reject`, and `_.some`.
      *
      * The guarded methods are:
-     * `ary`, `callback`, `chunk`, `clone`, `create`, `curry`, `curryRight`, `drop`,
-     * `dropRight`, `every`, `fill`, `flatten`, `invert`, `max`, `min`, `parseInt`,
-     * `slice`, `sortBy`, `take`, `takeRight`, `template`, `trim`, `trimLeft`,
-     * `trimRight`, `trunc`, `random`, `range`, `sample`, `some`, `uniq`, and `words`
+     * `ary`, `callback`, `chunk`, `clone`, `create`, `curry`, `curryRight`,
+     * `drop`, `dropRight`, `every`, `fill`, `flatten`, `invert`, `max`, `min`,
+     * `parseInt`, `slice`, `sortBy`, `take`, `takeRight`, `template`, `trim`,
+     * `trimLeft`, `trimRight`, `trunc`, `random`, `range`, `sample`, `some`,
+     * `sum`, `uniq`, and `words`
      *
      * @static
      * @memberOf _
@@ -33085,7 +36389,6 @@ var cytoscape;
      * @param {Array|Object|string} collection The collection to iterate over.
      * @param {Function|Object|string} [iteratee=_.identity] The function invoked
      *  per iteration.
-     *  create a `_.property` or `_.matches` style callback respectively.
      * @param {*} [thisArg] The `this` binding of `iteratee`.
      * @returns {Array} Returns the new mapped array.
      * @example
@@ -33179,13 +36482,13 @@ var cytoscape;
     }, function() { return [[], []]; });
 
     /**
-     * Gets the value of `key` from all elements in `collection`.
+     * Gets the property value of `path` from all elements in `collection`.
      *
      * @static
      * @memberOf _
      * @category Collection
      * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {string} key The key of the property to pluck.
+     * @param {Array|string} path The path of the property to pluck.
      * @returns {Array} Returns the property values.
      * @example
      *
@@ -33201,8 +36504,8 @@ var cytoscape;
      * _.pluck(userIndex, 'age');
      * // => [36, 40] (iteration order is not guaranteed)
      */
-    function pluck(collection, key) {
-      return map(collection, baseProperty(key));
+    function pluck(collection, path) {
+      return map(collection, property(path));
     }
 
     /**
@@ -33213,7 +36516,7 @@ var cytoscape;
      * value. The `iteratee` is bound to `thisArg` and invoked with four arguments:
      * (accumulator, value, index|key, collection).
      *
-     * Many lodash methods are guarded to work as interatees for methods like
+     * Many lodash methods are guarded to work as iteratees for methods like
      * `_.reduce`, `_.reduceRight`, and `_.transform`.
      *
      * The guarded methods are:
@@ -33230,8 +36533,8 @@ var cytoscape;
      * @returns {*} Returns the accumulated value.
      * @example
      *
-     * _.reduce([1, 2], function(sum, n) {
-     *   return sum + n;
+     * _.reduce([1, 2], function(total, n) {
+     *   return total + n;
      * });
      * // => 3
      *
@@ -33265,22 +36568,11 @@ var cytoscape;
      * }, []);
      * // => [4, 5, 2, 3, 0, 1]
      */
-    var reduceRight =  createReduce(arrayReduceRight, baseEachRight);
+    var reduceRight = createReduce(arrayReduceRight, baseEachRight);
 
     /**
      * The opposite of `_.filter`; this method returns the elements of `collection`
      * that `predicate` does **not** return truthy for.
-     *
-     * If a property name is provided for `predicate` the created `_.property`
-     * style callback returns the property value of the given element.
-     *
-     * If a value is also provided for `thisArg` the created `_.matchesProperty`
-     * style callback returns `true` for elements that have a matching property
-     * value, else `false`.
-     *
-     * If an object is provided for `predicate` the created `_.matches` style
-     * callback returns `true` for elements that have the properties of the given
-     * object, else `false`.
      *
      * @static
      * @memberOf _
@@ -33346,8 +36638,20 @@ var cytoscape;
         var length = collection.length;
         return length > 0 ? collection[baseRandom(0, length - 1)] : undefined;
       }
-      var result = shuffle(collection);
-      result.length = nativeMin(n < 0 ? 0 : (+n || 0), result.length);
+      var index = -1,
+          result = toArray(collection),
+          length = result.length,
+          lastIndex = length - 1;
+
+      n = nativeMin(n < 0 ? 0 : (+n || 0), length);
+      while (++index < n) {
+        var rand = baseRandom(index, lastIndex),
+            value = result[rand];
+
+        result[rand] = result[index];
+        result[index] = value;
+      }
+      result.length = n;
       return result;
     }
 
@@ -33366,20 +36670,7 @@ var cytoscape;
      * // => [4, 1, 3, 2]
      */
     function shuffle(collection) {
-      collection = toIterable(collection);
-
-      var index = -1,
-          length = collection.length,
-          result = Array(length);
-
-      while (++index < length) {
-        var rand = baseRandom(0, index);
-        if (index != rand) {
-          result[index] = result[rand];
-        }
-        result[rand] = collection[index];
-      }
-      return result;
+      return sample(collection, POSITIVE_INFINITY);
     }
 
     /**
@@ -33403,7 +36694,7 @@ var cytoscape;
      * // => 7
      */
     function size(collection) {
-      var length = collection ? collection.length : 0;
+      var length = collection ? getLength(collection) : 0;
       return isLength(length) ? length : keys(collection).length;
     }
 
@@ -33461,7 +36752,7 @@ var cytoscape;
       if (thisArg && isIterateeCall(collection, predicate, thisArg)) {
         predicate = null;
       }
-      if (typeof predicate != 'function' || typeof thisArg != 'undefined') {
+      if (typeof predicate != 'function' || thisArg !== undefined) {
         predicate = getCallback(predicate, thisArg, 3);
       }
       return func(collection, predicate);
@@ -33489,9 +36780,8 @@ var cytoscape;
      * @memberOf _
      * @category Collection
      * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {Array|Function|Object|string} [iteratee=_.identity] The function
-     *  invoked per iteration. If a property name or an object is provided it is
-     *  used to create a `_.property` or `_.matches` style callback respectively.
+     * @param {Function|Object|string} [iteratee=_.identity] The function invoked
+     *  per iteration.
      * @param {*} [thisArg] The `this` binding of `iteratee`.
      * @returns {Array} Returns the new sorted array.
      * @example
@@ -33520,104 +36810,112 @@ var cytoscape;
       if (collection == null) {
         return [];
       }
-      var index = -1,
-          length = collection.length,
-          result = isLength(length) ? Array(length) : [];
-
       if (thisArg && isIterateeCall(collection, iteratee, thisArg)) {
         iteratee = null;
       }
+      var index = -1;
       iteratee = getCallback(iteratee, thisArg, 3);
-      baseEach(collection, function(value, key, collection) {
-        result[++index] = { 'criteria': iteratee(value, key, collection), 'index': index, 'value': value };
+
+      var result = baseMap(collection, function(value, key, collection) {
+        return { 'criteria': iteratee(value, key, collection), 'index': ++index, 'value': value };
       });
       return baseSortBy(result, compareAscending);
     }
 
     /**
-     * This method is like `_.sortBy` except that it sorts by property names
-     * instead of an iteratee function.
+     * This method is like `_.sortBy` except that it can sort by multiple iteratees
+     * or property names.
+     *
+     * If a property name is provided for an iteratee the created `_.property`
+     * style callback returns the property value of the given element.
+     *
+     * If an object is provided for an iteratee the created `_.matches` style
+     * callback returns `true` for elements that have the properties of the given
+     * object, else `false`.
      *
      * @static
      * @memberOf _
      * @category Collection
      * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {...(string|string[])} props The property names to sort by,
-     *  specified as individual property names or arrays of property names.
+     * @param {...(Function|Function[]|Object|Object[]|string|string[])} iteratees
+     *  The iteratees to sort by, specified as individual values or arrays of values.
      * @returns {Array} Returns the new sorted array.
      * @example
      *
      * var users = [
+     *   { 'user': 'fred',   'age': 48 },
      *   { 'user': 'barney', 'age': 36 },
-     *   { 'user': 'fred',   'age': 40 },
-     *   { 'user': 'barney', 'age': 26 },
-     *   { 'user': 'fred',   'age': 30 }
+     *   { 'user': 'fred',   'age': 42 },
+     *   { 'user': 'barney', 'age': 34 }
      * ];
      *
      * _.map(_.sortByAll(users, ['user', 'age']), _.values);
-     * // => [['barney', 26], ['barney', 36], ['fred', 30], ['fred', 40]]
+     * // => [['barney', 34], ['barney', 36], ['fred', 42], ['fred', 48]]
+     *
+     * _.map(_.sortByAll(users, 'user', function(chr) {
+     *   return Math.floor(chr.age / 10);
+     * }), _.values);
+     * // => [['barney', 36], ['barney', 34], ['fred', 48], ['fred', 42]]
      */
-    function sortByAll() {
-      var args = arguments,
-          collection = args[0],
-          guard = args[3],
-          index = 0,
-          length = args.length - 1;
-
+    var sortByAll = restParam(function(collection, iteratees) {
       if (collection == null) {
         return [];
       }
-      var props = Array(length);
-      while (index < length) {
-        props[index] = args[++index];
+      var guard = iteratees[2];
+      if (guard && isIterateeCall(iteratees[0], iteratees[1], guard)) {
+        iteratees.length = 1;
       }
-      if (guard && isIterateeCall(args[1], args[2], guard)) {
-        props = args[1];
-      }
-      return baseSortByOrder(collection, baseFlatten(props), []);
-    }
+      return baseSortByOrder(collection, baseFlatten(iteratees), []);
+    });
 
     /**
      * This method is like `_.sortByAll` except that it allows specifying the
-     * sort orders of the property names to sort by. A truthy value in `orders`
-     * will sort the corresponding property name in ascending order while a
-     * falsey value will sort it in descending order.
+     * sort orders of the iteratees to sort by. A truthy value in `orders` will
+     * sort the corresponding property name in ascending order while a falsey
+     * value will sort it in descending order.
+     *
+     * If a property name is provided for an iteratee the created `_.property`
+     * style callback returns the property value of the given element.
+     *
+     * If an object is provided for an iteratee the created `_.matches` style
+     * callback returns `true` for elements that have the properties of the given
+     * object, else `false`.
      *
      * @static
      * @memberOf _
      * @category Collection
      * @param {Array|Object|string} collection The collection to iterate over.
-     * @param {string[]} props The property names to sort by.
-     * @param {boolean[]} orders The sort orders of `props`.
+     * @param {Function[]|Object[]|string[]} iteratees The iteratees to sort by.
+     * @param {boolean[]} orders The sort orders of `iteratees`.
      * @param- {Object} [guard] Enables use as a callback for functions like `_.reduce`.
      * @returns {Array} Returns the new sorted array.
      * @example
      *
      * var users = [
-     *   { 'user': 'barney', 'age': 26 },
-     *   { 'user': 'fred',   'age': 40 },
-     *   { 'user': 'barney', 'age': 36 },
-     *   { 'user': 'fred',   'age': 30 }
+     *   { 'user': 'fred',   'age': 48 },
+     *   { 'user': 'barney', 'age': 34 },
+     *   { 'user': 'fred',   'age': 42 },
+     *   { 'user': 'barney', 'age': 36 }
      * ];
      *
      * // sort by `user` in ascending order and by `age` in descending order
      * _.map(_.sortByOrder(users, ['user', 'age'], [true, false]), _.values);
-     * // => [['barney', 36], ['barney', 26], ['fred', 40], ['fred', 30]]
+     * // => [['barney', 36], ['barney', 34], ['fred', 48], ['fred', 42]]
      */
-    function sortByOrder(collection, props, orders, guard) {
+    function sortByOrder(collection, iteratees, orders, guard) {
       if (collection == null) {
         return [];
       }
-      if (guard && isIterateeCall(props, orders, guard)) {
+      if (guard && isIterateeCall(iteratees, orders, guard)) {
         orders = null;
       }
-      if (!isArray(props)) {
-        props = props == null ? [] : [props];
+      if (!isArray(iteratees)) {
+        iteratees = iteratees == null ? [] : [iteratees];
       }
       if (!isArray(orders)) {
         orders = orders == null ? [] : [orders];
       }
-      return baseSortByOrder(collection, props, orders);
+      return baseSortByOrder(collection, iteratees, orders);
     }
 
     /**
@@ -33770,7 +37068,8 @@ var cytoscape;
       return function() {
         if (--n > 0) {
           result = func.apply(this, arguments);
-        } else {
+        }
+        if (n <= 1) {
           func = null;
         }
         return result;
@@ -33785,7 +37084,7 @@ var cytoscape;
      * The `_.bind.placeholder` value, which defaults to `_` in monolithic builds,
      * may be used as a placeholder for partially applied arguments.
      *
-     * **Note:** Unlike native `Function#bind` this method does not set the `length`
+     * **Note:** Unlike native `Function#bind` this method does not set the "length"
      * property of bound functions.
      *
      * @static
@@ -33827,7 +37126,7 @@ var cytoscape;
      * of method names. If no method names are provided all enumerable function
      * properties, own and inherited, of `object` are bound.
      *
-     * **Note:** This method does not set the `length` property of bound functions.
+     * **Note:** This method does not set the "length" property of bound functions.
      *
      * @static
      * @memberOf _
@@ -33868,7 +37167,7 @@ var cytoscape;
      *
      * This method differs from `_.bind` by allowing bound functions to reference
      * methods that may be redefined or don't yet exist.
-     * See [Peter Michaux's article](http://michaux.ca/articles/lazy-function-definition-pattern)
+     * See [Peter Michaux's article](http://peter.michaux.ca/articles/lazy-function-definition-pattern)
      * for more details.
      *
      * The `_.bindKey.placeholder` value, which defaults to `_` in monolithic
@@ -33925,7 +37224,7 @@ var cytoscape;
      * The `_.curry.placeholder` value, which defaults to `_` in monolithic builds,
      * may be used as a placeholder for provided arguments.
      *
-     * **Note:** This method does not set the `length` property of curried functions.
+     * **Note:** This method does not set the "length" property of curried functions.
      *
      * @static
      * @memberOf _
@@ -33964,7 +37263,7 @@ var cytoscape;
      * The `_.curryRight.placeholder` value, which defaults to `_` in monolithic
      * builds, may be used as a placeholder for provided arguments.
      *
-     * **Note:** This method does not set the `length` property of curried functions.
+     * **Note:** This method does not set the "length" property of curried functions.
      *
      * @static
      * @memberOf _
@@ -33997,12 +37296,13 @@ var cytoscape;
     var curryRight = createCurry(CURRY_RIGHT_FLAG);
 
     /**
-     * Creates a function that delays invoking `func` until after `wait` milliseconds
-     * have elapsed since the last time it was invoked. The created function comes
-     * with a `cancel` method to cancel delayed invocations. Provide an options
-     * object to indicate that `func` should be invoked on the leading and/or
-     * trailing edge of the `wait` timeout. Subsequent calls to the debounced
-     * function return the result of the last `func` invocation.
+     * Creates a debounced function that delays invoking `func` until after `wait`
+     * milliseconds have elapsed since the last time the debounced function was
+     * invoked. The debounced function comes with a `cancel` method to cancel
+     * delayed invocations. Provide an options object to indicate that `func`
+     * should be invoked on the leading and/or trailing edge of the `wait` timeout.
+     * Subsequent calls to the debounced function return the result of the last
+     * `func` invocation.
      *
      * **Note:** If `leading` and `trailing` options are `true`, `func` is invoked
      * on the trailing edge of the timeout only if the the debounced function is
@@ -34316,14 +37616,14 @@ var cytoscape;
       }
       var memoized = function() {
         var args = arguments,
-            cache = memoized.cache,
-            key = resolver ? resolver.apply(this, args) : args[0];
+            key = resolver ? resolver.apply(this, args) : args[0],
+            cache = memoized.cache;
 
         if (cache.has(key)) {
           return cache.get(key);
         }
         var result = func.apply(this, args);
-        cache.set(key, result);
+        memoized.cache = cache.set(key, result);
         return result;
       };
       memoized.cache = new memoize.Cache;
@@ -34376,7 +37676,7 @@ var cytoscape;
      * // `initialize` invokes `createApplication` once
      */
     function once(func) {
-      return before(func, 2);
+      return before(2, func);
     }
 
     /**
@@ -34387,7 +37687,7 @@ var cytoscape;
      * The `_.partial.placeholder` value, which defaults to `_` in monolithic
      * builds, may be used as a placeholder for partially applied arguments.
      *
-     * **Note:** This method does not set the `length` property of partially
+     * **Note:** This method does not set the "length" property of partially
      * applied functions.
      *
      * @static
@@ -34420,7 +37720,7 @@ var cytoscape;
      * The `_.partialRight.placeholder` value, which defaults to `_` in monolithic
      * builds, may be used as a placeholder for partially applied arguments.
      *
-     * **Note:** This method does not set the `length` property of partially
+     * **Note:** This method does not set the "length" property of partially
      * applied functions.
      *
      * @static
@@ -34504,7 +37804,7 @@ var cytoscape;
       if (typeof func != 'function') {
         throw new TypeError(FUNC_ERROR_TEXT);
       }
-      start = nativeMax(typeof start == 'undefined' ? (func.length - 1) : (+start || 0), 0);
+      start = nativeMax(start === undefined ? (func.length - 1) : (+start || 0), 0);
       return function() {
         var args = arguments,
             index = -1,
@@ -34570,12 +37870,12 @@ var cytoscape;
     }
 
     /**
-     * Creates a function that only invokes `func` at most once per every `wait`
-     * milliseconds. The created function comes with a `cancel` method to cancel
-     * delayed invocations. Provide an options object to indicate that `func`
-     * should be invoked on the leading and/or trailing edge of the `wait` timeout.
-     * Subsequent calls to the throttled function return the result of the last
-     * `func` call.
+     * Creates a throttled function that only invokes `func` at most once per
+     * every `wait` milliseconds. The throttled function comes with a `cancel`
+     * method to cancel delayed invocations. Provide an options object to indicate
+     * that `func` should be invoked on the leading and/or trailing edge of the
+     * `wait` timeout. Subsequent calls to the throttled function return the
+     * result of the last `func` call.
      *
      * **Note:** If `leading` and `trailing` options are `true`, `func` is invoked
      * on the trailing edge of the timeout only if the the throttled function is
@@ -34715,8 +38015,9 @@ var cytoscape;
         customizer = isDeep;
         isDeep = false;
       }
-      customizer = typeof customizer == 'function' && bindCallback(customizer, thisArg, 1);
-      return baseClone(value, isDeep, customizer);
+      return typeof customizer == 'function'
+        ? baseClone(value, isDeep, bindCallback(customizer, thisArg, 1))
+        : baseClone(value, isDeep);
     }
 
     /**
@@ -34765,8 +38066,57 @@ var cytoscape;
      * // => 20
      */
     function cloneDeep(value, customizer, thisArg) {
-      customizer = typeof customizer == 'function' && bindCallback(customizer, thisArg, 1);
-      return baseClone(value, true, customizer);
+      return typeof customizer == 'function'
+        ? baseClone(value, true, bindCallback(customizer, thisArg, 1))
+        : baseClone(value, true);
+    }
+
+    /**
+     * Checks if `value` is greater than `other`.
+     *
+     * @static
+     * @memberOf _
+     * @category Lang
+     * @param {*} value The value to compare.
+     * @param {*} other The other value to compare.
+     * @returns {boolean} Returns `true` if `value` is greater than `other`, else `false`.
+     * @example
+     *
+     * _.gt(3, 1);
+     * // => true
+     *
+     * _.gt(3, 3);
+     * // => false
+     *
+     * _.gt(1, 3);
+     * // => false
+     */
+    function gt(value, other) {
+      return value > other;
+    }
+
+    /**
+     * Checks if `value` is greater than or equal to `other`.
+     *
+     * @static
+     * @memberOf _
+     * @category Lang
+     * @param {*} value The value to compare.
+     * @param {*} other The other value to compare.
+     * @returns {boolean} Returns `true` if `value` is greater than or equal to `other`, else `false`.
+     * @example
+     *
+     * _.gte(3, 1);
+     * // => true
+     *
+     * _.gte(3, 3);
+     * // => true
+     *
+     * _.gte(1, 3);
+     * // => false
+     */
+    function gte(value, other) {
+      return value >= other;
     }
 
     /**
@@ -34786,8 +38136,7 @@ var cytoscape;
      * // => false
      */
     function isArguments(value) {
-      var length = isObjectLike(value) ? value.length : undefined;
-      return isLength(length) && objToString.call(value) == argsTag;
+      return isObjectLike(value) && isArrayLike(value) && objToString.call(value) == argsTag;
     }
 
     /**
@@ -34908,10 +38257,9 @@ var cytoscape;
       if (value == null) {
         return true;
       }
-      var length = value.length;
-      if (isLength(length) && (isArray(value) || isString(value) || isArguments(value) ||
+      if (isArrayLike(value) && (isArray(value) || isString(value) || isArguments(value) ||
           (isObjectLike(value) && isFunction(value.splice)))) {
-        return !length;
+        return !value.length;
       }
       return !keys(value).length;
     }
@@ -34931,10 +38279,11 @@ var cytoscape;
      *
      * @static
      * @memberOf _
+     * @alias eq
      * @category Lang
      * @param {*} value The value to compare.
      * @param {*} other The other value to compare.
-     * @param {Function} [customizer] The function to customize comparing values.
+     * @param {Function} [customizer] The function to customize value comparisons.
      * @param {*} [thisArg] The `this` binding of `customizer`.
      * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
      * @example
@@ -34960,12 +38309,9 @@ var cytoscape;
      * // => true
      */
     function isEqual(value, other, customizer, thisArg) {
-      customizer = typeof customizer == 'function' && bindCallback(customizer, thisArg, 3);
-      if (!customizer && isStrictComparable(value) && isStrictComparable(other)) {
-        return value === other;
-      }
+      customizer = typeof customizer == 'function' ? bindCallback(customizer, thisArg, 3) : undefined;
       var result = customizer ? customizer(value, other) : undefined;
-      return typeof result == 'undefined' ? baseIsEqual(value, other, customizer) : !!result;
+      return  result === undefined ? baseIsEqual(value, other, customizer) : !!result;
     }
 
     /**
@@ -35067,7 +38413,7 @@ var cytoscape;
       // Avoid a V8 JIT bug in Chrome 19-20.
       // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
       var type = typeof value;
-      return type == 'function' || (!!value && type == 'object');
+      return !!value && (type == 'object' || type == 'function');
     }
 
     /**
@@ -35087,7 +38433,7 @@ var cytoscape;
      * @category Lang
      * @param {Object} object The object to inspect.
      * @param {Object} source The object of property values to match.
-     * @param {Function} [customizer] The function to customize comparing values.
+     * @param {Function} [customizer] The function to customize value comparisons.
      * @param {*} [thisArg] The `this` binding of `customizer`.
      * @returns {boolean} Returns `true` if `object` is a match, else `false`.
      * @example
@@ -35110,32 +38456,8 @@ var cytoscape;
      * // => true
      */
     function isMatch(object, source, customizer, thisArg) {
-      var props = keys(source),
-          length = props.length;
-
-      if (!length) {
-        return true;
-      }
-      if (object == null) {
-        return false;
-      }
-      customizer = typeof customizer == 'function' && bindCallback(customizer, thisArg, 3);
-      if (!customizer && length == 1) {
-        var key = props[0],
-            value = source[key];
-
-        if (isStrictComparable(value)) {
-          return value === object[key] && (typeof value != 'undefined' || (key in toObject(object)));
-        }
-      }
-      var values = Array(length),
-          strictCompareFlags = Array(length);
-
-      while (length--) {
-        value = values[length] = source[props[length]];
-        strictCompareFlags[length] = isStrictComparable(value);
-      }
-      return baseIsMatch(toObject(object), props, values, strictCompareFlags, customizer);
+      customizer = typeof customizer == 'function' ? bindCallback(customizer, thisArg, 3) : undefined;
+      return baseIsMatch(object, getMatchData(source), customizer);
     }
 
     /**
@@ -35190,9 +38512,9 @@ var cytoscape;
         return false;
       }
       if (objToString.call(value) == funcTag) {
-        return reNative.test(fnToString.call(value));
+        return reIsNative.test(fnToString.call(value));
       }
-      return isObjectLike(value) && reHostCtor.test(value);
+      return isObjectLike(value) && reIsHostCtor.test(value);
     }
 
     /**
@@ -35275,8 +38597,8 @@ var cytoscape;
       if (!(value && objToString.call(value) == objectTag)) {
         return false;
       }
-      var valueOf = value.valueOf,
-          objProto = isNative(valueOf) && (objProto = getPrototypeOf(valueOf)) && getPrototypeOf(objProto);
+      var valueOf = getNative(value, 'valueOf'),
+          objProto = valueOf && (objProto = getPrototypeOf(valueOf)) && getPrototypeOf(objProto);
 
       return objProto
         ? (value == objProto || getPrototypeOf(value) == objProto)
@@ -35300,7 +38622,7 @@ var cytoscape;
      * // => false
      */
     function isRegExp(value) {
-      return (isObjectLike(value) && objToString.call(value) == regexpTag) || false;
+      return isObjectLike(value) && objToString.call(value) == regexpTag;
     }
 
     /**
@@ -35360,7 +38682,55 @@ var cytoscape;
      * // => false
      */
     function isUndefined(value) {
-      return typeof value == 'undefined';
+      return value === undefined;
+    }
+
+    /**
+     * Checks if `value` is less than `other`.
+     *
+     * @static
+     * @memberOf _
+     * @category Lang
+     * @param {*} value The value to compare.
+     * @param {*} other The other value to compare.
+     * @returns {boolean} Returns `true` if `value` is less than `other`, else `false`.
+     * @example
+     *
+     * _.lt(1, 3);
+     * // => true
+     *
+     * _.lt(3, 3);
+     * // => false
+     *
+     * _.lt(3, 1);
+     * // => false
+     */
+    function lt(value, other) {
+      return value < other;
+    }
+
+    /**
+     * Checks if `value` is less than or equal to `other`.
+     *
+     * @static
+     * @memberOf _
+     * @category Lang
+     * @param {*} value The value to compare.
+     * @param {*} other The other value to compare.
+     * @returns {boolean} Returns `true` if `value` is less than or equal to `other`, else `false`.
+     * @example
+     *
+     * _.lte(1, 3);
+     * // => true
+     *
+     * _.lte(3, 3);
+     * // => true
+     *
+     * _.lte(3, 1);
+     * // => false
+     */
+    function lte(value, other) {
+      return value <= other;
     }
 
     /**
@@ -35379,7 +38749,7 @@ var cytoscape;
      * // => [2, 3]
      */
     function toArray(value) {
-      var length = value ? value.length : 0;
+      var length = value ? getLength(value) : 0;
       if (!isLength(length)) {
         return values(value);
       }
@@ -35425,13 +38795,16 @@ var cytoscape;
      * The `customizer` is bound to `thisArg` and invoked with five arguments:
      * (objectValue, sourceValue, key, object, source).
      *
+     * **Note:** This method mutates `object` and is based on
+     * [`Object.assign`](https://people.mozilla.org/~jorendorff/es6-draft.html#sec-object.assign).
+     *
      * @static
      * @memberOf _
      * @alias extend
      * @category Object
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
-     * @param {Function} [customizer] The function to customize assigning values.
+     * @param {Function} [customizer] The function to customize assigned values.
      * @param {*} [thisArg] The `this` binding of `customizer`.
      * @returns {Object} Returns `object`.
      * @example
@@ -35441,13 +38814,17 @@ var cytoscape;
      *
      * // using a customizer callback
      * var defaults = _.partialRight(_.assign, function(value, other) {
-     *   return typeof value == 'undefined' ? other : value;
+     *   return _.isUndefined(value) ? other : value;
      * });
      *
      * defaults({ 'user': 'barney' }, { 'age': 36 }, { 'user': 'fred' });
      * // => { 'user': 'barney', 'age': 36 }
      */
-    var assign = createAssigner(baseAssign);
+    var assign = createAssigner(function(object, source, customizer) {
+      return customizer
+        ? assignWith(object, source, customizer)
+        : baseAssign(object, source);
+    });
 
     /**
      * Creates an object that inherits from the given `prototype` object. If a
@@ -35488,13 +38865,15 @@ var cytoscape;
       if (guard && isIterateeCall(prototype, properties, guard)) {
         properties = null;
       }
-      return properties ? baseCopy(properties, result, keys(properties)) : result;
+      return properties ? baseAssign(result, properties) : result;
     }
 
     /**
      * Assigns own enumerable properties of source object(s) to the destination
      * object for all destination properties that resolve to `undefined`. Once a
      * property is set, additional values of the same property are ignored.
+     *
+     * **Note:** This method mutates `object`.
      *
      * @static
      * @memberOf _
@@ -35619,7 +38998,7 @@ var cytoscape;
     /**
      * Iterates over own and inherited enumerable properties of an object invoking
      * `iteratee` for each property. The `iteratee` is bound to `thisArg` and invoked
-     * with three arguments: (value, key, object). Iterator functions may exit
+     * with three arguments: (value, key, object). Iteratee functions may exit
      * iteration early by explicitly returning `false`.
      *
      * @static
@@ -35675,7 +39054,7 @@ var cytoscape;
     /**
      * Iterates over own enumerable properties of an object invoking `iteratee`
      * for each property. The `iteratee` is bound to `thisArg` and invoked with
-     * three arguments: (value, key, object). Iterator functions may exit iteration
+     * three arguments: (value, key, object). Iteratee functions may exit iteration
      * early by explicitly returning `false`.
      *
      * @static
@@ -35748,24 +39127,72 @@ var cytoscape;
     }
 
     /**
-     * Checks if `key` exists as a direct property of `object` instead of an
-     * inherited property.
+     * Gets the property value at `path` of `object`. If the resolved value is
+     * `undefined` the `defaultValue` is used in its place.
      *
      * @static
      * @memberOf _
      * @category Object
-     * @param {Object} object The object to inspect.
-     * @param {string} key The key to check.
-     * @returns {boolean} Returns `true` if `key` is a direct property, else `false`.
+     * @param {Object} object The object to query.
+     * @param {Array|string} path The path of the property to get.
+     * @param {*} [defaultValue] The value returned if the resolved value is `undefined`.
+     * @returns {*} Returns the resolved value.
      * @example
      *
-     * var object = { 'a': 1, 'b': 2, 'c': 3 };
+     * var object = { 'a': [{ 'b': { 'c': 3 } }] };
      *
-     * _.has(object, 'b');
+     * _.get(object, 'a[0].b.c');
+     * // => 3
+     *
+     * _.get(object, ['a', '0', 'b', 'c']);
+     * // => 3
+     *
+     * _.get(object, 'a.b.c', 'default');
+     * // => 'default'
+     */
+    function get(object, path, defaultValue) {
+      var result = object == null ? undefined : baseGet(object, toPath(path), path + '');
+      return result === undefined ? defaultValue : result;
+    }
+
+    /**
+     * Checks if `path` is a direct property.
+     *
+     * @static
+     * @memberOf _
+     * @category Object
+     * @param {Object} object The object to query.
+     * @param {Array|string} path The path to check.
+     * @returns {boolean} Returns `true` if `path` is a direct property, else `false`.
+     * @example
+     *
+     * var object = { 'a': { 'b': { 'c': 3 } } };
+     *
+     * _.has(object, 'a');
+     * // => true
+     *
+     * _.has(object, 'a.b.c');
+     * // => true
+     *
+     * _.has(object, ['a', 'b', 'c']);
      * // => true
      */
-    function has(object, key) {
-      return object ? hasOwnProperty.call(object, key) : false;
+    function has(object, path) {
+      if (object == null) {
+        return false;
+      }
+      var result = hasOwnProperty.call(object, path);
+      if (!result && !isKey(path)) {
+        path = toPath(path);
+        object = path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+        if (object == null) {
+          return false;
+        }
+        path = last(path);
+        result = hasOwnProperty.call(object, path);
+      }
+      return result || (isLength(object.length) && isIndex(path, object.length) &&
+        (isArray(object) || isArguments(object)));
     }
 
     /**
@@ -35828,7 +39255,7 @@ var cytoscape;
      * @static
      * @memberOf _
      * @category Object
-     * @param {Object} object The object to inspect.
+     * @param {Object} object The object to query.
      * @returns {Array} Returns the array of property names.
      * @example
      *
@@ -35846,12 +39273,9 @@ var cytoscape;
      * // => ['0', '1']
      */
     var keys = !nativeKeys ? shimKeys : function(object) {
-      if (object) {
-        var Ctor = object.constructor,
-            length = object.length;
-      }
+      var Ctor = object == null ? null : object.constructor;
       if ((typeof Ctor == 'function' && Ctor.prototype === object) ||
-          (typeof object != 'function' && (length && isLength(length)))) {
+          (typeof object != 'function' && isArrayLike(object))) {
         return shimKeys(object);
       }
       return isObject(object) ? nativeKeys(object) : [];
@@ -35865,7 +39289,7 @@ var cytoscape;
      * @static
      * @memberOf _
      * @category Object
-     * @param {Object} object The object to inspect.
+     * @param {Object} object The object to query.
      * @returns {Array} Returns the array of property names.
      * @example
      *
@@ -35888,7 +39312,7 @@ var cytoscape;
       }
       var length = object.length;
       length = (length && isLength(length) &&
-        (isArray(object) || (support.nonEnumArgs && isArguments(object))) && length) || 0;
+        (isArray(object) || isArguments(object)) && length) || 0;
 
       var Ctor = object.constructor,
           index = -1,
@@ -35907,6 +39331,28 @@ var cytoscape;
       }
       return result;
     }
+
+    /**
+     * The opposite of `_.mapValues`; this method creates an object with the
+     * same values as `object` and keys generated by running each own enumerable
+     * property of `object` through `iteratee`.
+     *
+     * @static
+     * @memberOf _
+     * @category Object
+     * @param {Object} object The object to iterate over.
+     * @param {Function|Object|string} [iteratee=_.identity] The function invoked
+     *  per iteration.
+     * @param {*} [thisArg] The `this` binding of `iteratee`.
+     * @returns {Object} Returns the new mapped object.
+     * @example
+     *
+     * _.mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
+     *   return key + value;
+     * });
+     * // => { 'a1': 1, 'b2': 2 }
+     */
+    var mapKeys = createObjectMapper(true);
 
     /**
      * Creates an object with the same keys as `object` and values generated by
@@ -35949,15 +39395,7 @@ var cytoscape;
      * _.mapValues(users, 'age');
      * // => { 'fred': 40, 'pebbles': 1 } (iteration order is not guaranteed)
      */
-    function mapValues(object, iteratee, thisArg) {
-      var result = {};
-      iteratee = getCallback(iteratee, thisArg, 3);
-
-      baseForOwn(object, function(value, key, object) {
-        result[key] = iteratee(value, key, object);
-      });
-      return result;
-    }
+    var mapValues = createObjectMapper();
 
     /**
      * Recursively merges own enumerable properties of the source object(s), that
@@ -35973,7 +39411,7 @@ var cytoscape;
      * @category Object
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
-     * @param {Function} [customizer] The function to customize merging properties.
+     * @param {Function} [customizer] The function to customize assigned values.
      * @param {*} [thisArg] The `this` binding of `customizer`.
      * @returns {Object} Returns `object`.
      * @example
@@ -36012,11 +39450,6 @@ var cytoscape;
     /**
      * The opposite of `_.pick`; this method creates an object composed of the
      * own and inherited enumerable properties of `object` that are not omitted.
-     * Property names may be specified as individual arguments or as arrays of
-     * property names. If `predicate` is provided it is invoked for each property
-     * of `object` omitting the properties `predicate` returns truthy for. The
-     * predicate is bound to `thisArg` and invoked with three arguments:
-     * (value, key, object).
      *
      * @static
      * @memberOf _
@@ -36058,7 +39491,7 @@ var cytoscape;
      * @static
      * @memberOf _
      * @category Object
-     * @param {Object} object The object to inspect.
+     * @param {Object} object The object to query.
      * @returns {Array} Returns the new array of key-value pairs.
      * @example
      *
@@ -36066,6 +39499,8 @@ var cytoscape;
      * // => [['barney', 36], ['fred', 40]] (iteration order is not guaranteed)
      */
     function pairs(object) {
+      object = toObject(object);
+
       var index = -1,
           props = keys(object),
           length = props.length,
@@ -36114,41 +39549,93 @@ var cytoscape;
     });
 
     /**
-     * Resolves the value of property `key` on `object`. If the value of `key` is
-     * a function it is invoked with the `this` binding of `object` and its result
-     * is returned, else the property value is returned. If the property value is
-     * `undefined` the `defaultValue` is used in its place.
+     * This method is like `_.get` except that if the resolved value is a function
+     * it is invoked with the `this` binding of its parent object and its result
+     * is returned.
      *
      * @static
      * @memberOf _
      * @category Object
      * @param {Object} object The object to query.
-     * @param {string} key The key of the property to resolve.
-     * @param {*} [defaultValue] The value returned if the property value
-     *  resolves to `undefined`.
+     * @param {Array|string} path The path of the property to resolve.
+     * @param {*} [defaultValue] The value returned if the resolved value is `undefined`.
      * @returns {*} Returns the resolved value.
      * @example
      *
-     * var object = { 'user': 'fred', 'age': _.constant(40) };
+     * var object = { 'a': [{ 'b': { 'c1': 3, 'c2': _.constant(4) } }] };
      *
-     * _.result(object, 'user');
-     * // => 'fred'
+     * _.result(object, 'a[0].b.c1');
+     * // => 3
      *
-     * _.result(object, 'age');
-     * // => 40
+     * _.result(object, 'a[0].b.c2');
+     * // => 4
      *
-     * _.result(object, 'status', 'busy');
-     * // => 'busy'
+     * _.result(object, 'a.b.c', 'default');
+     * // => 'default'
      *
-     * _.result(object, 'status', _.constant('busy'));
-     * // => 'busy'
+     * _.result(object, 'a.b.c', _.constant('default'));
+     * // => 'default'
      */
-    function result(object, key, defaultValue) {
-      var value = object == null ? undefined : object[key];
-      if (typeof value == 'undefined') {
-        value = defaultValue;
+    function result(object, path, defaultValue) {
+      var result = object == null ? undefined : object[path];
+      if (result === undefined) {
+        if (object != null && !isKey(path, object)) {
+          path = toPath(path);
+          object = path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+          result = object == null ? undefined : object[last(path)];
+        }
+        result = result === undefined ? defaultValue : result;
       }
-      return isFunction(value) ? value.call(object) : value;
+      return isFunction(result) ? result.call(object) : result;
+    }
+
+    /**
+     * Sets the property value of `path` on `object`. If a portion of `path`
+     * does not exist it is created.
+     *
+     * @static
+     * @memberOf _
+     * @category Object
+     * @param {Object} object The object to augment.
+     * @param {Array|string} path The path of the property to set.
+     * @param {*} value The value to set.
+     * @returns {Object} Returns `object`.
+     * @example
+     *
+     * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+     *
+     * _.set(object, 'a[0].b.c', 4);
+     * console.log(object.a[0].b.c);
+     * // => 4
+     *
+     * _.set(object, 'x[0].y.z', 5);
+     * console.log(object.x[0].y.z);
+     * // => 5
+     */
+    function set(object, path, value) {
+      if (object == null) {
+        return object;
+      }
+      var pathKey = (path + '');
+      path = (object[pathKey] != null || isKey(path, object)) ? [pathKey] : toPath(path);
+
+      var index = -1,
+          length = path.length,
+          lastIndex = length - 1,
+          nested = object;
+
+      while (nested != null && ++index < length) {
+        var key = path[index];
+        if (isObject(nested)) {
+          if (index == lastIndex) {
+            nested[key] = value;
+          } else if (nested[key] == null) {
+            nested[key] = isIndex(path[index + 1]) ? [] : {};
+          }
+        }
+        nested = nested[key];
+      }
+      return object;
     }
 
     /**
@@ -36156,7 +39643,7 @@ var cytoscape;
      * `accumulator` object which is the result of running each of its own enumerable
      * properties through `iteratee`, with each invocation potentially mutating
      * the `accumulator` object. The `iteratee` is bound to `thisArg` and invoked
-     * with four arguments: (accumulator, value, key, object). Iterator functions
+     * with four arguments: (accumulator, value, key, object). Iteratee functions
      * may exit iteration early by explicitly returning `false`.
      *
      * @static
@@ -36190,7 +39677,7 @@ var cytoscape;
           if (isArr) {
             accumulator = isArray(object) ? new Ctor : [];
           } else {
-            accumulator = baseCreate(isFunction(Ctor) && Ctor.prototype);
+            accumulator = baseCreate(isFunction(Ctor) ? Ctor.prototype : null);
           }
         } else {
           accumulator = {};
@@ -36299,7 +39786,7 @@ var cytoscape;
       } else {
         end = +end || 0;
       }
-      return value >= start && value < end;
+      return value >= nativeMin(start, end) && value < nativeMax(start, end);
     }
 
     /**
@@ -36424,7 +39911,7 @@ var cytoscape;
      */
     function deburr(string) {
       string = baseToString(string);
-      return string && string.replace(reLatin1, deburrLetter).replace(reComboMarks, '');
+      return string && string.replace(reLatin1, deburrLetter).replace(reComboMark, '');
     }
 
     /**
@@ -36453,7 +39940,7 @@ var cytoscape;
       target = (target + '');
 
       var length = string.length;
-      position = typeof position == 'undefined'
+      position = position === undefined
         ? length
         : nativeMin(position < 0 ? 0 : (+position || 0), length);
 
@@ -36469,15 +39956,16 @@ var cytoscape;
      * use a third-party library like [_he_](https://mths.be/he).
      *
      * Though the ">" character is escaped for symmetry, characters like
-     * ">" and "/" don't require escaping in HTML and have no special meaning
+     * ">" and "/" don't need escaping in HTML and have no special meaning
      * unless they're part of a tag or unquoted attribute value.
      * See [Mathias Bynens's article](https://mathiasbynens.be/notes/ambiguous-ampersands)
      * (under "semi-related fun fact") for more details.
      *
      * Backticks are escaped because in Internet Explorer < 9, they can break out
-     * of attribute values or HTML comments. See [#102](https://html5sec.org/#102),
-     * [#108](https://html5sec.org/#108), and [#133](https://html5sec.org/#133) of
-     * the [HTML5 Security Cheatsheet](https://html5sec.org/) for more details.
+     * of attribute values or HTML comments. See [#59](https://html5sec.org/#59),
+     * [#102](https://html5sec.org/#102), [#108](https://html5sec.org/#108), and
+     * [#133](https://html5sec.org/#133) of the [HTML5 Security Cheatsheet](https://html5sec.org/)
+     * for more details.
      *
      * When working with HTML you should always [quote attribute values](http://wonko.com/post/html-escaping)
      * to reduce XSS vectors.
@@ -36545,7 +40033,7 @@ var cytoscape;
     });
 
     /**
-     * Pads `string` on the left and right sides if it is shorter than `length`.
+     * Pads `string` on the left and right sides if it's shorter than `length`.
      * Padding characters are truncated if they can't be evenly divided by `length`.
      *
      * @static
@@ -36583,7 +40071,7 @@ var cytoscape;
     }
 
     /**
-     * Pads `string` on the left side if it is shorter than `length`. Padding
+     * Pads `string` on the left side if it's shorter than `length`. Padding
      * characters are truncated if they exceed `length`.
      *
      * @static
@@ -36607,7 +40095,7 @@ var cytoscape;
     var padLeft = createPadDir();
 
     /**
-     * Pads `string` on the right side if it is shorter than `length`. Padding
+     * Pads `string` on the right side if it's shorter than `length`. Padding
      * characters are truncated if they exceed `length`.
      *
      * @static
@@ -36671,7 +40159,7 @@ var cytoscape;
           radix = +radix;
         }
         string = trim(string);
-        return nativeParseInt(string, radix || (reHexPrefix.test(string) ? 16 : 10));
+        return nativeParseInt(string, radix || (reHasHexPrefix.test(string) ? 16 : 10));
       };
     }
 
@@ -36896,9 +40384,9 @@ var cytoscape;
         options = otherOptions = null;
       }
       string = baseToString(string);
-      options = baseAssign(baseAssign({}, otherOptions || options), settings, assignOwnDefaults);
+      options = assignWith(baseAssign({}, otherOptions || options), settings, assignOwnDefaults);
 
-      var imports = baseAssign(baseAssign({}, options.imports), settings.imports, assignOwnDefaults),
+      var imports = assignWith(baseAssign({}, options.imports), settings.imports, assignOwnDefaults),
           importsKeys = keys(imports),
           importsValues = baseValues(imports, importsKeys);
 
@@ -37088,7 +40576,7 @@ var cytoscape;
     }
 
     /**
-     * Truncates `string` if it is longer than the given maximum string length.
+     * Truncates `string` if it's longer than the given maximum string length.
      * The last characters of the truncated string are replaced with the omission
      * string which defaults to "...".
      *
@@ -37349,7 +40837,7 @@ var cytoscape;
     }
 
     /**
-     * Creates a function which performs a deep comparison between a given object
+     * Creates a function that performs a deep comparison between a given object
      * and `source`, returning `true` if the given object has equivalent property
      * values, else `false`.
      *
@@ -37378,7 +40866,7 @@ var cytoscape;
     }
 
     /**
-     * Creates a function which compares the property value of `key` on a given
+     * Creates a function that compares the property value of `path` on a given
      * object to `value`.
      *
      * **Note:** This method supports comparing arrays, booleans, `Date` objects,
@@ -37388,8 +40876,8 @@ var cytoscape;
      * @static
      * @memberOf _
      * @category Utility
-     * @param {string} key The key of the property to get.
-     * @param {*} value The value to compare.
+     * @param {Array|string} path The path of the property to get.
+     * @param {*} srcValue The value to match.
      * @returns {Function} Returns the new function.
      * @example
      *
@@ -37401,22 +40889,79 @@ var cytoscape;
      * _.find(users, _.matchesProperty('user', 'fred'));
      * // => { 'user': 'fred' }
      */
-    function matchesProperty(key, value) {
-      return baseMatchesProperty(key + '', baseClone(value, true));
+    function matchesProperty(path, srcValue) {
+      return baseMatchesProperty(path, baseClone(srcValue, true));
     }
+
+    /**
+     * Creates a function that invokes the method at `path` on a given object.
+     * Any additional arguments are provided to the invoked method.
+     *
+     * @static
+     * @memberOf _
+     * @category Utility
+     * @param {Array|string} path The path of the method to invoke.
+     * @param {...*} [args] The arguments to invoke the method with.
+     * @returns {Function} Returns the new function.
+     * @example
+     *
+     * var objects = [
+     *   { 'a': { 'b': { 'c': _.constant(2) } } },
+     *   { 'a': { 'b': { 'c': _.constant(1) } } }
+     * ];
+     *
+     * _.map(objects, _.method('a.b.c'));
+     * // => [2, 1]
+     *
+     * _.invoke(_.sortBy(objects, _.method(['a', 'b', 'c'])), 'a.b.c');
+     * // => [1, 2]
+     */
+    var method = restParam(function(path, args) {
+      return function(object) {
+        return invokePath(object, path, args);
+      };
+    });
+
+    /**
+     * The opposite of `_.method`; this method creates a function that invokes
+     * the method at a given path on `object`. Any additional arguments are
+     * provided to the invoked method.
+     *
+     * @static
+     * @memberOf _
+     * @category Utility
+     * @param {Object} object The object to query.
+     * @param {...*} [args] The arguments to invoke the method with.
+     * @returns {Function} Returns the new function.
+     * @example
+     *
+     * var array = _.times(3, _.constant),
+     *     object = { 'a': array, 'b': array, 'c': array };
+     *
+     * _.map(['a[2]', 'c[0]'], _.methodOf(object));
+     * // => [2, 0]
+     *
+     * _.map([['a', '2'], ['c', '0']], _.methodOf(object));
+     * // => [2, 0]
+     */
+    var methodOf = restParam(function(object, args) {
+      return function(path) {
+        return invokePath(object, path, args);
+      };
+    });
 
     /**
      * Adds all own enumerable function properties of a source object to the
      * destination object. If `object` is a function then methods are added to
      * its prototype as well.
      *
-     * **Note:** Use `_.runInContext` to create a pristine `lodash` function
-     * for mixins to avoid conflicts caused by modifying the original.
+     * **Note:** Use `_.runInContext` to create a pristine `lodash` function to
+     * avoid conflicts caused by modifying the original.
      *
      * @static
      * @memberOf _
      * @category Utility
-     * @param {Function|Object} [object=this] object The destination object.
+     * @param {Function|Object} [object=lodash] The destination object.
      * @param {Object} source The object of functions to add.
      * @param {Object} [options] The options object.
      * @param {boolean} [options.chain=true] Specify whether the functions added
@@ -37429,9 +40974,6 @@ var cytoscape;
      *     return /[aeiou]/i.test(v);
      *   });
      * }
-     *
-     * // use `_.runInContext` to avoid conflicts (esp. in Node.js)
-     * var _ = require('lodash').runInContext();
      *
      * _.mixin({ 'vowels': vowels });
      * _.vowels('fred');
@@ -37447,8 +40989,8 @@ var cytoscape;
     function mixin(object, source, options) {
       if (options == null) {
         var isObj = isObject(source),
-            props = isObj && keys(source),
-            methodNames = props && props.length && baseFunctions(source, props);
+            props = isObj ? keys(source) : null,
+            methodNames = (props && props.length) ? baseFunctions(source, props) : null;
 
         if (!(methodNames ? methodNames.length : isObj)) {
           methodNames = false;
@@ -37515,7 +41057,7 @@ var cytoscape;
     }
 
     /**
-     * A no-operation function which returns `undefined` regardless of the
+     * A no-operation function that returns `undefined` regardless of the
      * arguments it receives.
      *
      * @static
@@ -37533,61 +41075,61 @@ var cytoscape;
     }
 
     /**
-     * Creates a function which returns the property value of `key` on a given object.
+     * Creates a function that returns the property value at `path` on a
+     * given object.
      *
      * @static
      * @memberOf _
      * @category Utility
-     * @param {string} key The key of the property to get.
+     * @param {Array|string} path The path of the property to get.
      * @returns {Function} Returns the new function.
      * @example
      *
-     * var users = [
-     *   { 'user': 'fred' },
-     *   { 'user': 'barney' }
+     * var objects = [
+     *   { 'a': { 'b': { 'c': 2 } } },
+     *   { 'a': { 'b': { 'c': 1 } } }
      * ];
      *
-     * var getName = _.property('user');
+     * _.map(objects, _.property('a.b.c'));
+     * // => [2, 1]
      *
-     * _.map(users, getName);
-     * // => ['fred', 'barney']
-     *
-     * _.pluck(_.sortBy(users, getName), 'user');
-     * // => ['barney', 'fred']
+     * _.pluck(_.sortBy(objects, _.property(['a', 'b', 'c'])), 'a.b.c');
+     * // => [1, 2]
      */
-    function property(key) {
-      return baseProperty(key + '');
+    function property(path) {
+      return isKey(path) ? baseProperty(path) : basePropertyDeep(path);
     }
 
     /**
-     * The opposite of `_.property`; this method creates a function which returns
-     * the property value of a given key on `object`.
+     * The opposite of `_.property`; this method creates a function that returns
+     * the property value at a given path on `object`.
      *
      * @static
      * @memberOf _
      * @category Utility
-     * @param {Object} object The object to inspect.
+     * @param {Object} object The object to query.
      * @returns {Function} Returns the new function.
      * @example
      *
-     * var object = { 'a': 3, 'b': 1, 'c': 2 };
+     * var array = [0, 1, 2],
+     *     object = { 'a': array, 'b': array, 'c': array };
      *
-     * _.map(['a', 'c'], _.propertyOf(object));
-     * // => [3, 2]
+     * _.map(['a[2]', 'c[0]'], _.propertyOf(object));
+     * // => [2, 0]
      *
-     * _.sortBy(['a', 'b', 'c'], _.propertyOf(object));
-     * // => ['b', 'c', 'a']
+     * _.map([['a', '2'], ['c', '0']], _.propertyOf(object));
+     * // => [2, 0]
      */
     function propertyOf(object) {
-      return function(key) {
-        return object == null ? undefined : object[key];
+      return function(path) {
+        return baseGet(object, toPath(path), path + '');
       };
     }
 
     /**
      * Creates an array of numbers (positive and/or negative) progressing from
      * `start` up to, but not including, `end`. If `end` is not specified it is
-     * set to `start` with `start` then set to `0`. If `start` is less than `end`
+     * set to `start` with `start` then set to `0`. If `end` is less than `start`
      * a zero-length range is created unless a negative `step` is specified.
      *
      * @static
@@ -37663,7 +41205,7 @@ var cytoscape;
      * _.times(3, function(n) {
      *   mage.castSpell(n);
      * });
-     * // => invokes `mage.castSpell(n)` three times with `n` of `0`, `1`, and `2` respectively
+     * // => invokes `mage.castSpell(n)` three times with `n` of `0`, `1`, and `2`
      *
      * _.times(3, function(n) {
      *   this.cast(n);
@@ -37671,7 +41213,7 @@ var cytoscape;
      * // => also invokes `mage.castSpell(n)` three times
      */
     function times(n, iteratee, thisArg) {
-      n = +n;
+      n = floor(n);
 
       // Exit early to avoid a JSC JIT bug in Safari 8
       // where `Array(0)` is treated as `Array(1)`.
@@ -37730,7 +41272,7 @@ var cytoscape;
      * // => 10
      */
     function add(augend, addend) {
-      return augend + addend;
+      return (+augend || 0) + (+addend || 0);
     }
 
     /**
@@ -37780,7 +41322,7 @@ var cytoscape;
      * _.max(users, 'age');
      * // => { 'user': 'fred', 'age': 40 }
      */
-    var max = createExtremum(arrayMax);
+    var max = createExtremum(gt, NEGATIVE_INFINITY);
 
     /**
      * Gets the minimum value of `collection`. If `collection` is empty or falsey
@@ -37829,7 +41371,7 @@ var cytoscape;
      * _.min(users, 'age');
      * // => { 'user': 'barney', 'age': 36 }
      */
-    var min = createExtremum(arrayMin, true);
+    var min = createExtremum(lt, POSITIVE_INFINITY);
 
     /**
      * Gets the sum of the values in `collection`.
@@ -37867,12 +41409,12 @@ var cytoscape;
       if (thisArg && isIterateeCall(collection, iteratee, thisArg)) {
         iteratee = null;
       }
-      var func = getCallback(),
+      var callback = getCallback(),
           noIteratee = iteratee == null;
 
-      if (!(func === baseCallback && noIteratee)) {
+      if (!(noIteratee && callback === baseCallback)) {
         noIteratee = false;
-        iteratee = func(iteratee, thisArg, 3);
+        iteratee = callback(iteratee, thisArg, 3);
       }
       return noIteratee
         ? arraySum(isArray(collection) ? collection : toIterable(collection))
@@ -37951,11 +41493,14 @@ var cytoscape;
     lodash.keys = keys;
     lodash.keysIn = keysIn;
     lodash.map = map;
+    lodash.mapKeys = mapKeys;
     lodash.mapValues = mapValues;
     lodash.matches = matches;
     lodash.matchesProperty = matchesProperty;
     lodash.memoize = memoize;
     lodash.merge = merge;
+    lodash.method = method;
+    lodash.methodOf = methodOf;
     lodash.mixin = mixin;
     lodash.negate = negate;
     lodash.omit = omit;
@@ -37976,6 +41521,7 @@ var cytoscape;
     lodash.remove = remove;
     lodash.rest = rest;
     lodash.restParam = restParam;
+    lodash.set = set;
     lodash.shuffle = shuffle;
     lodash.slice = slice;
     lodash.sortBy = sortBy;
@@ -37996,6 +41542,7 @@ var cytoscape;
     lodash.union = union;
     lodash.uniq = uniq;
     lodash.unzip = unzip;
+    lodash.unzipWith = unzipWith;
     lodash.values = values;
     lodash.valuesIn = valuesIn;
     lodash.where = where;
@@ -38004,6 +41551,7 @@ var cytoscape;
     lodash.xor = xor;
     lodash.zip = zip;
     lodash.zipObject = zipObject;
+    lodash.zipWith = zipWith;
 
     // Add aliases.
     lodash.backflow = flowRight;
@@ -38044,6 +41592,9 @@ var cytoscape;
     lodash.findLastKey = findLastKey;
     lodash.findWhere = findWhere;
     lodash.first = first;
+    lodash.get = get;
+    lodash.gt = gt;
+    lodash.gte = gte;
     lodash.has = has;
     lodash.identity = identity;
     lodash.includes = includes;
@@ -38073,6 +41624,8 @@ var cytoscape;
     lodash.kebabCase = kebabCase;
     lodash.last = last;
     lodash.lastIndexOf = lastIndexOf;
+    lodash.lt = lt;
+    lodash.lte = lte;
     lodash.max = max;
     lodash.min = min;
     lodash.noConflict = noConflict;
@@ -38109,6 +41662,7 @@ var cytoscape;
     lodash.all = every;
     lodash.any = some;
     lodash.contains = includes;
+    lodash.eq = isEqual;
     lodash.detect = find;
     lodash.foldl = reduce;
     lodash.foldr = reduceRight;
@@ -38232,7 +41786,7 @@ var cytoscape;
     // Add `LazyWrapper` methods for `_.pluck` and `_.where`.
     arrayEach(['pluck', 'where'], function(methodName, index) {
       var operationName = index ? 'filter' : 'map',
-          createCallback = index ? baseMatches : baseProperty;
+          createCallback = index ? baseMatches : property;
 
       LazyWrapper.prototype[methodName] = function(value) {
         return this[operationName](createCallback(value));
@@ -38252,9 +41806,14 @@ var cytoscape;
 
     LazyWrapper.prototype.slice = function(start, end) {
       start = start == null ? 0 : (+start || 0);
-      var result = start < 0 ? this.takeRight(-start) : this.drop(start);
 
-      if (typeof end != 'undefined') {
+      var result = this;
+      if (start < 0) {
+        result = this.takeRight(-start);
+      } else if (start) {
+        result = this.drop(start);
+      }
+      if (end !== undefined) {
         end = (+end || 0);
         result = end < 0 ? result.dropRight(-end) : result.take(end - start);
       }
@@ -38276,7 +41835,6 @@ var cytoscape;
 
       lodash.prototype[methodName] = function() {
         var args = arguments,
-            length = args.length,
             chainAll = this.__chain__,
             value = this.__wrapped__,
             isHybrid = !!this.__actions__.length,
@@ -38285,7 +41843,7 @@ var cytoscape;
             useLazy = isLazy || isArray(value);
 
         if (useLazy && checkIteratee && typeof iteratee == 'function' && iteratee.length != 1) {
-          // avoid lazy use if the iteratee has a `length` other than `1`
+          // avoid lazy use if the iteratee has a "length" value other than `1`
           isLazy = useLazy = false;
         }
         var onlyLazy = isLazy && !isHybrid;
@@ -38390,7 +41948,7 @@ var cytoscape;
     if (moduleExports) {
       (freeModule.exports = _)._ = _;
     }
-    // Export for Narwhal or Rhino -require.
+    // Export for Rhino with CommonJS support.
     else {
       freeExports._ = _;
     }
@@ -38403,7 +41961,7 @@ var cytoscape;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],14:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function() {
   var callWithJQuery;
 
@@ -38420,18 +41978,29 @@ var cytoscape;
   callWithJQuery(function($) {
     return $.pivotUtilities.d3_renderers = {
       Treemap: function(pivotData, opts) {
-        var addToTree, color, defaults, height, margin, result, rowKey, tree, treemap, value, width, _i, _len, _ref;
+        var addToTree, color, defaults, height, i, len, ref, result, rowKey, tree, treemap, value, width;
         defaults = {
-          localeStrings: {}
+          localeStrings: {},
+          d3: {
+            width: function() {
+              return $(window).width() / 1.4;
+            },
+            height: function() {
+              return $(window).height() / 1.4;
+            }
+          }
         };
         opts = $.extend(defaults, opts);
-        result = $("<div style='width: 100%; height: 100%;'>");
+        result = $("<div>").css({
+          width: "100%",
+          height: "100%"
+        });
         tree = {
           name: "All",
           children: []
         };
         addToTree = function(tree, path, value) {
-          var child, newChild, x, _i, _len, _ref;
+          var child, i, len, newChild, ref, x;
           if (path.length === 0) {
             tree.value = value;
             return;
@@ -38440,9 +42009,9 @@ var cytoscape;
             tree.children = [];
           }
           x = path.shift();
-          _ref = tree.children;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            child = _ref[_i];
+          ref = tree.children;
+          for (i = 0, len = ref.length; i < len; i++) {
+            child = ref[i];
             if (!(child.name === x)) {
               continue;
             }
@@ -38455,22 +42024,21 @@ var cytoscape;
           addToTree(newChild, path, value);
           return tree.children.push(newChild);
         };
-        _ref = pivotData.getRowKeys();
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          rowKey = _ref[_i];
+        ref = pivotData.getRowKeys();
+        for (i = 0, len = ref.length; i < len; i++) {
+          rowKey = ref[i];
           value = pivotData.getAggregator(rowKey, []).value();
           if (value != null) {
             addToTree(tree, rowKey, value);
           }
         }
         color = d3.scale.category10();
-        width = $(window).width() / 1.4;
-        height = $(window).height() / 1.4;
-        margin = 10;
+        width = opts.d3.width();
+        height = opts.d3.height();
         treemap = d3.layout.treemap().size([width, height]).sticky(true).value(function(d) {
           return d.size;
         });
-        d3.select(result[0]).append("div").style("position", "relative").style("width", (width + margin * 2) + "px").style("height", (height + margin * 2) + "px").style("left", margin + "px").style("top", margin + "px").datum(tree).selectAll(".node").data(treemap.padding([15, 0, 0, 0]).value(function(d) {
+        d3.select(result[0]).append("div").style("position", "relative").style("width", width + "px").style("height", height + "px").datum(tree).selectAll(".node").data(treemap.padding([15, 0, 0, 0]).value(function(d) {
           return d.value;
         }).nodes).enter().append("div").attr("class", "node").style("background", function(d) {
           if (d.children != null) {
@@ -38499,7 +42067,7 @@ var cytoscape;
 }).call(this);
 
 //# sourceMappingURL=d3_renderers.js.map
-},{"jquery":undefined}],15:[function(require,module,exports){
+},{"jquery":undefined}],19:[function(require,module,exports){
 (function() {
   var callWithJQuery;
 
@@ -38517,11 +42085,19 @@ var cytoscape;
     var makeGoogleChart;
     makeGoogleChart = function(chartType, extraOptions) {
       return function(pivotData, opts) {
-        var agg, colKey, colKeys, dataArray, dataTable, defaults, groupByTitle, h, hAxisTitle, headers, k, numCharsInHAxis, options, result, row, rowKey, rowKeys, title, v, vAxisTitle, wrapper, _i, _j, _len, _len1;
+        var agg, colKey, colKeys, dataArray, dataTable, defaults, fullAggName, groupByTitle, h, hAxisTitle, headers, i, j, k, len, len1, numCharsInHAxis, options, ref, result, row, rowKey, rowKeys, title, tree2, v, vAxisTitle, val, wrapper, x, y;
         defaults = {
           localeStrings: {
             vs: "vs",
             by: "by"
+          },
+          gchart: {
+            width: function() {
+              return window.innerWidth / 1.4;
+            },
+            height: function() {
+              return window.innerHeight / 1.4;
+            }
           }
         };
         opts = $.extend(defaults, opts);
@@ -38533,45 +42109,82 @@ var cytoscape;
         if (colKeys.length === 0) {
           colKeys.push([]);
         }
+        fullAggName = pivotData.aggregatorName;
+        if (pivotData.valAttrs.length) {
+          fullAggName += "(" + (pivotData.valAttrs.join(", ")) + ")";
+        }
         headers = (function() {
-          var _i, _len, _results;
-          _results = [];
-          for (_i = 0, _len = rowKeys.length; _i < _len; _i++) {
-            h = rowKeys[_i];
-            _results.push(h.join("-"));
+          var i, len, results;
+          results = [];
+          for (i = 0, len = rowKeys.length; i < len; i++) {
+            h = rowKeys[i];
+            results.push(h.join("-"));
           }
-          return _results;
+          return results;
         })();
         headers.unshift("");
         numCharsInHAxis = 0;
-        dataArray = [headers];
-        for (_i = 0, _len = colKeys.length; _i < _len; _i++) {
-          colKey = colKeys[_i];
-          row = [colKey.join("-")];
-          numCharsInHAxis += row[0].length;
-          for (_j = 0, _len1 = rowKeys.length; _j < _len1; _j++) {
-            rowKey = rowKeys[_j];
-            agg = pivotData.getAggregator(rowKey, colKey);
-            if (agg.value() != null) {
-              row.push(agg.value());
-            } else {
-              row.push(null);
+        if (chartType === "ScatterChart") {
+          dataArray = [];
+          ref = pivotData.tree;
+          for (y in ref) {
+            tree2 = ref[y];
+            for (x in tree2) {
+              agg = tree2[x];
+              dataArray.push([parseFloat(x), parseFloat(y), fullAggName + ": \n" + agg.format(agg.value())]);
             }
           }
-          dataArray.push(row);
-        }
-        title = vAxisTitle = pivotData.aggregatorName + (pivotData.valAttrs.length ? "(" + (pivotData.valAttrs.join(", ")) + ")" : "");
-        hAxisTitle = pivotData.colAttrs.join("-");
-        if (hAxisTitle !== "") {
-          title += " " + opts.localeStrings.vs + " " + hAxisTitle;
-        }
-        groupByTitle = pivotData.rowAttrs.join("-");
-        if (groupByTitle !== "") {
-          title += " " + opts.localeStrings.by + " " + groupByTitle;
+          dataTable = new google.visualization.DataTable();
+          dataTable.addColumn('number', pivotData.colAttrs.join("-"));
+          dataTable.addColumn('number', pivotData.rowAttrs.join("-"));
+          dataTable.addColumn({
+            type: "string",
+            role: "tooltip"
+          });
+          dataTable.addRows(dataArray);
+          hAxisTitle = pivotData.colAttrs.join("-");
+          vAxisTitle = pivotData.rowAttrs.join("-");
+          title = "";
+        } else {
+          dataArray = [headers];
+          for (i = 0, len = colKeys.length; i < len; i++) {
+            colKey = colKeys[i];
+            row = [colKey.join("-")];
+            numCharsInHAxis += row[0].length;
+            for (j = 0, len1 = rowKeys.length; j < len1; j++) {
+              rowKey = rowKeys[j];
+              agg = pivotData.getAggregator(rowKey, colKey);
+              if (agg.value() != null) {
+                val = agg.value();
+                if ($.isNumeric(val)) {
+                  if (val < 1) {
+                    row.push(parseFloat(val.toPrecision(3)));
+                  } else {
+                    row.push(parseFloat(val.toFixed(3)));
+                  }
+                } else {
+                  row.push(val);
+                }
+              } else {
+                row.push(null);
+              }
+            }
+            dataArray.push(row);
+          }
+          dataTable = google.visualization.arrayToDataTable(dataArray);
+          title = vAxisTitle = fullAggName;
+          hAxisTitle = pivotData.colAttrs.join("-");
+          if (hAxisTitle !== "") {
+            title += " " + opts.localeStrings.vs + " " + hAxisTitle;
+          }
+          groupByTitle = pivotData.rowAttrs.join("-");
+          if (groupByTitle !== "") {
+            title += " " + opts.localeStrings.by + " " + groupByTitle;
+          }
         }
         options = {
-          width: $(window).width() / 1.4,
-          height: $(window).height() / 1.4,
+          width: opts.gchart.width(),
+          height: opts.gchart.height(),
           title: title,
           hAxis: {
             title: hAxisTitle,
@@ -38579,9 +42192,26 @@ var cytoscape;
           },
           vAxis: {
             title: vAxisTitle
+          },
+          tooltip: {
+            textStyle: {
+              fontName: 'Arial',
+              fontSize: 12
+            }
           }
         };
-        if (dataArray[0].length === 2 && dataArray[0][1] === "") {
+        if (chartType === "ColumnChart") {
+          options.vAxis.minValue = 0;
+        }
+        if (chartType === "ScatterChart") {
+          options.legend = {
+            position: "none"
+          };
+          options.chartArea = {
+            'width': '80%',
+            'height': '80%'
+          };
+        } else if (dataArray[0].length === 2 && dataArray[0][1] === "") {
           options.legend = {
             position: "none"
           };
@@ -38590,8 +42220,10 @@ var cytoscape;
           v = extraOptions[k];
           options[k] = v;
         }
-        dataTable = google.visualization.arrayToDataTable(dataArray);
-        result = $("<div style='width: 100%; height: 100%;'>");
+        result = $("<div>").css({
+          width: "100%",
+          height: "100%"
+        });
         wrapper = new google.visualization.ChartWrapper({
           dataTable: dataTable,
           chartType: chartType,
@@ -38617,14 +42249,15 @@ var cytoscape;
       }),
       "Area Chart": makeGoogleChart("AreaChart", {
         isStacked: true
-      })
+      }),
+      "Scatter Chart": makeGoogleChart("ScatterChart")
     };
   });
 
 }).call(this);
 
 //# sourceMappingURL=gchart_renderers.js.map
-},{"jquery":undefined}],16:[function(require,module,exports){
+},{"jquery":undefined}],20:[function(require,module,exports){
 ;(function(win){
 	var store = {},
 		doc = win.document,
@@ -38801,10 +42434,10 @@ var cytoscape;
 
 })(Function('return this')());
 
-},{}],17:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 module.exports={
   "name": "yasgui-utils",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Utils for YASGUI libs",
   "main": "src/main.js",
   "repository": {
@@ -38833,23 +42466,24 @@ module.exports={
   "dependencies": {
     "store": "^1.3.14"
   },
-  "_id": "yasgui-utils@1.5.2",
+  "_id": "yasgui-utils@1.6.0",
   "dist": {
-    "shasum": "c7d06928898e788ee2958969e4c2dc26f435aa64",
-    "tarball": "http://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.5.2.tgz"
+    "shasum": "bcb9091109c233e3e82737c94c202e6512389c47",
+    "tarball": "http://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.6.0.tgz"
   },
-  "_from": "yasgui-utils@>=1.4.1 <2.0.0",
+  "_from": "yasgui-utils@1.6.0",
   "_npmVersion": "1.4.3",
   "_npmUser": {
     "name": "laurens.rietveld",
     "email": "laurens.rietveld@gmail.com"
   },
   "directories": {},
-  "_shasum": "c7d06928898e788ee2958969e4c2dc26f435aa64",
-  "_resolved": "https://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.5.2.tgz"
+  "_shasum": "bcb9091109c233e3e82737c94c202e6512389c47",
+  "_resolved": "https://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.6.0.tgz",
+  "readme": "ERROR: No README data found!"
 }
 
-},{}],18:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 window.console = window.console || {"log":function(){}};//make sure any console statements don't break IE
 module.exports = {
 	storage: require("./storage.js"),
@@ -38870,7 +42504,7 @@ module.exports = {
 	}
 };
 
-},{"../package.json":17,"./storage.js":19,"./svg.js":20}],19:[function(require,module,exports){
+},{"../package.json":21,"./storage.js":23,"./svg.js":24}],23:[function(require,module,exports){
 var store = require("store");
 var times = {
 	day: function() {
@@ -38901,8 +42535,16 @@ var root = module.exports = {
 		}
 	},
 	remove: function(key) {
-    if (!store.enabled) return;//this is probably in private mode. Don't run, as we might get Js errors
+		if (!store.enabled) return;//this is probably in private mode. Don't run, as we might get Js errors
 		if (key) store.remove(key)
+	},
+	removeAll: function(filter) {
+		if (!store.enabled) return;//this is probably in private mode. Don't run, as we might get Js errors
+		if (typeof filter === 'function') {
+			for (var key in store.getAll()) {
+				if (filter(key, root.get(key))) root.remove(key);
+			}
+		}
 	},
 	get : function(key) {
     if (!store.enabled) return null;//this is probably in private mode. Don't run, as we might get Js errors
@@ -38922,7 +42564,7 @@ var root = module.exports = {
 
 };
 
-},{"store":16}],20:[function(require,module,exports){
+},{"store":20}],24:[function(require,module,exports){
 module.exports = {
 	draw: function(parent, svgString) {
 		if (!parent) return;
@@ -38951,7 +42593,2589 @@ module.exports = {
 		return false;
 	}
 };
-},{}],21:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
+/*!
+ * ZeroClipboard
+ * The ZeroClipboard library provides an easy way to copy text to the clipboard using an invisible Adobe Flash movie and a JavaScript interface.
+ * Copyright (c) 2009-2014 Jon Rohan, James M. Greene
+ * Licensed MIT
+ * http://zeroclipboard.org/
+ * v2.2.0
+ */
+(function(window, undefined) {
+  "use strict";
+  /**
+ * Store references to critically important global functions that may be
+ * overridden on certain web pages.
+ */
+  var _window = window, _document = _window.document, _navigator = _window.navigator, _setTimeout = _window.setTimeout, _clearTimeout = _window.clearTimeout, _setInterval = _window.setInterval, _clearInterval = _window.clearInterval, _getComputedStyle = _window.getComputedStyle, _encodeURIComponent = _window.encodeURIComponent, _ActiveXObject = _window.ActiveXObject, _Error = _window.Error, _parseInt = _window.Number.parseInt || _window.parseInt, _parseFloat = _window.Number.parseFloat || _window.parseFloat, _isNaN = _window.Number.isNaN || _window.isNaN, _now = _window.Date.now, _keys = _window.Object.keys, _defineProperty = _window.Object.defineProperty, _hasOwn = _window.Object.prototype.hasOwnProperty, _slice = _window.Array.prototype.slice, _unwrap = function() {
+    var unwrapper = function(el) {
+      return el;
+    };
+    if (typeof _window.wrap === "function" && typeof _window.unwrap === "function") {
+      try {
+        var div = _document.createElement("div");
+        var unwrappedDiv = _window.unwrap(div);
+        if (div.nodeType === 1 && unwrappedDiv && unwrappedDiv.nodeType === 1) {
+          unwrapper = _window.unwrap;
+        }
+      } catch (e) {}
+    }
+    return unwrapper;
+  }();
+  /**
+ * Convert an `arguments` object into an Array.
+ *
+ * @returns The arguments as an Array
+ * @private
+ */
+  var _args = function(argumentsObj) {
+    return _slice.call(argumentsObj, 0);
+  };
+  /**
+ * Shallow-copy the owned, enumerable properties of one object over to another, similar to jQuery's `$.extend`.
+ *
+ * @returns The target object, augmented
+ * @private
+ */
+  var _extend = function() {
+    var i, len, arg, prop, src, copy, args = _args(arguments), target = args[0] || {};
+    for (i = 1, len = args.length; i < len; i++) {
+      if ((arg = args[i]) != null) {
+        for (prop in arg) {
+          if (_hasOwn.call(arg, prop)) {
+            src = target[prop];
+            copy = arg[prop];
+            if (target !== copy && copy !== undefined) {
+              target[prop] = copy;
+            }
+          }
+        }
+      }
+    }
+    return target;
+  };
+  /**
+ * Return a deep copy of the source object or array.
+ *
+ * @returns Object or Array
+ * @private
+ */
+  var _deepCopy = function(source) {
+    var copy, i, len, prop;
+    if (typeof source !== "object" || source == null || typeof source.nodeType === "number") {
+      copy = source;
+    } else if (typeof source.length === "number") {
+      copy = [];
+      for (i = 0, len = source.length; i < len; i++) {
+        if (_hasOwn.call(source, i)) {
+          copy[i] = _deepCopy(source[i]);
+        }
+      }
+    } else {
+      copy = {};
+      for (prop in source) {
+        if (_hasOwn.call(source, prop)) {
+          copy[prop] = _deepCopy(source[prop]);
+        }
+      }
+    }
+    return copy;
+  };
+  /**
+ * Makes a shallow copy of `obj` (like `_extend`) but filters its properties based on a list of `keys` to keep.
+ * The inverse of `_omit`, mostly. The big difference is that these properties do NOT need to be enumerable to
+ * be kept.
+ *
+ * @returns A new filtered object.
+ * @private
+ */
+  var _pick = function(obj, keys) {
+    var newObj = {};
+    for (var i = 0, len = keys.length; i < len; i++) {
+      if (keys[i] in obj) {
+        newObj[keys[i]] = obj[keys[i]];
+      }
+    }
+    return newObj;
+  };
+  /**
+ * Makes a shallow copy of `obj` (like `_extend`) but filters its properties based on a list of `keys` to omit.
+ * The inverse of `_pick`.
+ *
+ * @returns A new filtered object.
+ * @private
+ */
+  var _omit = function(obj, keys) {
+    var newObj = {};
+    for (var prop in obj) {
+      if (keys.indexOf(prop) === -1) {
+        newObj[prop] = obj[prop];
+      }
+    }
+    return newObj;
+  };
+  /**
+ * Remove all owned, enumerable properties from an object.
+ *
+ * @returns The original object without its owned, enumerable properties.
+ * @private
+ */
+  var _deleteOwnProperties = function(obj) {
+    if (obj) {
+      for (var prop in obj) {
+        if (_hasOwn.call(obj, prop)) {
+          delete obj[prop];
+        }
+      }
+    }
+    return obj;
+  };
+  /**
+ * Determine if an element is contained within another element.
+ *
+ * @returns Boolean
+ * @private
+ */
+  var _containedBy = function(el, ancestorEl) {
+    if (el && el.nodeType === 1 && el.ownerDocument && ancestorEl && (ancestorEl.nodeType === 1 && ancestorEl.ownerDocument && ancestorEl.ownerDocument === el.ownerDocument || ancestorEl.nodeType === 9 && !ancestorEl.ownerDocument && ancestorEl === el.ownerDocument)) {
+      do {
+        if (el === ancestorEl) {
+          return true;
+        }
+        el = el.parentNode;
+      } while (el);
+    }
+    return false;
+  };
+  /**
+ * Get the URL path's parent directory.
+ *
+ * @returns String or `undefined`
+ * @private
+ */
+  var _getDirPathOfUrl = function(url) {
+    var dir;
+    if (typeof url === "string" && url) {
+      dir = url.split("#")[0].split("?")[0];
+      dir = url.slice(0, url.lastIndexOf("/") + 1);
+    }
+    return dir;
+  };
+  /**
+ * Get the current script's URL by throwing an `Error` and analyzing it.
+ *
+ * @returns String or `undefined`
+ * @private
+ */
+  var _getCurrentScriptUrlFromErrorStack = function(stack) {
+    var url, matches;
+    if (typeof stack === "string" && stack) {
+      matches = stack.match(/^(?:|[^:@]*@|.+\)@(?=http[s]?|file)|.+?\s+(?: at |@)(?:[^:\(]+ )*[\(]?)((?:http[s]?|file):\/\/[\/]?.+?\/[^:\)]*?)(?::\d+)(?::\d+)?/);
+      if (matches && matches[1]) {
+        url = matches[1];
+      } else {
+        matches = stack.match(/\)@((?:http[s]?|file):\/\/[\/]?.+?\/[^:\)]*?)(?::\d+)(?::\d+)?/);
+        if (matches && matches[1]) {
+          url = matches[1];
+        }
+      }
+    }
+    return url;
+  };
+  /**
+ * Get the current script's URL by throwing an `Error` and analyzing it.
+ *
+ * @returns String or `undefined`
+ * @private
+ */
+  var _getCurrentScriptUrlFromError = function() {
+    var url, err;
+    try {
+      throw new _Error();
+    } catch (e) {
+      err = e;
+    }
+    if (err) {
+      url = err.sourceURL || err.fileName || _getCurrentScriptUrlFromErrorStack(err.stack);
+    }
+    return url;
+  };
+  /**
+ * Get the current script's URL.
+ *
+ * @returns String or `undefined`
+ * @private
+ */
+  var _getCurrentScriptUrl = function() {
+    var jsPath, scripts, i;
+    if (_document.currentScript && (jsPath = _document.currentScript.src)) {
+      return jsPath;
+    }
+    scripts = _document.getElementsByTagName("script");
+    if (scripts.length === 1) {
+      return scripts[0].src || undefined;
+    }
+    if ("readyState" in scripts[0]) {
+      for (i = scripts.length; i--; ) {
+        if (scripts[i].readyState === "interactive" && (jsPath = scripts[i].src)) {
+          return jsPath;
+        }
+      }
+    }
+    if (_document.readyState === "loading" && (jsPath = scripts[scripts.length - 1].src)) {
+      return jsPath;
+    }
+    if (jsPath = _getCurrentScriptUrlFromError()) {
+      return jsPath;
+    }
+    return undefined;
+  };
+  /**
+ * Get the unanimous parent directory of ALL script tags.
+ * If any script tags are either (a) inline or (b) from differing parent
+ * directories, this method must return `undefined`.
+ *
+ * @returns String or `undefined`
+ * @private
+ */
+  var _getUnanimousScriptParentDir = function() {
+    var i, jsDir, jsPath, scripts = _document.getElementsByTagName("script");
+    for (i = scripts.length; i--; ) {
+      if (!(jsPath = scripts[i].src)) {
+        jsDir = null;
+        break;
+      }
+      jsPath = _getDirPathOfUrl(jsPath);
+      if (jsDir == null) {
+        jsDir = jsPath;
+      } else if (jsDir !== jsPath) {
+        jsDir = null;
+        break;
+      }
+    }
+    return jsDir || undefined;
+  };
+  /**
+ * Get the presumed location of the "ZeroClipboard.swf" file, based on the location
+ * of the executing JavaScript file (e.g. "ZeroClipboard.js", etc.).
+ *
+ * @returns String
+ * @private
+ */
+  var _getDefaultSwfPath = function() {
+    var jsDir = _getDirPathOfUrl(_getCurrentScriptUrl()) || _getUnanimousScriptParentDir() || "";
+    return jsDir + "ZeroClipboard.swf";
+  };
+  /**
+ * Keep track of if the page is framed (in an `iframe`). This can never change.
+ * @private
+ */
+  var _pageIsFramed = function() {
+    return window.opener == null && (!!window.top && window != window.top || !!window.parent && window != window.parent);
+  }();
+  /**
+ * Keep track of the state of the Flash object.
+ * @private
+ */
+  var _flashState = {
+    bridge: null,
+    version: "0.0.0",
+    pluginType: "unknown",
+    disabled: null,
+    outdated: null,
+    sandboxed: null,
+    unavailable: null,
+    degraded: null,
+    deactivated: null,
+    overdue: null,
+    ready: null
+  };
+  /**
+ * The minimum Flash Player version required to use ZeroClipboard completely.
+ * @readonly
+ * @private
+ */
+  var _minimumFlashVersion = "11.0.0";
+  /**
+ * The ZeroClipboard library version number, as reported by Flash, at the time the SWF was compiled.
+ */
+  var _zcSwfVersion;
+  /**
+ * Keep track of all event listener registrations.
+ * @private
+ */
+  var _handlers = {};
+  /**
+ * Keep track of the currently activated element.
+ * @private
+ */
+  var _currentElement;
+  /**
+ * Keep track of the element that was activated when a `copy` process started.
+ * @private
+ */
+  var _copyTarget;
+  /**
+ * Keep track of data for the pending clipboard transaction.
+ * @private
+ */
+  var _clipData = {};
+  /**
+ * Keep track of data formats for the pending clipboard transaction.
+ * @private
+ */
+  var _clipDataFormatMap = null;
+  /**
+ * Keep track of the Flash availability check timeout.
+ * @private
+ */
+  var _flashCheckTimeout = 0;
+  /**
+ * Keep track of SWF network errors interval polling.
+ * @private
+ */
+  var _swfFallbackCheckInterval = 0;
+  /**
+ * The `message` store for events
+ * @private
+ */
+  var _eventMessages = {
+    ready: "Flash communication is established",
+    error: {
+      "flash-disabled": "Flash is disabled or not installed. May also be attempting to run Flash in a sandboxed iframe, which is impossible.",
+      "flash-outdated": "Flash is too outdated to support ZeroClipboard",
+      "flash-sandboxed": "Attempting to run Flash in a sandboxed iframe, which is impossible",
+      "flash-unavailable": "Flash is unable to communicate bidirectionally with JavaScript",
+      "flash-degraded": "Flash is unable to preserve data fidelity when communicating with JavaScript",
+      "flash-deactivated": "Flash is too outdated for your browser and/or is configured as click-to-activate.\nThis may also mean that the ZeroClipboard SWF object could not be loaded, so please check your `swfPath` configuration and/or network connectivity.\nMay also be attempting to run Flash in a sandboxed iframe, which is impossible.",
+      "flash-overdue": "Flash communication was established but NOT within the acceptable time limit",
+      "version-mismatch": "ZeroClipboard JS version number does not match ZeroClipboard SWF version number",
+      "clipboard-error": "At least one error was thrown while ZeroClipboard was attempting to inject your data into the clipboard",
+      "config-mismatch": "ZeroClipboard configuration does not match Flash's reality",
+      "swf-not-found": "The ZeroClipboard SWF object could not be loaded, so please check your `swfPath` configuration and/or network connectivity"
+    }
+  };
+  /**
+ * The `name`s of `error` events that can only occur is Flash has at least
+ * been able to load the SWF successfully.
+ * @private
+ */
+  var _errorsThatOnlyOccurAfterFlashLoads = [ "flash-unavailable", "flash-degraded", "flash-overdue", "version-mismatch", "config-mismatch", "clipboard-error" ];
+  /**
+ * The `name`s of `error` events that should likely result in the `_flashState`
+ * variable's property values being updated.
+ * @private
+ */
+  var _flashStateErrorNames = [ "flash-disabled", "flash-outdated", "flash-sandboxed", "flash-unavailable", "flash-degraded", "flash-deactivated", "flash-overdue" ];
+  /**
+ * A RegExp to match the `name` property of `error` events related to Flash.
+ * @private
+ */
+  var _flashStateErrorNameMatchingRegex = new RegExp("^flash-(" + _flashStateErrorNames.map(function(errorName) {
+    return errorName.replace(/^flash-/, "");
+  }).join("|") + ")$");
+  /**
+ * A RegExp to match the `name` property of `error` events related to Flash,
+ * which is enabled.
+ * @private
+ */
+  var _flashStateEnabledErrorNameMatchingRegex = new RegExp("^flash-(" + _flashStateErrorNames.slice(1).map(function(errorName) {
+    return errorName.replace(/^flash-/, "");
+  }).join("|") + ")$");
+  /**
+ * ZeroClipboard configuration defaults for the Core module.
+ * @private
+ */
+  var _globalConfig = {
+    swfPath: _getDefaultSwfPath(),
+    trustedDomains: window.location.host ? [ window.location.host ] : [],
+    cacheBust: true,
+    forceEnhancedClipboard: false,
+    flashLoadTimeout: 3e4,
+    autoActivate: true,
+    bubbleEvents: true,
+    containerId: "global-zeroclipboard-html-bridge",
+    containerClass: "global-zeroclipboard-container",
+    swfObjectId: "global-zeroclipboard-flash-bridge",
+    hoverClass: "zeroclipboard-is-hover",
+    activeClass: "zeroclipboard-is-active",
+    forceHandCursor: false,
+    title: null,
+    zIndex: 999999999
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.config`.
+ * @private
+ */
+  var _config = function(options) {
+    if (typeof options === "object" && options !== null) {
+      for (var prop in options) {
+        if (_hasOwn.call(options, prop)) {
+          if (/^(?:forceHandCursor|title|zIndex|bubbleEvents)$/.test(prop)) {
+            _globalConfig[prop] = options[prop];
+          } else if (_flashState.bridge == null) {
+            if (prop === "containerId" || prop === "swfObjectId") {
+              if (_isValidHtml4Id(options[prop])) {
+                _globalConfig[prop] = options[prop];
+              } else {
+                throw new Error("The specified `" + prop + "` value is not valid as an HTML4 Element ID");
+              }
+            } else {
+              _globalConfig[prop] = options[prop];
+            }
+          }
+        }
+      }
+    }
+    if (typeof options === "string" && options) {
+      if (_hasOwn.call(_globalConfig, options)) {
+        return _globalConfig[options];
+      }
+      return;
+    }
+    return _deepCopy(_globalConfig);
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.state`.
+ * @private
+ */
+  var _state = function() {
+    _detectSandbox();
+    return {
+      browser: _pick(_navigator, [ "userAgent", "platform", "appName" ]),
+      flash: _omit(_flashState, [ "bridge" ]),
+      zeroclipboard: {
+        version: ZeroClipboard.version,
+        config: ZeroClipboard.config()
+      }
+    };
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.isFlashUnusable`.
+ * @private
+ */
+  var _isFlashUnusable = function() {
+    return !!(_flashState.disabled || _flashState.outdated || _flashState.sandboxed || _flashState.unavailable || _flashState.degraded || _flashState.deactivated);
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.on`.
+ * @private
+ */
+  var _on = function(eventType, listener) {
+    var i, len, events, added = {};
+    if (typeof eventType === "string" && eventType) {
+      events = eventType.toLowerCase().split(/\s+/);
+    } else if (typeof eventType === "object" && eventType && typeof listener === "undefined") {
+      for (i in eventType) {
+        if (_hasOwn.call(eventType, i) && typeof i === "string" && i && typeof eventType[i] === "function") {
+          ZeroClipboard.on(i, eventType[i]);
+        }
+      }
+    }
+    if (events && events.length) {
+      for (i = 0, len = events.length; i < len; i++) {
+        eventType = events[i].replace(/^on/, "");
+        added[eventType] = true;
+        if (!_handlers[eventType]) {
+          _handlers[eventType] = [];
+        }
+        _handlers[eventType].push(listener);
+      }
+      if (added.ready && _flashState.ready) {
+        ZeroClipboard.emit({
+          type: "ready"
+        });
+      }
+      if (added.error) {
+        for (i = 0, len = _flashStateErrorNames.length; i < len; i++) {
+          if (_flashState[_flashStateErrorNames[i].replace(/^flash-/, "")] === true) {
+            ZeroClipboard.emit({
+              type: "error",
+              name: _flashStateErrorNames[i]
+            });
+            break;
+          }
+        }
+        if (_zcSwfVersion !== undefined && ZeroClipboard.version !== _zcSwfVersion) {
+          ZeroClipboard.emit({
+            type: "error",
+            name: "version-mismatch",
+            jsVersion: ZeroClipboard.version,
+            swfVersion: _zcSwfVersion
+          });
+        }
+      }
+    }
+    return ZeroClipboard;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.off`.
+ * @private
+ */
+  var _off = function(eventType, listener) {
+    var i, len, foundIndex, events, perEventHandlers;
+    if (arguments.length === 0) {
+      events = _keys(_handlers);
+    } else if (typeof eventType === "string" && eventType) {
+      events = eventType.split(/\s+/);
+    } else if (typeof eventType === "object" && eventType && typeof listener === "undefined") {
+      for (i in eventType) {
+        if (_hasOwn.call(eventType, i) && typeof i === "string" && i && typeof eventType[i] === "function") {
+          ZeroClipboard.off(i, eventType[i]);
+        }
+      }
+    }
+    if (events && events.length) {
+      for (i = 0, len = events.length; i < len; i++) {
+        eventType = events[i].toLowerCase().replace(/^on/, "");
+        perEventHandlers = _handlers[eventType];
+        if (perEventHandlers && perEventHandlers.length) {
+          if (listener) {
+            foundIndex = perEventHandlers.indexOf(listener);
+            while (foundIndex !== -1) {
+              perEventHandlers.splice(foundIndex, 1);
+              foundIndex = perEventHandlers.indexOf(listener, foundIndex);
+            }
+          } else {
+            perEventHandlers.length = 0;
+          }
+        }
+      }
+    }
+    return ZeroClipboard;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.handlers`.
+ * @private
+ */
+  var _listeners = function(eventType) {
+    var copy;
+    if (typeof eventType === "string" && eventType) {
+      copy = _deepCopy(_handlers[eventType]) || null;
+    } else {
+      copy = _deepCopy(_handlers);
+    }
+    return copy;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.emit`.
+ * @private
+ */
+  var _emit = function(event) {
+    var eventCopy, returnVal, tmp;
+    event = _createEvent(event);
+    if (!event) {
+      return;
+    }
+    if (_preprocessEvent(event)) {
+      return;
+    }
+    if (event.type === "ready" && _flashState.overdue === true) {
+      return ZeroClipboard.emit({
+        type: "error",
+        name: "flash-overdue"
+      });
+    }
+    eventCopy = _extend({}, event);
+    _dispatchCallbacks.call(this, eventCopy);
+    if (event.type === "copy") {
+      tmp = _mapClipDataToFlash(_clipData);
+      returnVal = tmp.data;
+      _clipDataFormatMap = tmp.formatMap;
+    }
+    return returnVal;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.create`.
+ * @private
+ */
+  var _create = function() {
+    var previousState = _flashState.sandboxed;
+    _detectSandbox();
+    if (typeof _flashState.ready !== "boolean") {
+      _flashState.ready = false;
+    }
+    if (_flashState.sandboxed !== previousState && _flashState.sandboxed === true) {
+      _flashState.ready = false;
+      ZeroClipboard.emit({
+        type: "error",
+        name: "flash-sandboxed"
+      });
+    } else if (!ZeroClipboard.isFlashUnusable() && _flashState.bridge === null) {
+      var maxWait = _globalConfig.flashLoadTimeout;
+      if (typeof maxWait === "number" && maxWait >= 0) {
+        _flashCheckTimeout = _setTimeout(function() {
+          if (typeof _flashState.deactivated !== "boolean") {
+            _flashState.deactivated = true;
+          }
+          if (_flashState.deactivated === true) {
+            ZeroClipboard.emit({
+              type: "error",
+              name: "flash-deactivated"
+            });
+          }
+        }, maxWait);
+      }
+      _flashState.overdue = false;
+      _embedSwf();
+    }
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.destroy`.
+ * @private
+ */
+  var _destroy = function() {
+    ZeroClipboard.clearData();
+    ZeroClipboard.blur();
+    ZeroClipboard.emit("destroy");
+    _unembedSwf();
+    ZeroClipboard.off();
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.setData`.
+ * @private
+ */
+  var _setData = function(format, data) {
+    var dataObj;
+    if (typeof format === "object" && format && typeof data === "undefined") {
+      dataObj = format;
+      ZeroClipboard.clearData();
+    } else if (typeof format === "string" && format) {
+      dataObj = {};
+      dataObj[format] = data;
+    } else {
+      return;
+    }
+    for (var dataFormat in dataObj) {
+      if (typeof dataFormat === "string" && dataFormat && _hasOwn.call(dataObj, dataFormat) && typeof dataObj[dataFormat] === "string" && dataObj[dataFormat]) {
+        _clipData[dataFormat] = dataObj[dataFormat];
+      }
+    }
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.clearData`.
+ * @private
+ */
+  var _clearData = function(format) {
+    if (typeof format === "undefined") {
+      _deleteOwnProperties(_clipData);
+      _clipDataFormatMap = null;
+    } else if (typeof format === "string" && _hasOwn.call(_clipData, format)) {
+      delete _clipData[format];
+    }
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.getData`.
+ * @private
+ */
+  var _getData = function(format) {
+    if (typeof format === "undefined") {
+      return _deepCopy(_clipData);
+    } else if (typeof format === "string" && _hasOwn.call(_clipData, format)) {
+      return _clipData[format];
+    }
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.focus`/`ZeroClipboard.activate`.
+ * @private
+ */
+  var _focus = function(element) {
+    if (!(element && element.nodeType === 1)) {
+      return;
+    }
+    if (_currentElement) {
+      _removeClass(_currentElement, _globalConfig.activeClass);
+      if (_currentElement !== element) {
+        _removeClass(_currentElement, _globalConfig.hoverClass);
+      }
+    }
+    _currentElement = element;
+    _addClass(element, _globalConfig.hoverClass);
+    var newTitle = element.getAttribute("title") || _globalConfig.title;
+    if (typeof newTitle === "string" && newTitle) {
+      var htmlBridge = _getHtmlBridge(_flashState.bridge);
+      if (htmlBridge) {
+        htmlBridge.setAttribute("title", newTitle);
+      }
+    }
+    var useHandCursor = _globalConfig.forceHandCursor === true || _getStyle(element, "cursor") === "pointer";
+    _setHandCursor(useHandCursor);
+    _reposition();
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.blur`/`ZeroClipboard.deactivate`.
+ * @private
+ */
+  var _blur = function() {
+    var htmlBridge = _getHtmlBridge(_flashState.bridge);
+    if (htmlBridge) {
+      htmlBridge.removeAttribute("title");
+      htmlBridge.style.left = "0px";
+      htmlBridge.style.top = "-9999px";
+      htmlBridge.style.width = "1px";
+      htmlBridge.style.height = "1px";
+    }
+    if (_currentElement) {
+      _removeClass(_currentElement, _globalConfig.hoverClass);
+      _removeClass(_currentElement, _globalConfig.activeClass);
+      _currentElement = null;
+    }
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.activeElement`.
+ * @private
+ */
+  var _activeElement = function() {
+    return _currentElement || null;
+  };
+  /**
+ * Check if a value is a valid HTML4 `ID` or `Name` token.
+ * @private
+ */
+  var _isValidHtml4Id = function(id) {
+    return typeof id === "string" && id && /^[A-Za-z][A-Za-z0-9_:\-\.]*$/.test(id);
+  };
+  /**
+ * Create or update an `event` object, based on the `eventType`.
+ * @private
+ */
+  var _createEvent = function(event) {
+    var eventType;
+    if (typeof event === "string" && event) {
+      eventType = event;
+      event = {};
+    } else if (typeof event === "object" && event && typeof event.type === "string" && event.type) {
+      eventType = event.type;
+    }
+    if (!eventType) {
+      return;
+    }
+    eventType = eventType.toLowerCase();
+    if (!event.target && (/^(copy|aftercopy|_click)$/.test(eventType) || eventType === "error" && event.name === "clipboard-error")) {
+      event.target = _copyTarget;
+    }
+    _extend(event, {
+      type: eventType,
+      target: event.target || _currentElement || null,
+      relatedTarget: event.relatedTarget || null,
+      currentTarget: _flashState && _flashState.bridge || null,
+      timeStamp: event.timeStamp || _now() || null
+    });
+    var msg = _eventMessages[event.type];
+    if (event.type === "error" && event.name && msg) {
+      msg = msg[event.name];
+    }
+    if (msg) {
+      event.message = msg;
+    }
+    if (event.type === "ready") {
+      _extend(event, {
+        target: null,
+        version: _flashState.version
+      });
+    }
+    if (event.type === "error") {
+      if (_flashStateErrorNameMatchingRegex.test(event.name)) {
+        _extend(event, {
+          target: null,
+          minimumVersion: _minimumFlashVersion
+        });
+      }
+      if (_flashStateEnabledErrorNameMatchingRegex.test(event.name)) {
+        _extend(event, {
+          version: _flashState.version
+        });
+      }
+    }
+    if (event.type === "copy") {
+      event.clipboardData = {
+        setData: ZeroClipboard.setData,
+        clearData: ZeroClipboard.clearData
+      };
+    }
+    if (event.type === "aftercopy") {
+      event = _mapClipResultsFromFlash(event, _clipDataFormatMap);
+    }
+    if (event.target && !event.relatedTarget) {
+      event.relatedTarget = _getRelatedTarget(event.target);
+    }
+    return _addMouseData(event);
+  };
+  /**
+ * Get a relatedTarget from the target's `data-clipboard-target` attribute
+ * @private
+ */
+  var _getRelatedTarget = function(targetEl) {
+    var relatedTargetId = targetEl && targetEl.getAttribute && targetEl.getAttribute("data-clipboard-target");
+    return relatedTargetId ? _document.getElementById(relatedTargetId) : null;
+  };
+  /**
+ * Add element and position data to `MouseEvent` instances
+ * @private
+ */
+  var _addMouseData = function(event) {
+    if (event && /^_(?:click|mouse(?:over|out|down|up|move))$/.test(event.type)) {
+      var srcElement = event.target;
+      var fromElement = event.type === "_mouseover" && event.relatedTarget ? event.relatedTarget : undefined;
+      var toElement = event.type === "_mouseout" && event.relatedTarget ? event.relatedTarget : undefined;
+      var pos = _getElementPosition(srcElement);
+      var screenLeft = _window.screenLeft || _window.screenX || 0;
+      var screenTop = _window.screenTop || _window.screenY || 0;
+      var scrollLeft = _document.body.scrollLeft + _document.documentElement.scrollLeft;
+      var scrollTop = _document.body.scrollTop + _document.documentElement.scrollTop;
+      var pageX = pos.left + (typeof event._stageX === "number" ? event._stageX : 0);
+      var pageY = pos.top + (typeof event._stageY === "number" ? event._stageY : 0);
+      var clientX = pageX - scrollLeft;
+      var clientY = pageY - scrollTop;
+      var screenX = screenLeft + clientX;
+      var screenY = screenTop + clientY;
+      var moveX = typeof event.movementX === "number" ? event.movementX : 0;
+      var moveY = typeof event.movementY === "number" ? event.movementY : 0;
+      delete event._stageX;
+      delete event._stageY;
+      _extend(event, {
+        srcElement: srcElement,
+        fromElement: fromElement,
+        toElement: toElement,
+        screenX: screenX,
+        screenY: screenY,
+        pageX: pageX,
+        pageY: pageY,
+        clientX: clientX,
+        clientY: clientY,
+        x: clientX,
+        y: clientY,
+        movementX: moveX,
+        movementY: moveY,
+        offsetX: 0,
+        offsetY: 0,
+        layerX: 0,
+        layerY: 0
+      });
+    }
+    return event;
+  };
+  /**
+ * Determine if an event's registered handlers should be execute synchronously or asynchronously.
+ *
+ * @returns {boolean}
+ * @private
+ */
+  var _shouldPerformAsync = function(event) {
+    var eventType = event && typeof event.type === "string" && event.type || "";
+    return !/^(?:(?:before)?copy|destroy)$/.test(eventType);
+  };
+  /**
+ * Control if a callback should be executed asynchronously or not.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _dispatchCallback = function(func, context, args, async) {
+    if (async) {
+      _setTimeout(function() {
+        func.apply(context, args);
+      }, 0);
+    } else {
+      func.apply(context, args);
+    }
+  };
+  /**
+ * Handle the actual dispatching of events to client instances.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _dispatchCallbacks = function(event) {
+    if (!(typeof event === "object" && event && event.type)) {
+      return;
+    }
+    var async = _shouldPerformAsync(event);
+    var wildcardTypeHandlers = _handlers["*"] || [];
+    var specificTypeHandlers = _handlers[event.type] || [];
+    var handlers = wildcardTypeHandlers.concat(specificTypeHandlers);
+    if (handlers && handlers.length) {
+      var i, len, func, context, eventCopy, originalContext = this;
+      for (i = 0, len = handlers.length; i < len; i++) {
+        func = handlers[i];
+        context = originalContext;
+        if (typeof func === "string" && typeof _window[func] === "function") {
+          func = _window[func];
+        }
+        if (typeof func === "object" && func && typeof func.handleEvent === "function") {
+          context = func;
+          func = func.handleEvent;
+        }
+        if (typeof func === "function") {
+          eventCopy = _extend({}, event);
+          _dispatchCallback(func, context, [ eventCopy ], async);
+        }
+      }
+    }
+    return this;
+  };
+  /**
+ * Check an `error` event's `name` property to see if Flash has
+ * already loaded, which rules out possible `iframe` sandboxing.
+ * @private
+ */
+  var _getSandboxStatusFromErrorEvent = function(event) {
+    var isSandboxed = null;
+    if (_pageIsFramed === false || event && event.type === "error" && event.name && _errorsThatOnlyOccurAfterFlashLoads.indexOf(event.name) !== -1) {
+      isSandboxed = false;
+    }
+    return isSandboxed;
+  };
+  /**
+ * Preprocess any special behaviors, reactions, or state changes after receiving this event.
+ * Executes only once per event emitted, NOT once per client.
+ * @private
+ */
+  var _preprocessEvent = function(event) {
+    var element = event.target || _currentElement || null;
+    var sourceIsSwf = event._source === "swf";
+    delete event._source;
+    switch (event.type) {
+     case "error":
+      var isSandboxed = event.name === "flash-sandboxed" || _getSandboxStatusFromErrorEvent(event);
+      if (typeof isSandboxed === "boolean") {
+        _flashState.sandboxed = isSandboxed;
+      }
+      if (_flashStateErrorNames.indexOf(event.name) !== -1) {
+        _extend(_flashState, {
+          disabled: event.name === "flash-disabled",
+          outdated: event.name === "flash-outdated",
+          unavailable: event.name === "flash-unavailable",
+          degraded: event.name === "flash-degraded",
+          deactivated: event.name === "flash-deactivated",
+          overdue: event.name === "flash-overdue",
+          ready: false
+        });
+      } else if (event.name === "version-mismatch") {
+        _zcSwfVersion = event.swfVersion;
+        _extend(_flashState, {
+          disabled: false,
+          outdated: false,
+          unavailable: false,
+          degraded: false,
+          deactivated: false,
+          overdue: false,
+          ready: false
+        });
+      }
+      _clearTimeoutsAndPolling();
+      break;
+
+     case "ready":
+      _zcSwfVersion = event.swfVersion;
+      var wasDeactivated = _flashState.deactivated === true;
+      _extend(_flashState, {
+        disabled: false,
+        outdated: false,
+        sandboxed: false,
+        unavailable: false,
+        degraded: false,
+        deactivated: false,
+        overdue: wasDeactivated,
+        ready: !wasDeactivated
+      });
+      _clearTimeoutsAndPolling();
+      break;
+
+     case "beforecopy":
+      _copyTarget = element;
+      break;
+
+     case "copy":
+      var textContent, htmlContent, targetEl = event.relatedTarget;
+      if (!(_clipData["text/html"] || _clipData["text/plain"]) && targetEl && (htmlContent = targetEl.value || targetEl.outerHTML || targetEl.innerHTML) && (textContent = targetEl.value || targetEl.textContent || targetEl.innerText)) {
+        event.clipboardData.clearData();
+        event.clipboardData.setData("text/plain", textContent);
+        if (htmlContent !== textContent) {
+          event.clipboardData.setData("text/html", htmlContent);
+        }
+      } else if (!_clipData["text/plain"] && event.target && (textContent = event.target.getAttribute("data-clipboard-text"))) {
+        event.clipboardData.clearData();
+        event.clipboardData.setData("text/plain", textContent);
+      }
+      break;
+
+     case "aftercopy":
+      _queueEmitClipboardErrors(event);
+      ZeroClipboard.clearData();
+      if (element && element !== _safeActiveElement() && element.focus) {
+        element.focus();
+      }
+      break;
+
+     case "_mouseover":
+      ZeroClipboard.focus(element);
+      if (_globalConfig.bubbleEvents === true && sourceIsSwf) {
+        if (element && element !== event.relatedTarget && !_containedBy(event.relatedTarget, element)) {
+          _fireMouseEvent(_extend({}, event, {
+            type: "mouseenter",
+            bubbles: false,
+            cancelable: false
+          }));
+        }
+        _fireMouseEvent(_extend({}, event, {
+          type: "mouseover"
+        }));
+      }
+      break;
+
+     case "_mouseout":
+      ZeroClipboard.blur();
+      if (_globalConfig.bubbleEvents === true && sourceIsSwf) {
+        if (element && element !== event.relatedTarget && !_containedBy(event.relatedTarget, element)) {
+          _fireMouseEvent(_extend({}, event, {
+            type: "mouseleave",
+            bubbles: false,
+            cancelable: false
+          }));
+        }
+        _fireMouseEvent(_extend({}, event, {
+          type: "mouseout"
+        }));
+      }
+      break;
+
+     case "_mousedown":
+      _addClass(element, _globalConfig.activeClass);
+      if (_globalConfig.bubbleEvents === true && sourceIsSwf) {
+        _fireMouseEvent(_extend({}, event, {
+          type: event.type.slice(1)
+        }));
+      }
+      break;
+
+     case "_mouseup":
+      _removeClass(element, _globalConfig.activeClass);
+      if (_globalConfig.bubbleEvents === true && sourceIsSwf) {
+        _fireMouseEvent(_extend({}, event, {
+          type: event.type.slice(1)
+        }));
+      }
+      break;
+
+     case "_click":
+      _copyTarget = null;
+      if (_globalConfig.bubbleEvents === true && sourceIsSwf) {
+        _fireMouseEvent(_extend({}, event, {
+          type: event.type.slice(1)
+        }));
+      }
+      break;
+
+     case "_mousemove":
+      if (_globalConfig.bubbleEvents === true && sourceIsSwf) {
+        _fireMouseEvent(_extend({}, event, {
+          type: event.type.slice(1)
+        }));
+      }
+      break;
+    }
+    if (/^_(?:click|mouse(?:over|out|down|up|move))$/.test(event.type)) {
+      return true;
+    }
+  };
+  /**
+ * Check an "aftercopy" event for clipboard errors and emit a corresponding "error" event.
+ * @private
+ */
+  var _queueEmitClipboardErrors = function(aftercopyEvent) {
+    if (aftercopyEvent.errors && aftercopyEvent.errors.length > 0) {
+      var errorEvent = _deepCopy(aftercopyEvent);
+      _extend(errorEvent, {
+        type: "error",
+        name: "clipboard-error"
+      });
+      delete errorEvent.success;
+      _setTimeout(function() {
+        ZeroClipboard.emit(errorEvent);
+      }, 0);
+    }
+  };
+  /**
+ * Dispatch a synthetic MouseEvent.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _fireMouseEvent = function(event) {
+    if (!(event && typeof event.type === "string" && event)) {
+      return;
+    }
+    var e, target = event.target || null, doc = target && target.ownerDocument || _document, defaults = {
+      view: doc.defaultView || _window,
+      canBubble: true,
+      cancelable: true,
+      detail: event.type === "click" ? 1 : 0,
+      button: typeof event.which === "number" ? event.which - 1 : typeof event.button === "number" ? event.button : doc.createEvent ? 0 : 1
+    }, args = _extend(defaults, event);
+    if (!target) {
+      return;
+    }
+    if (doc.createEvent && target.dispatchEvent) {
+      args = [ args.type, args.canBubble, args.cancelable, args.view, args.detail, args.screenX, args.screenY, args.clientX, args.clientY, args.ctrlKey, args.altKey, args.shiftKey, args.metaKey, args.button, args.relatedTarget ];
+      e = doc.createEvent("MouseEvents");
+      if (e.initMouseEvent) {
+        e.initMouseEvent.apply(e, args);
+        e._source = "js";
+        target.dispatchEvent(e);
+      }
+    }
+  };
+  /**
+ * Continuously poll the DOM until either:
+ *  (a) the fallback content becomes visible, or
+ *  (b) we receive an event from SWF (handled elsewhere)
+ *
+ * IMPORTANT:
+ * This is NOT a necessary check but it can result in significantly faster
+ * detection of bad `swfPath` configuration and/or network/server issues [in
+ * supported browsers] than waiting for the entire `flashLoadTimeout` duration
+ * to elapse before detecting that the SWF cannot be loaded. The detection
+ * duration can be anywhere from 10-30 times faster [in supported browsers] by
+ * using this approach.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _watchForSwfFallbackContent = function() {
+    var maxWait = _globalConfig.flashLoadTimeout;
+    if (typeof maxWait === "number" && maxWait >= 0) {
+      var pollWait = Math.min(1e3, maxWait / 10);
+      var fallbackContentId = _globalConfig.swfObjectId + "_fallbackContent";
+      _swfFallbackCheckInterval = _setInterval(function() {
+        var el = _document.getElementById(fallbackContentId);
+        if (_isElementVisible(el)) {
+          _clearTimeoutsAndPolling();
+          _flashState.deactivated = null;
+          ZeroClipboard.emit({
+            type: "error",
+            name: "swf-not-found"
+          });
+        }
+      }, pollWait);
+    }
+  };
+  /**
+ * Create the HTML bridge element to embed the Flash object into.
+ * @private
+ */
+  var _createHtmlBridge = function() {
+    var container = _document.createElement("div");
+    container.id = _globalConfig.containerId;
+    container.className = _globalConfig.containerClass;
+    container.style.position = "absolute";
+    container.style.left = "0px";
+    container.style.top = "-9999px";
+    container.style.width = "1px";
+    container.style.height = "1px";
+    container.style.zIndex = "" + _getSafeZIndex(_globalConfig.zIndex);
+    return container;
+  };
+  /**
+ * Get the HTML element container that wraps the Flash bridge object/element.
+ * @private
+ */
+  var _getHtmlBridge = function(flashBridge) {
+    var htmlBridge = flashBridge && flashBridge.parentNode;
+    while (htmlBridge && htmlBridge.nodeName === "OBJECT" && htmlBridge.parentNode) {
+      htmlBridge = htmlBridge.parentNode;
+    }
+    return htmlBridge || null;
+  };
+  /**
+ * Create the SWF object.
+ *
+ * @returns The SWF object reference.
+ * @private
+ */
+  var _embedSwf = function() {
+    var len, flashBridge = _flashState.bridge, container = _getHtmlBridge(flashBridge);
+    if (!flashBridge) {
+      var allowScriptAccess = _determineScriptAccess(_window.location.host, _globalConfig);
+      var allowNetworking = allowScriptAccess === "never" ? "none" : "all";
+      var flashvars = _vars(_extend({
+        jsVersion: ZeroClipboard.version
+      }, _globalConfig));
+      var swfUrl = _globalConfig.swfPath + _cacheBust(_globalConfig.swfPath, _globalConfig);
+      container = _createHtmlBridge();
+      var divToBeReplaced = _document.createElement("div");
+      container.appendChild(divToBeReplaced);
+      _document.body.appendChild(container);
+      var tmpDiv = _document.createElement("div");
+      var usingActiveX = _flashState.pluginType === "activex";
+      tmpDiv.innerHTML = '<object id="' + _globalConfig.swfObjectId + '" name="' + _globalConfig.swfObjectId + '" ' + 'width="100%" height="100%" ' + (usingActiveX ? 'classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"' : 'type="application/x-shockwave-flash" data="' + swfUrl + '"') + ">" + (usingActiveX ? '<param name="movie" value="' + swfUrl + '"/>' : "") + '<param name="allowScriptAccess" value="' + allowScriptAccess + '"/>' + '<param name="allowNetworking" value="' + allowNetworking + '"/>' + '<param name="menu" value="false"/>' + '<param name="wmode" value="transparent"/>' + '<param name="flashvars" value="' + flashvars + '"/>' + '<div id="' + _globalConfig.swfObjectId + '_fallbackContent">&nbsp;</div>' + "</object>";
+      flashBridge = tmpDiv.firstChild;
+      tmpDiv = null;
+      _unwrap(flashBridge).ZeroClipboard = ZeroClipboard;
+      container.replaceChild(flashBridge, divToBeReplaced);
+      _watchForSwfFallbackContent();
+    }
+    if (!flashBridge) {
+      flashBridge = _document[_globalConfig.swfObjectId];
+      if (flashBridge && (len = flashBridge.length)) {
+        flashBridge = flashBridge[len - 1];
+      }
+      if (!flashBridge && container) {
+        flashBridge = container.firstChild;
+      }
+    }
+    _flashState.bridge = flashBridge || null;
+    return flashBridge;
+  };
+  /**
+ * Destroy the SWF object.
+ * @private
+ */
+  var _unembedSwf = function() {
+    var flashBridge = _flashState.bridge;
+    if (flashBridge) {
+      var htmlBridge = _getHtmlBridge(flashBridge);
+      if (htmlBridge) {
+        if (_flashState.pluginType === "activex" && "readyState" in flashBridge) {
+          flashBridge.style.display = "none";
+          (function removeSwfFromIE() {
+            if (flashBridge.readyState === 4) {
+              for (var prop in flashBridge) {
+                if (typeof flashBridge[prop] === "function") {
+                  flashBridge[prop] = null;
+                }
+              }
+              if (flashBridge.parentNode) {
+                flashBridge.parentNode.removeChild(flashBridge);
+              }
+              if (htmlBridge.parentNode) {
+                htmlBridge.parentNode.removeChild(htmlBridge);
+              }
+            } else {
+              _setTimeout(removeSwfFromIE, 10);
+            }
+          })();
+        } else {
+          if (flashBridge.parentNode) {
+            flashBridge.parentNode.removeChild(flashBridge);
+          }
+          if (htmlBridge.parentNode) {
+            htmlBridge.parentNode.removeChild(htmlBridge);
+          }
+        }
+      }
+      _clearTimeoutsAndPolling();
+      _flashState.ready = null;
+      _flashState.bridge = null;
+      _flashState.deactivated = null;
+      _zcSwfVersion = undefined;
+    }
+  };
+  /**
+ * Map the data format names of the "clipData" to Flash-friendly names.
+ *
+ * @returns A new transformed object.
+ * @private
+ */
+  var _mapClipDataToFlash = function(clipData) {
+    var newClipData = {}, formatMap = {};
+    if (!(typeof clipData === "object" && clipData)) {
+      return;
+    }
+    for (var dataFormat in clipData) {
+      if (dataFormat && _hasOwn.call(clipData, dataFormat) && typeof clipData[dataFormat] === "string" && clipData[dataFormat]) {
+        switch (dataFormat.toLowerCase()) {
+         case "text/plain":
+         case "text":
+         case "air:text":
+         case "flash:text":
+          newClipData.text = clipData[dataFormat];
+          formatMap.text = dataFormat;
+          break;
+
+         case "text/html":
+         case "html":
+         case "air:html":
+         case "flash:html":
+          newClipData.html = clipData[dataFormat];
+          formatMap.html = dataFormat;
+          break;
+
+         case "application/rtf":
+         case "text/rtf":
+         case "rtf":
+         case "richtext":
+         case "air:rtf":
+         case "flash:rtf":
+          newClipData.rtf = clipData[dataFormat];
+          formatMap.rtf = dataFormat;
+          break;
+
+         default:
+          break;
+        }
+      }
+    }
+    return {
+      data: newClipData,
+      formatMap: formatMap
+    };
+  };
+  /**
+ * Map the data format names from Flash-friendly names back to their original "clipData" names (via a format mapping).
+ *
+ * @returns A new transformed object.
+ * @private
+ */
+  var _mapClipResultsFromFlash = function(clipResults, formatMap) {
+    if (!(typeof clipResults === "object" && clipResults && typeof formatMap === "object" && formatMap)) {
+      return clipResults;
+    }
+    var newResults = {};
+    for (var prop in clipResults) {
+      if (_hasOwn.call(clipResults, prop)) {
+        if (prop === "errors") {
+          newResults[prop] = clipResults[prop] ? clipResults[prop].slice() : [];
+          for (var i = 0, len = newResults[prop].length; i < len; i++) {
+            newResults[prop][i].format = formatMap[newResults[prop][i].format];
+          }
+        } else if (prop !== "success" && prop !== "data") {
+          newResults[prop] = clipResults[prop];
+        } else {
+          newResults[prop] = {};
+          var tmpHash = clipResults[prop];
+          for (var dataFormat in tmpHash) {
+            if (dataFormat && _hasOwn.call(tmpHash, dataFormat) && _hasOwn.call(formatMap, dataFormat)) {
+              newResults[prop][formatMap[dataFormat]] = tmpHash[dataFormat];
+            }
+          }
+        }
+      }
+    }
+    return newResults;
+  };
+  /**
+ * Will look at a path, and will create a "?noCache={time}" or "&noCache={time}"
+ * query param string to return. Does NOT append that string to the original path.
+ * This is useful because ExternalInterface often breaks when a Flash SWF is cached.
+ *
+ * @returns The `noCache` query param with necessary "?"/"&" prefix.
+ * @private
+ */
+  var _cacheBust = function(path, options) {
+    var cacheBust = options == null || options && options.cacheBust === true;
+    if (cacheBust) {
+      return (path.indexOf("?") === -1 ? "?" : "&") + "noCache=" + _now();
+    } else {
+      return "";
+    }
+  };
+  /**
+ * Creates a query string for the FlashVars param.
+ * Does NOT include the cache-busting query param.
+ *
+ * @returns FlashVars query string
+ * @private
+ */
+  var _vars = function(options) {
+    var i, len, domain, domains, str = "", trustedOriginsExpanded = [];
+    if (options.trustedDomains) {
+      if (typeof options.trustedDomains === "string") {
+        domains = [ options.trustedDomains ];
+      } else if (typeof options.trustedDomains === "object" && "length" in options.trustedDomains) {
+        domains = options.trustedDomains;
+      }
+    }
+    if (domains && domains.length) {
+      for (i = 0, len = domains.length; i < len; i++) {
+        if (_hasOwn.call(domains, i) && domains[i] && typeof domains[i] === "string") {
+          domain = _extractDomain(domains[i]);
+          if (!domain) {
+            continue;
+          }
+          if (domain === "*") {
+            trustedOriginsExpanded.length = 0;
+            trustedOriginsExpanded.push(domain);
+            break;
+          }
+          trustedOriginsExpanded.push.apply(trustedOriginsExpanded, [ domain, "//" + domain, _window.location.protocol + "//" + domain ]);
+        }
+      }
+    }
+    if (trustedOriginsExpanded.length) {
+      str += "trustedOrigins=" + _encodeURIComponent(trustedOriginsExpanded.join(","));
+    }
+    if (options.forceEnhancedClipboard === true) {
+      str += (str ? "&" : "") + "forceEnhancedClipboard=true";
+    }
+    if (typeof options.swfObjectId === "string" && options.swfObjectId) {
+      str += (str ? "&" : "") + "swfObjectId=" + _encodeURIComponent(options.swfObjectId);
+    }
+    if (typeof options.jsVersion === "string" && options.jsVersion) {
+      str += (str ? "&" : "") + "jsVersion=" + _encodeURIComponent(options.jsVersion);
+    }
+    return str;
+  };
+  /**
+ * Extract the domain (e.g. "github.com") from an origin (e.g. "https://github.com") or
+ * URL (e.g. "https://github.com/zeroclipboard/zeroclipboard/").
+ *
+ * @returns the domain
+ * @private
+ */
+  var _extractDomain = function(originOrUrl) {
+    if (originOrUrl == null || originOrUrl === "") {
+      return null;
+    }
+    originOrUrl = originOrUrl.replace(/^\s+|\s+$/g, "");
+    if (originOrUrl === "") {
+      return null;
+    }
+    var protocolIndex = originOrUrl.indexOf("//");
+    originOrUrl = protocolIndex === -1 ? originOrUrl : originOrUrl.slice(protocolIndex + 2);
+    var pathIndex = originOrUrl.indexOf("/");
+    originOrUrl = pathIndex === -1 ? originOrUrl : protocolIndex === -1 || pathIndex === 0 ? null : originOrUrl.slice(0, pathIndex);
+    if (originOrUrl && originOrUrl.slice(-4).toLowerCase() === ".swf") {
+      return null;
+    }
+    return originOrUrl || null;
+  };
+  /**
+ * Set `allowScriptAccess` based on `trustedDomains` and `window.location.host` vs. `swfPath`.
+ *
+ * @returns The appropriate script access level.
+ * @private
+ */
+  var _determineScriptAccess = function() {
+    var _extractAllDomains = function(origins) {
+      var i, len, tmp, resultsArray = [];
+      if (typeof origins === "string") {
+        origins = [ origins ];
+      }
+      if (!(typeof origins === "object" && origins && typeof origins.length === "number")) {
+        return resultsArray;
+      }
+      for (i = 0, len = origins.length; i < len; i++) {
+        if (_hasOwn.call(origins, i) && (tmp = _extractDomain(origins[i]))) {
+          if (tmp === "*") {
+            resultsArray.length = 0;
+            resultsArray.push("*");
+            break;
+          }
+          if (resultsArray.indexOf(tmp) === -1) {
+            resultsArray.push(tmp);
+          }
+        }
+      }
+      return resultsArray;
+    };
+    return function(currentDomain, configOptions) {
+      var swfDomain = _extractDomain(configOptions.swfPath);
+      if (swfDomain === null) {
+        swfDomain = currentDomain;
+      }
+      var trustedDomains = _extractAllDomains(configOptions.trustedDomains);
+      var len = trustedDomains.length;
+      if (len > 0) {
+        if (len === 1 && trustedDomains[0] === "*") {
+          return "always";
+        }
+        if (trustedDomains.indexOf(currentDomain) !== -1) {
+          if (len === 1 && currentDomain === swfDomain) {
+            return "sameDomain";
+          }
+          return "always";
+        }
+      }
+      return "never";
+    };
+  }();
+  /**
+ * Get the currently active/focused DOM element.
+ *
+ * @returns the currently active/focused element, or `null`
+ * @private
+ */
+  var _safeActiveElement = function() {
+    try {
+      return _document.activeElement;
+    } catch (err) {
+      return null;
+    }
+  };
+  /**
+ * Add a class to an element, if it doesn't already have it.
+ *
+ * @returns The element, with its new class added.
+ * @private
+ */
+  var _addClass = function(element, value) {
+    var c, cl, className, classNames = [];
+    if (typeof value === "string" && value) {
+      classNames = value.split(/\s+/);
+    }
+    if (element && element.nodeType === 1 && classNames.length > 0) {
+      if (element.classList) {
+        for (c = 0, cl = classNames.length; c < cl; c++) {
+          element.classList.add(classNames[c]);
+        }
+      } else if (element.hasOwnProperty("className")) {
+        className = " " + element.className + " ";
+        for (c = 0, cl = classNames.length; c < cl; c++) {
+          if (className.indexOf(" " + classNames[c] + " ") === -1) {
+            className += classNames[c] + " ";
+          }
+        }
+        element.className = className.replace(/^\s+|\s+$/g, "");
+      }
+    }
+    return element;
+  };
+  /**
+ * Remove a class from an element, if it has it.
+ *
+ * @returns The element, with its class removed.
+ * @private
+ */
+  var _removeClass = function(element, value) {
+    var c, cl, className, classNames = [];
+    if (typeof value === "string" && value) {
+      classNames = value.split(/\s+/);
+    }
+    if (element && element.nodeType === 1 && classNames.length > 0) {
+      if (element.classList && element.classList.length > 0) {
+        for (c = 0, cl = classNames.length; c < cl; c++) {
+          element.classList.remove(classNames[c]);
+        }
+      } else if (element.className) {
+        className = (" " + element.className + " ").replace(/[\r\n\t]/g, " ");
+        for (c = 0, cl = classNames.length; c < cl; c++) {
+          className = className.replace(" " + classNames[c] + " ", " ");
+        }
+        element.className = className.replace(/^\s+|\s+$/g, "");
+      }
+    }
+    return element;
+  };
+  /**
+ * Attempt to interpret the element's CSS styling. If `prop` is `"cursor"`,
+ * then we assume that it should be a hand ("pointer") cursor if the element
+ * is an anchor element ("a" tag).
+ *
+ * @returns The computed style property.
+ * @private
+ */
+  var _getStyle = function(el, prop) {
+    var value = _getComputedStyle(el, null).getPropertyValue(prop);
+    if (prop === "cursor") {
+      if (!value || value === "auto") {
+        if (el.nodeName === "A") {
+          return "pointer";
+        }
+      }
+    }
+    return value;
+  };
+  /**
+ * Get the absolutely positioned coordinates of a DOM element.
+ *
+ * @returns Object containing the element's position, width, and height.
+ * @private
+ */
+  var _getElementPosition = function(el) {
+    var pos = {
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0
+    };
+    if (el.getBoundingClientRect) {
+      var elRect = el.getBoundingClientRect();
+      var pageXOffset = _window.pageXOffset;
+      var pageYOffset = _window.pageYOffset;
+      var leftBorderWidth = _document.documentElement.clientLeft || 0;
+      var topBorderWidth = _document.documentElement.clientTop || 0;
+      var leftBodyOffset = 0;
+      var topBodyOffset = 0;
+      if (_getStyle(_document.body, "position") === "relative") {
+        var bodyRect = _document.body.getBoundingClientRect();
+        var htmlRect = _document.documentElement.getBoundingClientRect();
+        leftBodyOffset = bodyRect.left - htmlRect.left || 0;
+        topBodyOffset = bodyRect.top - htmlRect.top || 0;
+      }
+      pos.left = elRect.left + pageXOffset - leftBorderWidth - leftBodyOffset;
+      pos.top = elRect.top + pageYOffset - topBorderWidth - topBodyOffset;
+      pos.width = "width" in elRect ? elRect.width : elRect.right - elRect.left;
+      pos.height = "height" in elRect ? elRect.height : elRect.bottom - elRect.top;
+    }
+    return pos;
+  };
+  /**
+ * Determine is an element is visible somewhere within the document (page).
+ *
+ * @returns Boolean
+ * @private
+ */
+  var _isElementVisible = function(el) {
+    if (!el) {
+      return false;
+    }
+    var styles = _getComputedStyle(el, null);
+    var hasCssHeight = _parseFloat(styles.height) > 0;
+    var hasCssWidth = _parseFloat(styles.width) > 0;
+    var hasCssTop = _parseFloat(styles.top) >= 0;
+    var hasCssLeft = _parseFloat(styles.left) >= 0;
+    var cssKnows = hasCssHeight && hasCssWidth && hasCssTop && hasCssLeft;
+    var rect = cssKnows ? null : _getElementPosition(el);
+    var isVisible = styles.display !== "none" && styles.visibility !== "collapse" && (cssKnows || !!rect && (hasCssHeight || rect.height > 0) && (hasCssWidth || rect.width > 0) && (hasCssTop || rect.top >= 0) && (hasCssLeft || rect.left >= 0));
+    return isVisible;
+  };
+  /**
+ * Clear all existing timeouts and interval polling delegates.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _clearTimeoutsAndPolling = function() {
+    _clearTimeout(_flashCheckTimeout);
+    _flashCheckTimeout = 0;
+    _clearInterval(_swfFallbackCheckInterval);
+    _swfFallbackCheckInterval = 0;
+  };
+  /**
+ * Reposition the Flash object to cover the currently activated element.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _reposition = function() {
+    var htmlBridge;
+    if (_currentElement && (htmlBridge = _getHtmlBridge(_flashState.bridge))) {
+      var pos = _getElementPosition(_currentElement);
+      _extend(htmlBridge.style, {
+        width: pos.width + "px",
+        height: pos.height + "px",
+        top: pos.top + "px",
+        left: pos.left + "px",
+        zIndex: "" + _getSafeZIndex(_globalConfig.zIndex)
+      });
+    }
+  };
+  /**
+ * Sends a signal to the Flash object to display the hand cursor if `true`.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _setHandCursor = function(enabled) {
+    if (_flashState.ready === true) {
+      if (_flashState.bridge && typeof _flashState.bridge.setHandCursor === "function") {
+        _flashState.bridge.setHandCursor(enabled);
+      } else {
+        _flashState.ready = false;
+      }
+    }
+  };
+  /**
+ * Get a safe value for `zIndex`
+ *
+ * @returns an integer, or "auto"
+ * @private
+ */
+  var _getSafeZIndex = function(val) {
+    if (/^(?:auto|inherit)$/.test(val)) {
+      return val;
+    }
+    var zIndex;
+    if (typeof val === "number" && !_isNaN(val)) {
+      zIndex = val;
+    } else if (typeof val === "string") {
+      zIndex = _getSafeZIndex(_parseInt(val, 10));
+    }
+    return typeof zIndex === "number" ? zIndex : "auto";
+  };
+  /**
+ * Attempt to detect if ZeroClipboard is executing inside of a sandboxed iframe.
+ * If it is, Flash Player cannot be used, so ZeroClipboard is dead in the water.
+ *
+ * @see {@link http://lists.w3.org/Archives/Public/public-whatwg-archive/2014Dec/0002.html}
+ * @see {@link https://github.com/zeroclipboard/zeroclipboard/issues/511}
+ * @see {@link http://zeroclipboard.org/test-iframes.html}
+ *
+ * @returns `true` (is sandboxed), `false` (is not sandboxed), or `null` (uncertain) 
+ * @private
+ */
+  var _detectSandbox = function(doNotReassessFlashSupport) {
+    var effectiveScriptOrigin, frame, frameError, previousState = _flashState.sandboxed, isSandboxed = null;
+    doNotReassessFlashSupport = doNotReassessFlashSupport === true;
+    if (_pageIsFramed === false) {
+      isSandboxed = false;
+    } else {
+      try {
+        frame = window.frameElement || null;
+      } catch (e) {
+        frameError = {
+          name: e.name,
+          message: e.message
+        };
+      }
+      if (frame && frame.nodeType === 1 && frame.nodeName === "IFRAME") {
+        try {
+          isSandboxed = frame.hasAttribute("sandbox");
+        } catch (e) {
+          isSandboxed = null;
+        }
+      } else {
+        try {
+          effectiveScriptOrigin = document.domain || null;
+        } catch (e) {
+          effectiveScriptOrigin = null;
+        }
+        if (effectiveScriptOrigin === null || frameError && frameError.name === "SecurityError" && /(^|[\s\(\[@])sandbox(es|ed|ing|[\s\.,!\)\]@]|$)/.test(frameError.message.toLowerCase())) {
+          isSandboxed = true;
+        }
+      }
+    }
+    _flashState.sandboxed = isSandboxed;
+    if (previousState !== isSandboxed && !doNotReassessFlashSupport) {
+      _detectFlashSupport(_ActiveXObject);
+    }
+    return isSandboxed;
+  };
+  /**
+ * Detect the Flash Player status, version, and plugin type.
+ *
+ * @see {@link https://code.google.com/p/doctype-mirror/wiki/ArticleDetectFlash#The_code}
+ * @see {@link http://stackoverflow.com/questions/12866060/detecting-pepper-ppapi-flash-with-javascript}
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _detectFlashSupport = function(ActiveXObject) {
+    var plugin, ax, mimeType, hasFlash = false, isActiveX = false, isPPAPI = false, flashVersion = "";
+    /**
+   * Derived from Apple's suggested sniffer.
+   * @param {String} desc e.g. "Shockwave Flash 7.0 r61"
+   * @returns {String} "7.0.61"
+   * @private
+   */
+    function parseFlashVersion(desc) {
+      var matches = desc.match(/[\d]+/g);
+      matches.length = 3;
+      return matches.join(".");
+    }
+    function isPepperFlash(flashPlayerFileName) {
+      return !!flashPlayerFileName && (flashPlayerFileName = flashPlayerFileName.toLowerCase()) && (/^(pepflashplayer\.dll|libpepflashplayer\.so|pepperflashplayer\.plugin)$/.test(flashPlayerFileName) || flashPlayerFileName.slice(-13) === "chrome.plugin");
+    }
+    function inspectPlugin(plugin) {
+      if (plugin) {
+        hasFlash = true;
+        if (plugin.version) {
+          flashVersion = parseFlashVersion(plugin.version);
+        }
+        if (!flashVersion && plugin.description) {
+          flashVersion = parseFlashVersion(plugin.description);
+        }
+        if (plugin.filename) {
+          isPPAPI = isPepperFlash(plugin.filename);
+        }
+      }
+    }
+    if (_navigator.plugins && _navigator.plugins.length) {
+      plugin = _navigator.plugins["Shockwave Flash"];
+      inspectPlugin(plugin);
+      if (_navigator.plugins["Shockwave Flash 2.0"]) {
+        hasFlash = true;
+        flashVersion = "2.0.0.11";
+      }
+    } else if (_navigator.mimeTypes && _navigator.mimeTypes.length) {
+      mimeType = _navigator.mimeTypes["application/x-shockwave-flash"];
+      plugin = mimeType && mimeType.enabledPlugin;
+      inspectPlugin(plugin);
+    } else if (typeof ActiveXObject !== "undefined") {
+      isActiveX = true;
+      try {
+        ax = new ActiveXObject("ShockwaveFlash.ShockwaveFlash.7");
+        hasFlash = true;
+        flashVersion = parseFlashVersion(ax.GetVariable("$version"));
+      } catch (e1) {
+        try {
+          ax = new ActiveXObject("ShockwaveFlash.ShockwaveFlash.6");
+          hasFlash = true;
+          flashVersion = "6.0.21";
+        } catch (e2) {
+          try {
+            ax = new ActiveXObject("ShockwaveFlash.ShockwaveFlash");
+            hasFlash = true;
+            flashVersion = parseFlashVersion(ax.GetVariable("$version"));
+          } catch (e3) {
+            isActiveX = false;
+          }
+        }
+      }
+    }
+    _flashState.disabled = hasFlash !== true;
+    _flashState.outdated = flashVersion && _parseFloat(flashVersion) < _parseFloat(_minimumFlashVersion);
+    _flashState.version = flashVersion || "0.0.0";
+    _flashState.pluginType = isPPAPI ? "pepper" : isActiveX ? "activex" : hasFlash ? "netscape" : "unknown";
+  };
+  /**
+ * Invoke the Flash detection algorithms immediately upon inclusion so we're not waiting later.
+ */
+  _detectFlashSupport(_ActiveXObject);
+  /**
+ * Always assess the `sandboxed` state of the page at important Flash-related moments.
+ */
+  _detectSandbox(true);
+  /**
+ * A shell constructor for `ZeroClipboard` client instances.
+ *
+ * @constructor
+ */
+  var ZeroClipboard = function() {
+    if (!(this instanceof ZeroClipboard)) {
+      return new ZeroClipboard();
+    }
+    if (typeof ZeroClipboard._createClient === "function") {
+      ZeroClipboard._createClient.apply(this, _args(arguments));
+    }
+  };
+  /**
+ * The ZeroClipboard library's version number.
+ *
+ * @static
+ * @readonly
+ * @property {string}
+ */
+  _defineProperty(ZeroClipboard, "version", {
+    value: "2.2.0",
+    writable: false,
+    configurable: true,
+    enumerable: true
+  });
+  /**
+ * Update or get a copy of the ZeroClipboard global configuration.
+ * Returns a copy of the current/updated configuration.
+ *
+ * @returns Object
+ * @static
+ */
+  ZeroClipboard.config = function() {
+    return _config.apply(this, _args(arguments));
+  };
+  /**
+ * Diagnostic method that describes the state of the browser, Flash Player, and ZeroClipboard.
+ *
+ * @returns Object
+ * @static
+ */
+  ZeroClipboard.state = function() {
+    return _state.apply(this, _args(arguments));
+  };
+  /**
+ * Check if Flash is unusable for any reason: disabled, outdated, deactivated, etc.
+ *
+ * @returns Boolean
+ * @static
+ */
+  ZeroClipboard.isFlashUnusable = function() {
+    return _isFlashUnusable.apply(this, _args(arguments));
+  };
+  /**
+ * Register an event listener.
+ *
+ * @returns `ZeroClipboard`
+ * @static
+ */
+  ZeroClipboard.on = function() {
+    return _on.apply(this, _args(arguments));
+  };
+  /**
+ * Unregister an event listener.
+ * If no `listener` function/object is provided, it will unregister all listeners for the provided `eventType`.
+ * If no `eventType` is provided, it will unregister all listeners for every event type.
+ *
+ * @returns `ZeroClipboard`
+ * @static
+ */
+  ZeroClipboard.off = function() {
+    return _off.apply(this, _args(arguments));
+  };
+  /**
+ * Retrieve event listeners for an `eventType`.
+ * If no `eventType` is provided, it will retrieve all listeners for every event type.
+ *
+ * @returns array of listeners for the `eventType`; if no `eventType`, then a map/hash object of listeners for all event types; or `null`
+ */
+  ZeroClipboard.handlers = function() {
+    return _listeners.apply(this, _args(arguments));
+  };
+  /**
+ * Event emission receiver from the Flash object, forwarding to any registered JavaScript event listeners.
+ *
+ * @returns For the "copy" event, returns the Flash-friendly "clipData" object; otherwise `undefined`.
+ * @static
+ */
+  ZeroClipboard.emit = function() {
+    return _emit.apply(this, _args(arguments));
+  };
+  /**
+ * Create and embed the Flash object.
+ *
+ * @returns The Flash object
+ * @static
+ */
+  ZeroClipboard.create = function() {
+    return _create.apply(this, _args(arguments));
+  };
+  /**
+ * Self-destruct and clean up everything, including the embedded Flash object.
+ *
+ * @returns `undefined`
+ * @static
+ */
+  ZeroClipboard.destroy = function() {
+    return _destroy.apply(this, _args(arguments));
+  };
+  /**
+ * Set the pending data for clipboard injection.
+ *
+ * @returns `undefined`
+ * @static
+ */
+  ZeroClipboard.setData = function() {
+    return _setData.apply(this, _args(arguments));
+  };
+  /**
+ * Clear the pending data for clipboard injection.
+ * If no `format` is provided, all pending data formats will be cleared.
+ *
+ * @returns `undefined`
+ * @static
+ */
+  ZeroClipboard.clearData = function() {
+    return _clearData.apply(this, _args(arguments));
+  };
+  /**
+ * Get a copy of the pending data for clipboard injection.
+ * If no `format` is provided, a copy of ALL pending data formats will be returned.
+ *
+ * @returns `String` or `Object`
+ * @static
+ */
+  ZeroClipboard.getData = function() {
+    return _getData.apply(this, _args(arguments));
+  };
+  /**
+ * Sets the current HTML object that the Flash object should overlay. This will put the global
+ * Flash object on top of the current element; depending on the setup, this may also set the
+ * pending clipboard text data as well as the Flash object's wrapping element's title attribute
+ * based on the underlying HTML element and ZeroClipboard configuration.
+ *
+ * @returns `undefined`
+ * @static
+ */
+  ZeroClipboard.focus = ZeroClipboard.activate = function() {
+    return _focus.apply(this, _args(arguments));
+  };
+  /**
+ * Un-overlays the Flash object. This will put the global Flash object off-screen; depending on
+ * the setup, this may also unset the Flash object's wrapping element's title attribute based on
+ * the underlying HTML element and ZeroClipboard configuration.
+ *
+ * @returns `undefined`
+ * @static
+ */
+  ZeroClipboard.blur = ZeroClipboard.deactivate = function() {
+    return _blur.apply(this, _args(arguments));
+  };
+  /**
+ * Returns the currently focused/"activated" HTML element that the Flash object is wrapping.
+ *
+ * @returns `HTMLElement` or `null`
+ * @static
+ */
+  ZeroClipboard.activeElement = function() {
+    return _activeElement.apply(this, _args(arguments));
+  };
+  /**
+ * Keep track of the ZeroClipboard client instance counter.
+ */
+  var _clientIdCounter = 0;
+  /**
+ * Keep track of the state of the client instances.
+ *
+ * Entry structure:
+ *   _clientMeta[client.id] = {
+ *     instance: client,
+ *     elements: [],
+ *     handlers: {}
+ *   };
+ */
+  var _clientMeta = {};
+  /**
+ * Keep track of the ZeroClipboard clipped elements counter.
+ */
+  var _elementIdCounter = 0;
+  /**
+ * Keep track of the state of the clipped element relationships to clients.
+ *
+ * Entry structure:
+ *   _elementMeta[element.zcClippingId] = [client1.id, client2.id];
+ */
+  var _elementMeta = {};
+  /**
+ * Keep track of the state of the mouse event handlers for clipped elements.
+ *
+ * Entry structure:
+ *   _mouseHandlers[element.zcClippingId] = {
+ *     mouseover:  function(event) {},
+ *     mouseout:   function(event) {},
+ *     mouseenter: function(event) {},
+ *     mouseleave: function(event) {},
+ *     mousemove:  function(event) {}
+ *   };
+ */
+  var _mouseHandlers = {};
+  /**
+ * Extending the ZeroClipboard configuration defaults for the Client module.
+ */
+  _extend(_globalConfig, {
+    autoActivate: true
+  });
+  /**
+ * The real constructor for `ZeroClipboard` client instances.
+ * @private
+ */
+  var _clientConstructor = function(elements) {
+    var client = this;
+    client.id = "" + _clientIdCounter++;
+    _clientMeta[client.id] = {
+      instance: client,
+      elements: [],
+      handlers: {}
+    };
+    if (elements) {
+      client.clip(elements);
+    }
+    ZeroClipboard.on("*", function(event) {
+      return client.emit(event);
+    });
+    ZeroClipboard.on("destroy", function() {
+      client.destroy();
+    });
+    ZeroClipboard.create();
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.on`.
+ * @private
+ */
+  var _clientOn = function(eventType, listener) {
+    var i, len, events, added = {}, meta = _clientMeta[this.id], handlers = meta && meta.handlers;
+    if (!meta) {
+      throw new Error("Attempted to add new listener(s) to a destroyed ZeroClipboard client instance");
+    }
+    if (typeof eventType === "string" && eventType) {
+      events = eventType.toLowerCase().split(/\s+/);
+    } else if (typeof eventType === "object" && eventType && typeof listener === "undefined") {
+      for (i in eventType) {
+        if (_hasOwn.call(eventType, i) && typeof i === "string" && i && typeof eventType[i] === "function") {
+          this.on(i, eventType[i]);
+        }
+      }
+    }
+    if (events && events.length) {
+      for (i = 0, len = events.length; i < len; i++) {
+        eventType = events[i].replace(/^on/, "");
+        added[eventType] = true;
+        if (!handlers[eventType]) {
+          handlers[eventType] = [];
+        }
+        handlers[eventType].push(listener);
+      }
+      if (added.ready && _flashState.ready) {
+        this.emit({
+          type: "ready",
+          client: this
+        });
+      }
+      if (added.error) {
+        for (i = 0, len = _flashStateErrorNames.length; i < len; i++) {
+          if (_flashState[_flashStateErrorNames[i].replace(/^flash-/, "")]) {
+            this.emit({
+              type: "error",
+              name: _flashStateErrorNames[i],
+              client: this
+            });
+            break;
+          }
+        }
+        if (_zcSwfVersion !== undefined && ZeroClipboard.version !== _zcSwfVersion) {
+          this.emit({
+            type: "error",
+            name: "version-mismatch",
+            jsVersion: ZeroClipboard.version,
+            swfVersion: _zcSwfVersion
+          });
+        }
+      }
+    }
+    return this;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.off`.
+ * @private
+ */
+  var _clientOff = function(eventType, listener) {
+    var i, len, foundIndex, events, perEventHandlers, meta = _clientMeta[this.id], handlers = meta && meta.handlers;
+    if (!handlers) {
+      return this;
+    }
+    if (arguments.length === 0) {
+      events = _keys(handlers);
+    } else if (typeof eventType === "string" && eventType) {
+      events = eventType.split(/\s+/);
+    } else if (typeof eventType === "object" && eventType && typeof listener === "undefined") {
+      for (i in eventType) {
+        if (_hasOwn.call(eventType, i) && typeof i === "string" && i && typeof eventType[i] === "function") {
+          this.off(i, eventType[i]);
+        }
+      }
+    }
+    if (events && events.length) {
+      for (i = 0, len = events.length; i < len; i++) {
+        eventType = events[i].toLowerCase().replace(/^on/, "");
+        perEventHandlers = handlers[eventType];
+        if (perEventHandlers && perEventHandlers.length) {
+          if (listener) {
+            foundIndex = perEventHandlers.indexOf(listener);
+            while (foundIndex !== -1) {
+              perEventHandlers.splice(foundIndex, 1);
+              foundIndex = perEventHandlers.indexOf(listener, foundIndex);
+            }
+          } else {
+            perEventHandlers.length = 0;
+          }
+        }
+      }
+    }
+    return this;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.handlers`.
+ * @private
+ */
+  var _clientListeners = function(eventType) {
+    var copy = null, handlers = _clientMeta[this.id] && _clientMeta[this.id].handlers;
+    if (handlers) {
+      if (typeof eventType === "string" && eventType) {
+        copy = handlers[eventType] ? handlers[eventType].slice(0) : [];
+      } else {
+        copy = _deepCopy(handlers);
+      }
+    }
+    return copy;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.emit`.
+ * @private
+ */
+  var _clientEmit = function(event) {
+    if (_clientShouldEmit.call(this, event)) {
+      if (typeof event === "object" && event && typeof event.type === "string" && event.type) {
+        event = _extend({}, event);
+      }
+      var eventCopy = _extend({}, _createEvent(event), {
+        client: this
+      });
+      _clientDispatchCallbacks.call(this, eventCopy);
+    }
+    return this;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.clip`.
+ * @private
+ */
+  var _clientClip = function(elements) {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to clip element(s) to a destroyed ZeroClipboard client instance");
+    }
+    elements = _prepClip(elements);
+    for (var i = 0; i < elements.length; i++) {
+      if (_hasOwn.call(elements, i) && elements[i] && elements[i].nodeType === 1) {
+        if (!elements[i].zcClippingId) {
+          elements[i].zcClippingId = "zcClippingId_" + _elementIdCounter++;
+          _elementMeta[elements[i].zcClippingId] = [ this.id ];
+          if (_globalConfig.autoActivate === true) {
+            _addMouseHandlers(elements[i]);
+          }
+        } else if (_elementMeta[elements[i].zcClippingId].indexOf(this.id) === -1) {
+          _elementMeta[elements[i].zcClippingId].push(this.id);
+        }
+        var clippedElements = _clientMeta[this.id] && _clientMeta[this.id].elements;
+        if (clippedElements.indexOf(elements[i]) === -1) {
+          clippedElements.push(elements[i]);
+        }
+      }
+    }
+    return this;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.unclip`.
+ * @private
+ */
+  var _clientUnclip = function(elements) {
+    var meta = _clientMeta[this.id];
+    if (!meta) {
+      return this;
+    }
+    var clippedElements = meta.elements;
+    var arrayIndex;
+    if (typeof elements === "undefined") {
+      elements = clippedElements.slice(0);
+    } else {
+      elements = _prepClip(elements);
+    }
+    for (var i = elements.length; i--; ) {
+      if (_hasOwn.call(elements, i) && elements[i] && elements[i].nodeType === 1) {
+        arrayIndex = 0;
+        while ((arrayIndex = clippedElements.indexOf(elements[i], arrayIndex)) !== -1) {
+          clippedElements.splice(arrayIndex, 1);
+        }
+        var clientIds = _elementMeta[elements[i].zcClippingId];
+        if (clientIds) {
+          arrayIndex = 0;
+          while ((arrayIndex = clientIds.indexOf(this.id, arrayIndex)) !== -1) {
+            clientIds.splice(arrayIndex, 1);
+          }
+          if (clientIds.length === 0) {
+            if (_globalConfig.autoActivate === true) {
+              _removeMouseHandlers(elements[i]);
+            }
+            delete elements[i].zcClippingId;
+          }
+        }
+      }
+    }
+    return this;
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.elements`.
+ * @private
+ */
+  var _clientElements = function() {
+    var meta = _clientMeta[this.id];
+    return meta && meta.elements ? meta.elements.slice(0) : [];
+  };
+  /**
+ * The underlying implementation of `ZeroClipboard.Client.prototype.destroy`.
+ * @private
+ */
+  var _clientDestroy = function() {
+    if (!_clientMeta[this.id]) {
+      return;
+    }
+    this.unclip();
+    this.off();
+    delete _clientMeta[this.id];
+  };
+  /**
+ * Inspect an Event to see if the Client (`this`) should honor it for emission.
+ * @private
+ */
+  var _clientShouldEmit = function(event) {
+    if (!(event && event.type)) {
+      return false;
+    }
+    if (event.client && event.client !== this) {
+      return false;
+    }
+    var meta = _clientMeta[this.id];
+    var clippedEls = meta && meta.elements;
+    var hasClippedEls = !!clippedEls && clippedEls.length > 0;
+    var goodTarget = !event.target || hasClippedEls && clippedEls.indexOf(event.target) !== -1;
+    var goodRelTarget = event.relatedTarget && hasClippedEls && clippedEls.indexOf(event.relatedTarget) !== -1;
+    var goodClient = event.client && event.client === this;
+    if (!meta || !(goodTarget || goodRelTarget || goodClient)) {
+      return false;
+    }
+    return true;
+  };
+  /**
+ * Handle the actual dispatching of events to a client instance.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _clientDispatchCallbacks = function(event) {
+    var meta = _clientMeta[this.id];
+    if (!(typeof event === "object" && event && event.type && meta)) {
+      return;
+    }
+    var async = _shouldPerformAsync(event);
+    var wildcardTypeHandlers = meta && meta.handlers["*"] || [];
+    var specificTypeHandlers = meta && meta.handlers[event.type] || [];
+    var handlers = wildcardTypeHandlers.concat(specificTypeHandlers);
+    if (handlers && handlers.length) {
+      var i, len, func, context, eventCopy, originalContext = this;
+      for (i = 0, len = handlers.length; i < len; i++) {
+        func = handlers[i];
+        context = originalContext;
+        if (typeof func === "string" && typeof _window[func] === "function") {
+          func = _window[func];
+        }
+        if (typeof func === "object" && func && typeof func.handleEvent === "function") {
+          context = func;
+          func = func.handleEvent;
+        }
+        if (typeof func === "function") {
+          eventCopy = _extend({}, event);
+          _dispatchCallback(func, context, [ eventCopy ], async);
+        }
+      }
+    }
+  };
+  /**
+ * Prepares the elements for clipping/unclipping.
+ *
+ * @returns An Array of elements.
+ * @private
+ */
+  var _prepClip = function(elements) {
+    if (typeof elements === "string") {
+      elements = [];
+    }
+    return typeof elements.length !== "number" ? [ elements ] : elements;
+  };
+  /**
+ * Add a `mouseover` handler function for a clipped element.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _addMouseHandlers = function(element) {
+    if (!(element && element.nodeType === 1)) {
+      return;
+    }
+    var _suppressMouseEvents = function(event) {
+      if (!(event || (event = _window.event))) {
+        return;
+      }
+      if (event._source !== "js") {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
+      delete event._source;
+    };
+    var _elementMouseOver = function(event) {
+      if (!(event || (event = _window.event))) {
+        return;
+      }
+      _suppressMouseEvents(event);
+      ZeroClipboard.focus(element);
+    };
+    element.addEventListener("mouseover", _elementMouseOver, false);
+    element.addEventListener("mouseout", _suppressMouseEvents, false);
+    element.addEventListener("mouseenter", _suppressMouseEvents, false);
+    element.addEventListener("mouseleave", _suppressMouseEvents, false);
+    element.addEventListener("mousemove", _suppressMouseEvents, false);
+    _mouseHandlers[element.zcClippingId] = {
+      mouseover: _elementMouseOver,
+      mouseout: _suppressMouseEvents,
+      mouseenter: _suppressMouseEvents,
+      mouseleave: _suppressMouseEvents,
+      mousemove: _suppressMouseEvents
+    };
+  };
+  /**
+ * Remove a `mouseover` handler function for a clipped element.
+ *
+ * @returns `undefined`
+ * @private
+ */
+  var _removeMouseHandlers = function(element) {
+    if (!(element && element.nodeType === 1)) {
+      return;
+    }
+    var mouseHandlers = _mouseHandlers[element.zcClippingId];
+    if (!(typeof mouseHandlers === "object" && mouseHandlers)) {
+      return;
+    }
+    var key, val, mouseEvents = [ "move", "leave", "enter", "out", "over" ];
+    for (var i = 0, len = mouseEvents.length; i < len; i++) {
+      key = "mouse" + mouseEvents[i];
+      val = mouseHandlers[key];
+      if (typeof val === "function") {
+        element.removeEventListener(key, val, false);
+      }
+    }
+    delete _mouseHandlers[element.zcClippingId];
+  };
+  /**
+ * Creates a new ZeroClipboard client instance.
+ * Optionally, auto-`clip` an element or collection of elements.
+ *
+ * @constructor
+ */
+  ZeroClipboard._createClient = function() {
+    _clientConstructor.apply(this, _args(arguments));
+  };
+  /**
+ * Register an event listener to the client.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.on = function() {
+    return _clientOn.apply(this, _args(arguments));
+  };
+  /**
+ * Unregister an event handler from the client.
+ * If no `listener` function/object is provided, it will unregister all handlers for the provided `eventType`.
+ * If no `eventType` is provided, it will unregister all handlers for every event type.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.off = function() {
+    return _clientOff.apply(this, _args(arguments));
+  };
+  /**
+ * Retrieve event listeners for an `eventType` from the client.
+ * If no `eventType` is provided, it will retrieve all listeners for every event type.
+ *
+ * @returns array of listeners for the `eventType`; if no `eventType`, then a map/hash object of listeners for all event types; or `null`
+ */
+  ZeroClipboard.prototype.handlers = function() {
+    return _clientListeners.apply(this, _args(arguments));
+  };
+  /**
+ * Event emission receiver from the Flash object for this client's registered JavaScript event listeners.
+ *
+ * @returns For the "copy" event, returns the Flash-friendly "clipData" object; otherwise `undefined`.
+ */
+  ZeroClipboard.prototype.emit = function() {
+    return _clientEmit.apply(this, _args(arguments));
+  };
+  /**
+ * Register clipboard actions for new element(s) to the client.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.clip = function() {
+    return _clientClip.apply(this, _args(arguments));
+  };
+  /**
+ * Unregister the clipboard actions of previously registered element(s) on the page.
+ * If no elements are provided, ALL registered elements will be unregistered.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.unclip = function() {
+    return _clientUnclip.apply(this, _args(arguments));
+  };
+  /**
+ * Get all of the elements to which this client is clipped.
+ *
+ * @returns array of clipped elements
+ */
+  ZeroClipboard.prototype.elements = function() {
+    return _clientElements.apply(this, _args(arguments));
+  };
+  /**
+ * Self-destruct and clean up everything for a single client.
+ * This will NOT destroy the embedded Flash object.
+ *
+ * @returns `undefined`
+ */
+  ZeroClipboard.prototype.destroy = function() {
+    return _clientDestroy.apply(this, _args(arguments));
+  };
+  /**
+ * Stores the pending plain text to inject into the clipboard.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.setText = function(text) {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to set pending clipboard data from a destroyed ZeroClipboard client instance");
+    }
+    ZeroClipboard.setData("text/plain", text);
+    return this;
+  };
+  /**
+ * Stores the pending HTML text to inject into the clipboard.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.setHtml = function(html) {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to set pending clipboard data from a destroyed ZeroClipboard client instance");
+    }
+    ZeroClipboard.setData("text/html", html);
+    return this;
+  };
+  /**
+ * Stores the pending rich text (RTF) to inject into the clipboard.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.setRichText = function(richText) {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to set pending clipboard data from a destroyed ZeroClipboard client instance");
+    }
+    ZeroClipboard.setData("application/rtf", richText);
+    return this;
+  };
+  /**
+ * Stores the pending data to inject into the clipboard.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.setData = function() {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to set pending clipboard data from a destroyed ZeroClipboard client instance");
+    }
+    ZeroClipboard.setData.apply(this, _args(arguments));
+    return this;
+  };
+  /**
+ * Clears the pending data to inject into the clipboard.
+ * If no `format` is provided, all pending data formats will be cleared.
+ *
+ * @returns `this`
+ */
+  ZeroClipboard.prototype.clearData = function() {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to clear pending clipboard data from a destroyed ZeroClipboard client instance");
+    }
+    ZeroClipboard.clearData.apply(this, _args(arguments));
+    return this;
+  };
+  /**
+ * Gets a copy of the pending data to inject into the clipboard.
+ * If no `format` is provided, a copy of ALL pending data formats will be returned.
+ *
+ * @returns `String` or `Object`
+ */
+  ZeroClipboard.prototype.getData = function() {
+    if (!_clientMeta[this.id]) {
+      throw new Error("Attempted to get pending clipboard data from a destroyed ZeroClipboard client instance");
+    }
+    return ZeroClipboard.getData.apply(this, _args(arguments));
+  };
+  if (typeof define === "function" && define.amd) {
+    define(function() {
+      return ZeroClipboard;
+    });
+  } else if (typeof module === "object" && module && typeof module.exports === "object" && module.exports) {
+    module.exports = ZeroClipboard;
+  } else {
+    window.ZeroClipboard = ZeroClipboard;
+  }
+})(function() {
+  return this || window;
+}());
+},{}],26:[function(require,module,exports){
 module.exports={
   "name": "yasgui-yasr",
   "description": "Yet Another SPARQL Resultset GUI",
@@ -39017,7 +45241,8 @@ module.exports={
     "url": "https://github.com/YASGUI/YASR.git"
   },
   "dependencies": {
-    "jquery": "~ 1.11.0",
+    "zeroclipboard": "~2.2.0",	  
+    "jquery": "1.11.0",
     "codemirror": "^4.7.0",
     "yasgui-utils": "^1.4.1",
     "pivottable": "^1.2.2",
@@ -39070,7 +45295,7 @@ module.exports={
   }
 }
 
-},{}],22:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 module.exports = function(result) {
 	var quote = "\"";
@@ -39130,7 +45355,7 @@ module.exports = function(result) {
 	createBody();
 	return csvString;
 };
-},{}],23:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -39190,7 +45415,7 @@ root.version = {
 };
 
 
-},{"../package.json":21,"./imgs.js":31,"jquery":undefined,"yasgui-utils":18}],24:[function(require,module,exports){
+},{"../package.json":26,"./imgs.js":36,"jquery":undefined,"yasgui-utils":22}],29:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 module.exports = {
@@ -39286,7 +45511,7 @@ module.exports = {
 	
 	
 };
-},{"jquery":undefined}],25:[function(require,module,exports){
+},{"jquery":undefined}],30:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -39380,7 +45605,7 @@ root.defaults = {
 	corsMessage: 'Unable to get response from endpoint',
 	tryQueryLink: null,
 };
-},{"jquery":undefined}],26:[function(require,module,exports){
+},{"jquery":undefined}],31:[function(require,module,exports){
 module.exports = {
 	GoogleTypeException:  function(foundTypes, varName) {
 	   this.foundTypes = foundTypes;
@@ -39400,7 +45625,7 @@ module.exports = {
 	   };
 	}
 }
-},{}],27:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 'use strict';
 module.exports = {
 	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
@@ -39464,8 +45689,7 @@ module.exports = {
                             '</div>',
 };
 
-},{}],28:[function(require,module,exports){
-(function (global){
+},{}],33:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter,
 	$ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 //cannot package google loader via browserify....
@@ -39475,7 +45699,7 @@ var loader = function() {
 	EventEmitter.call(this);
 	var mod = this;
 	this.init = function() {
-		if (!loadingFailed && !(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null) && !loadingMain) {//not initiated yet, not currently loading, and has not failed the previous time
+		if (!loadingFailed && !(window.google) && !loadingMain) {//not initiated yet, not currently loading, and has not failed the previous time
 			loadingMain = true;
 			/**
 			 * It is extremely difficult to catch script loader errors (see http://www.html5rocks.com/en/tutorials/speed/script-loading/)
@@ -39491,7 +45715,7 @@ var loader = function() {
 			var maxTimeout = 6000;//so 6 sec max
 			var startTime = +new Date();
 			var checkAndWait = function() {
-				if (!(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null)) {
+				if (!(window.google)) {
 					if ((+new Date() - startTime) > maxTimeout) {
 						//ok, we've waited long enough. Obviously we could not load the googleloader...
 						loadingFailed = true;
@@ -39509,7 +45733,7 @@ var loader = function() {
 			}
 			checkAndWait();
 		} else {
-			if ((typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null)) {
+			if ((window.google)) {
 				//already loaded! everything is fine
 				mod.emit('initDone');
 			} else if (loadingFailed) {
@@ -39523,7 +45747,7 @@ var loader = function() {
 	this.googleLoad = function() {
 		
 		var load = function() {
-			(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null).load("visualization", "1", {
+			(window.google).load("visualization", "1", {
 				packages : ["corechart", "charteditor" ],
 				callback : function(){mod.emit('done')}
 			})
@@ -39533,7 +45757,7 @@ var loader = function() {
 			mod.once('initError', function(){
 				mod.emit('error', 'Could not load google loader')
 			});
-		} else if ((typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null)) {
+		} else if ((window.google)) {
 			//google loader is there. use it
 			load();
 		} else if (loadingFailed) {
@@ -39574,10 +45798,7 @@ loader.prototype = new EventEmitter;
 module.exports = new loader();
 
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"events":4,"jquery":undefined}],29:[function(require,module,exports){
-(function (global){
+},{"events":5,"jquery":undefined}],34:[function(require,module,exports){
 'use strict';
 /**
  * todo: chart height as option
@@ -39606,7 +45827,7 @@ var root = module.exports = function(yasr){
 	var editor = null;
 	
 	var initEditor = function(callback) {
-		var google = (typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null);
+		var google = (window.google);
 		editor = new google.visualization.ChartEditor();
 		google.visualization.events.addListener(editor, 'ok', function(){
 				var chartWrapper, tmp;
@@ -39777,7 +45998,7 @@ var root = module.exports = function(yasr){
 				yasr.updateHeader();
 			}
 			
-			if (!(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null) || !(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null).visualization || !editor) {
+			if (!(window.google) || !(window.google).visualization || !editor) {
 				require('./gChartLoader.js')
 					.on('done', function() {
 						initEditor();
@@ -39886,9 +46107,7 @@ function deepEq$(x, y, type){
   }
 }
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"./exceptions.js":26,"./gChartLoader.js":28,"./utils.js":45,"jquery":undefined,"yasgui-utils":18}],30:[function(require,module,exports){
+},{"./exceptions.js":31,"./gChartLoader.js":33,"./utils.js":50,"jquery":undefined,"yasgui-utils":22}],35:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	utils = require("./utils.js"),
@@ -40110,7 +46329,7 @@ var root = module.exports = function(yasr) {
 		canHandleResults: canHandleResults,
 	}
 }
-},{"./parsers/graphJson.js":37,"./utils.js":45,"cytoscape":12,"datatables":undefined,"jquery":undefined,"lodash":13}],31:[function(require,module,exports){
+},{"./parsers/graphJson.js":42,"./utils.js":50,"cytoscape":16,"datatables":undefined,"jquery":undefined,"lodash":17}],36:[function(require,module,exports){
 'use strict';
 module.exports = {
 	cross: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve"><g>	<path d="M83.288,88.13c-2.114,2.112-5.575,2.112-7.689,0L53.659,66.188c-2.114-2.112-5.573-2.112-7.687,0L24.251,87.907   c-2.113,2.114-5.571,2.114-7.686,0l-4.693-4.691c-2.114-2.114-2.114-5.573,0-7.688l21.719-21.721c2.113-2.114,2.113-5.573,0-7.686   L11.872,24.4c-2.114-2.113-2.114-5.571,0-7.686l4.842-4.842c2.113-2.114,5.571-2.114,7.686,0L46.12,33.591   c2.114,2.114,5.572,2.114,7.688,0l21.721-21.719c2.114-2.114,5.573-2.114,7.687,0l4.695,4.695c2.111,2.113,2.111,5.571-0.003,7.686   L66.188,45.973c-2.112,2.114-2.112,5.573,0,7.686L88.13,75.602c2.112,2.111,2.112,5.572,0,7.687L83.288,88.13z"/></g></svg>',
@@ -40123,9 +46342,9 @@ module.exports = {
 	fullscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="640"     inkscape:window-height="480"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="0"     inkscape:current-layer="Layer_1" /><path     d="m -7.962963,-10 v 38.889 l 16.667,-16.667 16.667,16.667 5.555,-5.555 -16.667,-16.667 16.667,-16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 92.037037,-10 v 38.889 l -16.667,-16.667 -16.666,16.667 -5.556,-5.555 16.666,-16.667 -16.666,-16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M -7.962963,90 V 51.111 l 16.667,16.666 16.667,-16.666 5.555,5.556 -16.667,16.666 16.667,16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M 92.037037,90 V 51.111 l -16.667,16.666 -16.666,-16.666 -5.556,5.556 16.666,16.666 -16.666,16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 	smallscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="1855"     inkscape:window-height="1056"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="1"     inkscape:current-layer="Layer_1" /><path     d="m 30.926037,28.889 0,-38.889 -16.667,16.667 -16.667,-16.667 -5.555,5.555 16.667,16.667 -16.667,16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,28.889 0,-38.889 16.667,16.667 16.666,-16.667 5.556,5.555 -16.666,16.667 16.666,16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 30.926037,51.111 0,38.889 -16.667,-16.666 -16.667,16.666 -5.555,-5.556 16.667,-16.666 -16.667,-16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,51.111 0,38.889 16.667,-16.666 16.666,16.666 5.556,-5.556 -16.666,-16.666 16.666,-16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 };
-},{}],32:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 require('./tableToCsv.js');
-},{"./tableToCsv.js":33}],33:[function(require,module,exports){
+},{"./tableToCsv.js":38}],38:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -40225,7 +46444,7 @@ $.fn.tableToCsv = function(config) {
 }
 
 
-},{"jquery":undefined}],34:[function(require,module,exports){
+},{"jquery":undefined}],39:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var utils = require("yasgui-utils");
@@ -40251,7 +46470,7 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.container = $("<div class='yasr'></div>").appendTo(parent);
 	yasr.header = $("<div class='yasr_header'></div>").appendTo(yasr.container);
 	yasr.resultsInfo = $("<div class='alert alert-info results-info'><span class='count-info'>Showing <span class='res-count'></span><span class='all-info'> of <span class='all-count'></span></span>. </span><span class='view-info'></span><span class='time-took'></span></div>").appendTo(yasr.container);
-	yasr.insertResultsInfo = $("<div class='alert alert-info results-info'></div>").appendTo(yasr.container);
+	yasr.insertResultsInfo = $("<div class='alert alert-info results-info' style='display:none'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
 	
@@ -40390,16 +46609,16 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.resultsContainer.empty();
 		yasr.header.hide();
 		var qType = window.editor.getQueryType();
-		if ('SELECT' == qType || 'CONSTRUCT' == qType || 'DESCRIBE' == qType) {
-			var spinWrapper = $('<div class="spinWrapper"></div>');
-        	yasr.resultsContainer.append(spinWrapper);
-			var spinner = new Spinner().spin(spinWrapper.get(0));
-		}
-
+		var spinWrapper = $('<div class="spinWrapper"></div>');
+       	yasr.resultsContainer.append(spinWrapper);
+		yasr.spinner = new Spinner().spin(spinWrapper.get(0));
 	}
 
 	yasr.updateDownloadDropdown = function() {
 		var saveAsDropDown;
+		if (!window.editor) {
+			return;
+		}
 		yasr.header.find('.saveAsDropDown').remove();
 		var qType = window.editor.getQueryType();
 		if ('SELECT' == qType) {
@@ -40493,7 +46712,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (yasr.results.getAsJson().results) {
 			yasr.resultsCount = yasr.results.getAsJson().results.bindings.length;
 		}
-		if (yasr.results.getAsJson()) {
+		if (yasr.results.getAsJson() && !yasr.options.hideHeader) {
 			yasr.header.show();
 			yasr.updateDownloadDropdown();
 		}
@@ -40697,7 +46916,9 @@ var root = module.exports = function(parent, options, queryResults) {
 		var selection = utils.storage.get(selectorId);
 		if (selection) yasr.options.output = selection;
 	}
-	drawHeader(yasr);
+	if (!yasr.options.hideHeader) {
+		drawHeader(yasr);
+	}
 	if (!queryResults && yasr.options.persistency && yasr.options.persistency.results) {
 		var resultsId = yasr.getPersistencyId(yasr.options.persistency.results.key)
 		var fromStorage;
@@ -40768,13 +46989,13 @@ try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};
 try {root.registerOutput('graph', require("./graph.js"))} catch(e){};
-},{"../package.json":21,"./boolean.js":23,"./defaults.js":24,"./error.js":25,"./extensions.js":27,"./gChartLoader.js":28,"./gchart.js":29,"./graph.js":30,"./imgs.js":31,"./jquery/extendJquery.js":32,"./parsers/wrapper.js":40,"./pivot.js":42,"./rawResponse.js":43,"./table.js":44,"./utils.js":45,"jquery":undefined,"yasgui-utils":18}],35:[function(require,module,exports){
+},{"../package.json":26,"./boolean.js":28,"./defaults.js":29,"./error.js":30,"./extensions.js":32,"./gChartLoader.js":33,"./gchart.js":34,"./graph.js":35,"./imgs.js":36,"./jquery/extendJquery.js":37,"./parsers/wrapper.js":45,"./pivot.js":47,"./rawResponse.js":48,"./table.js":49,"./utils.js":50,"jquery":undefined,"yasgui-utils":22}],40:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, ",");
 };
-},{"./dlv.js":36,"jquery":undefined}],36:[function(require,module,exports){
+},{"./dlv.js":41,"jquery":undefined}],41:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 require("../../lib/jquery.csv-0.71.js");
@@ -40836,7 +47057,7 @@ var root = module.exports = function(queryResponse, separator) {
 	
 	return json;
 };
-},{"../../lib/jquery.csv-0.71.js":3,"jquery":undefined}],37:[function(require,module,exports){
+},{"../../lib/jquery.csv-0.71.js":3,"jquery":undefined}],42:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var _ = require('lodash');
@@ -40889,7 +47110,7 @@ var root = module.exports = function(responseJson) {
 	return false;
 	
 };
-},{"jquery":undefined,"lodash":13}],38:[function(require,module,exports){
+},{"jquery":undefined,"lodash":17}],43:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -40908,13 +47129,13 @@ var root = module.exports = function(queryResponse) {
 	return false;
 	
 };
-},{"jquery":undefined}],39:[function(require,module,exports){
+},{"jquery":undefined}],44:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, "\t");
 };
-},{"./dlv.js":36,"jquery":undefined}],40:[function(require,module,exports){
+},{"./dlv.js":41,"jquery":undefined}],45:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	_ = require('lodash');
@@ -41183,7 +47404,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 
 
 
-},{"./csv.js":35,"./graphJson.js":37,"./json.js":38,"./tsv.js":39,"./xml.js":41,"jquery":undefined,"lodash":13}],41:[function(require,module,exports){
+},{"./csv.js":40,"./graphJson.js":42,"./json.js":43,"./tsv.js":44,"./xml.js":46,"jquery":undefined,"lodash":17}],46:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var root = module.exports = function(xml) {
@@ -41269,7 +47490,7 @@ var root = module.exports = function(xml) {
 	return json;
 };
 
-},{"jquery":undefined}],42:[function(require,module,exports){
+},{"jquery":undefined}],47:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	utils = require('./utils.js'),
@@ -41532,7 +47753,7 @@ root.version = {
 	"YASR-rawResponse" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 };
-},{"../node_modules/pivottable/dist/d3_renderers.js":14,"../node_modules/pivottable/dist/gchart_renderers.js":15,"../package.json":21,"./gChartLoader.js":28,"./imgs.js":31,"./utils.js":45,"d3":undefined,"jquery":undefined,"jquery-ui/sortable":undefined,"pivottable":undefined,"yasgui-utils":18}],43:[function(require,module,exports){
+},{"../node_modules/pivottable/dist/d3_renderers.js":18,"../node_modules/pivottable/dist/gchart_renderers.js":19,"../package.json":26,"./gChartLoader.js":33,"./imgs.js":36,"./utils.js":50,"d3":undefined,"jquery":undefined,"jquery-ui/sortable":undefined,"pivottable":undefined,"yasgui-utils":22}],48:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	CodeMirror = (function(){try{return require('codemirror')}catch(e){return window.CodeMirror}})();
@@ -41625,12 +47846,13 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"CodeMirror" : CodeMirror.version
 };
-},{"../package.json":21,"codemirror":undefined,"codemirror/addon/edit/matchbrackets.js":5,"codemirror/addon/fold/brace-fold.js":6,"codemirror/addon/fold/foldcode.js":7,"codemirror/addon/fold/foldgutter.js":8,"codemirror/addon/fold/xml-fold.js":9,"codemirror/mode/javascript/javascript.js":10,"codemirror/mode/xml/xml.js":11,"jquery":undefined}],44:[function(require,module,exports){
+},{"../package.json":26,"codemirror":undefined,"codemirror/addon/edit/matchbrackets.js":9,"codemirror/addon/fold/brace-fold.js":10,"codemirror/addon/fold/foldcode.js":11,"codemirror/addon/fold/foldgutter.js":12,"codemirror/addon/fold/xml-fold.js":13,"codemirror/mode/javascript/javascript.js":14,"codemirror/mode/xml/xml.js":15,"jquery":undefined}],49:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	yutils = require("yasgui-utils"),
 	utils = require('./utils.js'),
 	imgs = require('./imgs.js'),
+	ZeroClipboard = require('zeroclipboard'),
 	_ = require('lodash');
 (function(){try{return require('datatables')}catch(e){return window.jQuery}})();
 require("../lib/colResizable-1.4.js");
@@ -41689,6 +47911,7 @@ var root = module.exports = function(yasr) {
 	var eventId = yasr.getPersistencyId('eventId') || "yasr_" + $(yasr.container).closest('[id]').attr('id');
 	var addAdditionalEvents = function() {
         var client = new ZeroClipboard( $('td div .fa-link') );
+        client.config({bubbleEvents: false});
         client.on( "ready", function( readyEvent ) {
             client.on( "aftercopy", yasr.afterCopy);
         });
@@ -41905,12 +48128,12 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
 				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
 				if (prefixWithLocal.prefix != "") {
-					localHref = ctx + "/resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+					localHref = "explore/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
 				}
 			}
 		}
 		if (undefined == localHref) {
-			localHref = ctx + "/resource?uri=" + encodeURIComponent(href);
+			localHref = "explore?uri=" + encodeURIComponent(href);
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "' target='_blank'>" + visibleString + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
@@ -41922,7 +48145,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 };
 
 var formatLiteralCustom = function(yasr, plugin, literalBinding) {
-	var stringRepresentation = YASR.utils.escapeHtmlEntities(literalBinding.value);
+	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}
@@ -42103,7 +48326,7 @@ root.version = {
 };
 
 
-},{"../lib/colResizable-1.4.js":2,"../package.json":21,"./bindingsToCsv.js":22,"./imgs.js":31,"./utils.js":45,"datatables":undefined,"jquery":undefined,"lodash":13,"yasgui-utils":18}],45:[function(require,module,exports){
+},{"../lib/colResizable-1.4.js":2,"../package.json":26,"./bindingsToCsv.js":27,"./imgs.js":36,"./utils.js":50,"datatables":undefined,"jquery":undefined,"lodash":17,"yasgui-utils":22,"zeroclipboard":25}],50:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	_ = require('lodash'),
@@ -42253,7 +48476,7 @@ var parseXmlSchemaDate = function(dateString) {
 	if (isNaN(date)) return null;
 	return date;
 };
-},{"./exceptions.js":26,"jquery":undefined,"lodash":13}]},{},[1])(1)
+},{"./exceptions.js":31,"jquery":undefined,"lodash":17}]},{},[1])(1)
 });
 
 

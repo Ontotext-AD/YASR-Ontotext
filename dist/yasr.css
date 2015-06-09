@@ -348,8 +348,9 @@
       text-align: center; }
     .yasr .dataTables_wrapper .dataTables_filter {
       margin-top: 0.5em; } }
+  .yasr .pvtUi {
+    color: #333; }
   .yasr table.pvtTable {
-    font-family: arial;
     font-size: 8pt;
     text-align: left;
     border-collapse: collapse; }
@@ -418,6 +419,12 @@
     text-align: center; }
   .yasr .pvtFilterBox h4 {
     margin: 0; }
+  .yasr .pvtFilterBox p {
+    margin: 1em auto; }
+  .yasr .pvtFilterBox label {
+    font-weight: normal; }
+  .yasr .pvtFilterBox input[type='checkbox'] {
+    margin-right: 5px; }
   .yasr .pvtCheckContainer {
     text-align: left;
     overflow: scroll;
@@ -425,6 +432,8 @@
     max-height: 200px; }
   .yasr .pvtCheckContainer p {
     margin: 5px; }
+  .yasr .pvtRendererArea {
+    padding: 5px; }
   .yasr .CodeMirror {
     /* Set height, width, borders, and global font properties here */
     font-family: monospace;

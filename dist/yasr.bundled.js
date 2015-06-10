@@ -94491,11 +94491,11 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		if (undefined == localHref) {
 			localHref = "explore?uri=" + encodeURIComponent(href);
 		}
-		value = "<a title='" + href + "' class='uri' href='" + localHref + "''>" + visibleString + "</a> " +
+		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'"
 	} else {
-		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";
+		value = "<span class='nonUri'>" + _.escape(formatLiteralCustom(yasr, plugin, binding)) + "</span>";
 	}
 	return "<div" + divClass +  ">" + value + "</div>";
 };

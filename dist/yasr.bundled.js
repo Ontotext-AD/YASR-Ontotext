@@ -3,7 +3,7 @@
 //the current browserify version does not support require-ing js files which are used as entry-point
 //this way, we can still require our main.js file
 module.exports = require('./main.js');
-},{"./main.js":48}],2:[function(require,module,exports){
+},{"./main.js":49}],2:[function(require,module,exports){
 /*! DataTables 1.10.2
  * ©2008-2014 SpryMedia Ltd - datatables.net/license
  */
@@ -14627,7 +14627,7 @@ module.exports = require('./main.js');
 }(window, document));
 
 
-},{"jquery":24}],3:[function(require,module,exports){
+},{"jquery":25}],3:[function(require,module,exports){
 /**
                _ _____           _          _     _      
               | |  __ \         (_)        | |   | |     
@@ -14942,7 +14942,7 @@ var $ = require('jquery');
     });
 
 
-},{"jquery":24}],4:[function(require,module,exports){
+},{"jquery":25}],4:[function(require,module,exports){
 /**
  * jQuery-csv (jQuery Plugin)
  * version: 0.71 (2012-11-19)
@@ -15792,9 +15792,12 @@ RegExp.escape= function(s) {
 
 
 
-},{"jquery":24}],5:[function(require,module,exports){
-
+},{"jquery":25}],5:[function(require,module,exports){
+// http://spin.js.org/#v2.1.3
+!function(a,b){"object"==typeof exports?module.exports=b():"function"==typeof define&&define.amd?define(b):a.Spinner=b()}(this,function(){"use strict";function a(a,b){var c,d=document.createElement(a||"div");for(c in b)d[c]=b[c];return d}function b(a){for(var b=1,c=arguments.length;c>b;b++)a.appendChild(arguments[b]);return a}function c(a,b,c,d){var e=["opacity",b,~~(100*a),c,d].join("-"),f=.01+c/d*100,g=Math.max(1-(1-a)/b*(100-f),a),h=j.substring(0,j.indexOf("Animation")).toLowerCase(),i=h&&"-"+h+"-"||"";return m[e]||(k.insertRule("@"+i+"keyframes "+e+"{0%{opacity:"+g+"}"+f+"%{opacity:"+a+"}"+(f+.01)+"%{opacity:1}"+(f+b)%100+"%{opacity:"+a+"}100%{opacity:"+g+"}}",k.cssRules.length),m[e]=1),e}function d(a,b){var c,d,e=a.style;if(b=b.charAt(0).toUpperCase()+b.slice(1),void 0!==e[b])return b;for(d=0;d<l.length;d++)if(c=l[d]+b,void 0!==e[c])return c}function e(a,b){for(var c in b)a.style[d(a,c)||c]=b[c];return a}function f(a){for(var b=1;b<arguments.length;b++){var c=arguments[b];for(var d in c)void 0===a[d]&&(a[d]=c[d])}return a}function g(a,b){return"string"==typeof a?a:a[b%a.length]}function h(a){this.opts=f(a||{},h.defaults,n)}function i(){function c(b,c){return a("<"+b+' xmlns="urn:schemas-microsoft.com:vml" class="spin-vml">',c)}k.addRule(".spin-vml","behavior:url(#default#VML)"),h.prototype.lines=function(a,d){function f(){return e(c("group",{coordsize:k+" "+k,coordorigin:-j+" "+-j}),{width:k,height:k})}function h(a,h,i){b(m,b(e(f(),{rotation:360/d.lines*a+"deg",left:~~h}),b(e(c("roundrect",{arcsize:d.corners}),{width:j,height:d.scale*d.width,left:d.scale*d.radius,top:-d.scale*d.width>>1,filter:i}),c("fill",{color:g(d.color,a),opacity:d.opacity}),c("stroke",{opacity:0}))))}var i,j=d.scale*(d.length+d.width),k=2*d.scale*j,l=-(d.width+d.length)*d.scale*2+"px",m=e(f(),{position:"absolute",top:l,left:l});if(d.shadow)for(i=1;i<=d.lines;i++)h(i,-2,"progid:DXImageTransform.Microsoft.Blur(pixelradius=2,makeshadow=1,shadowopacity=.3)");for(i=1;i<=d.lines;i++)h(i);return b(a,m)},h.prototype.opacity=function(a,b,c,d){var e=a.firstChild;d=d.shadow&&d.lines||0,e&&b+d<e.childNodes.length&&(e=e.childNodes[b+d],e=e&&e.firstChild,e=e&&e.firstChild,e&&(e.opacity=c))}}var j,k,l=["webkit","Moz","ms","O"],m={},n={lines:12,length:7,width:5,radius:10,scale:1,corners:1,color:"#000",opacity:.25,rotate:0,direction:1,speed:1,trail:100,fps:20,zIndex:2e9,className:"spinner",top:"50%",left:"50%",shadow:!1,hwaccel:!1,position:"absolute"};if(h.defaults={},f(h.prototype,{spin:function(b){this.stop();var c=this,d=c.opts,f=c.el=a(null,{className:d.className});if(e(f,{position:d.position,width:0,zIndex:d.zIndex,left:d.left,top:d.top}),b&&b.insertBefore(f,b.firstChild||null),f.setAttribute("role","progressbar"),c.lines(f,c.opts),!j){var g,h=0,i=(d.lines-1)*(1-d.direction)/2,k=d.fps,l=k/d.speed,m=(1-d.opacity)/(l*d.trail/100),n=l/d.lines;!function o(){h++;for(var a=0;a<d.lines;a++)g=Math.max(1-(h+(d.lines-a)*n)%l*m,d.opacity),c.opacity(f,a*d.direction+i,g,d);c.timeout=c.el&&setTimeout(o,~~(1e3/k))}()}return c},stop:function(){var a=this.el;return a&&(clearTimeout(this.timeout),a.parentNode&&a.parentNode.removeChild(a),this.el=void 0),this},lines:function(d,f){function h(b,c){return e(a(),{position:"absolute",width:f.scale*(f.length+f.width)+"px",height:f.scale*f.width+"px",background:b,boxShadow:c,transformOrigin:"left",transform:"rotate("+~~(360/f.lines*k+f.rotate)+"deg) translate("+f.scale*f.radius+"px,0)",borderRadius:(f.corners*f.scale*f.width>>1)+"px"})}for(var i,k=0,l=(f.lines-1)*(1-f.direction)/2;k<f.lines;k++)i=e(a(),{position:"absolute",top:1+~(f.scale*f.width/2)+"px",transform:f.hwaccel?"translate3d(0,0,0)":"",opacity:f.opacity,animation:j&&c(f.opacity,f.trail,l+k*f.direction,f.lines)+" "+1/f.speed+"s linear infinite"}),f.shadow&&b(i,e(h("#000","0 0 4px #000"),{top:"2px"})),b(d,b(i,h(g(f.color,k),"0 0 1px rgba(0,0,0,.1)")));return d},opacity:function(a,b,c){b<a.childNodes.length&&(a.childNodes[b].style.opacity=c)}}),"undefined"!=typeof document){k=function(){var c=a("style",{type:"text/css"});return b(document.getElementsByTagName("head")[0],c),c.sheet||c.styleSheet}();var o=e(a("group"),{behavior:"url(#default#VML)"});!d(o,"transform")&&o.adj?i():j=d(o,"animation")}return h});
 },{}],6:[function(require,module,exports){
+
+},{}],7:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -16097,7 +16100,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -16144,7 +16147,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -16373,7 +16376,7 @@ var substr = 'ab'.substr(-1) === 'b'
 
 }).call(this,require('_process'))
 
-},{"_process":9}],9:[function(require,module,exports){
+},{"_process":10}],10:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -16461,7 +16464,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16583,7 +16586,7 @@ process.chdir = function (dir) {
   });
 });
 
-},{"../../lib/codemirror":15}],11:[function(require,module,exports){
+},{"../../lib/codemirror":16}],12:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16690,7 +16693,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":15}],12:[function(require,module,exports){
+},{"../../lib/codemirror":16}],13:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16841,7 +16844,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   });
 });
 
-},{"../../lib/codemirror":15}],13:[function(require,module,exports){
+},{"../../lib/codemirror":16}],14:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16987,7 +16990,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   }
 });
 
-},{"../../lib/codemirror":15,"./foldcode":12}],14:[function(require,module,exports){
+},{"../../lib/codemirror":16,"./foldcode":13}],15:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -17171,7 +17174,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   };
 });
 
-},{"../../lib/codemirror":15}],15:[function(require,module,exports){
+},{"../../lib/codemirror":16}],16:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -25241,7 +25244,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   return CodeMirror;
 });
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -25935,7 +25938,7 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 });
 
-},{"../../lib/codemirror":15}],17:[function(require,module,exports){
+},{"../../lib/codemirror":16}],18:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -26321,7 +26324,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 });
 
-},{"../../lib/codemirror":15}],18:[function(require,module,exports){
+},{"../../lib/codemirror":16}],19:[function(require,module,exports){
 (function (process,__dirname){
 /*!
  * This file is part of Cytoscape.js 2.4.1.
@@ -52415,7 +52418,7 @@ this.cytoscape = cytoscape;
 
 }).call(this,require('_process'),"/node_modules/cytoscape/dist")
 
-},{"_process":9,"child_process":5,"os":7,"path":8}],19:[function(require,module,exports){
+},{"_process":10,"child_process":6,"os":8,"path":9}],20:[function(require,module,exports){
 !function() {
   var d3 = {
     version: "3.5.5"
@@ -61920,7 +61923,7 @@ this.cytoscape = cytoscape;
   if (typeof define === "function" && define.amd) define(d3); else if (typeof module === "object" && module.exports) module.exports = d3;
   this.d3 = d3;
 }();
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var jQuery = require('jquery');
 
 /*!
@@ -62244,7 +62247,7 @@ $.extend( $.ui, {
 
 })( jQuery );
 
-},{"jquery":24}],21:[function(require,module,exports){
+},{"jquery":25}],22:[function(require,module,exports){
 var jQuery = require('jquery');
 require('./widget');
 
@@ -62418,7 +62421,7 @@ $.widget("ui.mouse", {
 
 })(jQuery);
 
-},{"./widget":23,"jquery":24}],22:[function(require,module,exports){
+},{"./widget":24,"jquery":25}],23:[function(require,module,exports){
 var jQuery = require('jquery');
 require('./core');
 require('./mouse');
@@ -63714,7 +63717,7 @@ $.widget("ui.sortable", $.ui.mouse, {
 
 })(jQuery);
 
-},{"./core":20,"./mouse":21,"./widget":23,"jquery":24}],23:[function(require,module,exports){
+},{"./core":21,"./mouse":22,"./widget":24,"jquery":25}],24:[function(require,module,exports){
 var jQuery = require('jquery');
 
 /*!
@@ -64239,7 +64242,7 @@ $.each( { show: "fadeIn", hide: "fadeOut" }, function( method, defaultEffect ) {
 
 })( jQuery );
 
-},{"jquery":24}],24:[function(require,module,exports){
+},{"jquery":25}],25:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v1.11.0
  * http://jquery.com/
@@ -74578,7 +74581,7 @@ return jQuery;
 
 }));
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -86818,7 +86821,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 (function() {
   var callWithJQuery;
 
@@ -86924,7 +86927,7 @@ return jQuery;
 }).call(this);
 
 //# sourceMappingURL=d3_renderers.js.map
-},{"jquery":24}],27:[function(require,module,exports){
+},{"jquery":25}],28:[function(require,module,exports){
 (function() {
   var callWithJQuery;
 
@@ -87114,7 +87117,7 @@ return jQuery;
 }).call(this);
 
 //# sourceMappingURL=gchart_renderers.js.map
-},{"jquery":24}],28:[function(require,module,exports){
+},{"jquery":25}],29:[function(require,module,exports){
 (function() {
   var callWithJQuery,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
@@ -88612,7 +88615,7 @@ return jQuery;
 }).call(this);
 
 //# sourceMappingURL=pivot.js.map
-},{"jquery":24}],29:[function(require,module,exports){
+},{"jquery":25}],30:[function(require,module,exports){
 ;(function(win){
 	var store = {},
 		doc = win.document,
@@ -88789,7 +88792,7 @@ return jQuery;
 
 })(Function('return this')());
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports={
   "name": "yasgui-utils",
   "version": "1.6.0",
@@ -88838,7 +88841,7 @@ module.exports={
   "readme": "ERROR: No README data found!"
 }
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 window.console = window.console || {"log":function(){}};//make sure any console statements don't break IE
 module.exports = {
 	storage: require("./storage.js"),
@@ -88859,7 +88862,7 @@ module.exports = {
 	}
 };
 
-},{"../package.json":30,"./storage.js":32,"./svg.js":33}],32:[function(require,module,exports){
+},{"../package.json":31,"./storage.js":33,"./svg.js":34}],33:[function(require,module,exports){
 var store = require("store");
 var times = {
 	day: function() {
@@ -88919,7 +88922,7 @@ var root = module.exports = {
 
 };
 
-},{"store":29}],33:[function(require,module,exports){
+},{"store":30}],34:[function(require,module,exports){
 module.exports = {
 	draw: function(parent, svgString) {
 		if (!parent) return;
@@ -88948,7 +88951,7 @@ module.exports = {
 		return false;
 	}
 };
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 /*!
  * ZeroClipboard
  * The ZeroClipboard library provides an easy way to copy text to the clipboard using an invisible Adobe Flash movie and a JavaScript interface.
@@ -91530,7 +91533,7 @@ module.exports = {
 })(function() {
   return this || window;
 }());
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 module.exports={
   "name": "yasgui-yasr",
   "description": "Yet Another SPARQL Resultset GUI",
@@ -91650,7 +91653,7 @@ module.exports={
   }
 }
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 'use strict';
 module.exports = function(result) {
 	var quote = "\"";
@@ -91710,7 +91713,7 @@ module.exports = function(result) {
 	createBody();
 	return csvString;
 };
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 
@@ -91770,7 +91773,7 @@ root.version = {
 };
 
 
-},{"../package.json":35,"./imgs.js":45,"jquery":24,"yasgui-utils":31}],38:[function(require,module,exports){
+},{"../package.json":36,"./imgs.js":46,"jquery":25,"yasgui-utils":32}],39:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
 module.exports = {
@@ -91866,7 +91869,7 @@ module.exports = {
 	
 	
 };
-},{"jquery":24}],39:[function(require,module,exports){
+},{"jquery":25}],40:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 
@@ -91960,7 +91963,7 @@ root.defaults = {
 	corsMessage: 'Unable to get response from endpoint',
 	tryQueryLink: null,
 };
-},{"jquery":24}],40:[function(require,module,exports){
+},{"jquery":25}],41:[function(require,module,exports){
 module.exports = {
 	GoogleTypeException:  function(foundTypes, varName) {
 	   this.foundTypes = foundTypes;
@@ -91980,7 +91983,7 @@ module.exports = {
 	   };
 	}
 }
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 'use strict';
 module.exports = {
 	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
@@ -92044,7 +92047,7 @@ module.exports = {
                             '</div>',
 };
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter,
 	$ = require('jquery');
 //cannot package google loader via browserify....
@@ -92153,7 +92156,7 @@ loader.prototype = new EventEmitter;
 module.exports = new loader();
 
 
-},{"events":6,"jquery":24}],43:[function(require,module,exports){
+},{"events":7,"jquery":25}],44:[function(require,module,exports){
 'use strict';
 /**
  * todo: chart height as option
@@ -92462,7 +92465,7 @@ function deepEq$(x, y, type){
   }
 }
 
-},{"./exceptions.js":40,"./gChartLoader.js":42,"./utils.js":59,"jquery":24,"yasgui-utils":31}],44:[function(require,module,exports){
+},{"./exceptions.js":41,"./gChartLoader.js":43,"./utils.js":60,"jquery":25,"yasgui-utils":32}],45:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	utils = require("./utils.js"),
@@ -92684,7 +92687,7 @@ var root = module.exports = function(yasr) {
 		canHandleResults: canHandleResults,
 	}
 }
-},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"./parsers/graphJson.js":51,"./utils.js":59,"cytoscape":18,"jquery":24,"lodash":25}],45:[function(require,module,exports){
+},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"./parsers/graphJson.js":52,"./utils.js":60,"cytoscape":19,"jquery":25,"lodash":26}],46:[function(require,module,exports){
 'use strict';
 module.exports = {
 	cross: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve"><g>	<path d="M83.288,88.13c-2.114,2.112-5.575,2.112-7.689,0L53.659,66.188c-2.114-2.112-5.573-2.112-7.687,0L24.251,87.907   c-2.113,2.114-5.571,2.114-7.686,0l-4.693-4.691c-2.114-2.114-2.114-5.573,0-7.688l21.719-21.721c2.113-2.114,2.113-5.573,0-7.686   L11.872,24.4c-2.114-2.113-2.114-5.571,0-7.686l4.842-4.842c2.113-2.114,5.571-2.114,7.686,0L46.12,33.591   c2.114,2.114,5.572,2.114,7.688,0l21.721-21.719c2.114-2.114,5.573-2.114,7.687,0l4.695,4.695c2.111,2.113,2.111,5.571-0.003,7.686   L66.188,45.973c-2.112,2.114-2.112,5.573,0,7.686L88.13,75.602c2.112,2.111,2.112,5.572,0,7.687L83.288,88.13z"/></g></svg>',
@@ -92697,9 +92700,9 @@ module.exports = {
 	fullscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="640"     inkscape:window-height="480"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="0"     inkscape:current-layer="Layer_1" /><path     d="m -7.962963,-10 v 38.889 l 16.667,-16.667 16.667,16.667 5.555,-5.555 -16.667,-16.667 16.667,-16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 92.037037,-10 v 38.889 l -16.667,-16.667 -16.666,16.667 -5.556,-5.555 16.666,-16.667 -16.666,-16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M -7.962963,90 V 51.111 l 16.667,16.666 16.667,-16.666 5.555,5.556 -16.667,16.666 16.667,16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M 92.037037,90 V 51.111 l -16.667,16.666 -16.666,-16.666 -5.556,5.556 16.666,16.666 -16.666,16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 	smallscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="1855"     inkscape:window-height="1056"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="1"     inkscape:current-layer="Layer_1" /><path     d="m 30.926037,28.889 0,-38.889 -16.667,16.667 -16.667,-16.667 -5.555,5.555 16.667,16.667 -16.667,16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,28.889 0,-38.889 16.667,16.667 16.666,-16.667 5.556,5.555 -16.666,16.667 16.666,16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 30.926037,51.111 0,38.889 -16.667,-16.666 -16.667,16.666 -5.555,-5.556 16.667,-16.666 -16.667,-16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,51.111 0,38.889 16.667,-16.666 16.666,16.666 5.556,-5.556 -16.666,-16.666 16.666,-16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 };
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 require('./tableToCsv.js');
-},{"./tableToCsv.js":47}],47:[function(require,module,exports){
+},{"./tableToCsv.js":48}],48:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
 
@@ -92799,13 +92802,15 @@ $.fn.tableToCsv = function(config) {
 }
 
 
-},{"jquery":24}],48:[function(require,module,exports){
+},{"jquery":25}],49:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var utils = require("yasgui-utils");
 console = console || {"log":function(){}};//make sure any console statements don't break in IE
 
 require('./jquery/extendJquery.js');
+var Spinner = require("../lib/spin.min.js");
+
 
 
 /**
@@ -93344,13 +93349,13 @@ try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};
 try {root.registerOutput('graph', require("./graph.js"))} catch(e){};
-},{"../package.json":35,"./boolean.js":37,"./defaults.js":38,"./error.js":39,"./extensions.js":41,"./gChartLoader.js":42,"./gchart.js":43,"./graph.js":44,"./imgs.js":45,"./jquery/extendJquery.js":46,"./parsers/wrapper.js":54,"./pivot.js":56,"./rawResponse.js":57,"./table.js":58,"./utils.js":59,"jquery":24,"yasgui-utils":31}],49:[function(require,module,exports){
+},{"../lib/spin.min.js":5,"../package.json":36,"./boolean.js":38,"./defaults.js":39,"./error.js":40,"./extensions.js":42,"./gChartLoader.js":43,"./gchart.js":44,"./graph.js":45,"./imgs.js":46,"./jquery/extendJquery.js":47,"./parsers/wrapper.js":55,"./pivot.js":57,"./rawResponse.js":58,"./table.js":59,"./utils.js":60,"jquery":25,"yasgui-utils":32}],50:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, ",");
 };
-},{"./dlv.js":50,"jquery":24}],50:[function(require,module,exports){
+},{"./dlv.js":51,"jquery":25}],51:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
 require("../../lib/jquery.csv-0.71.js");
@@ -93412,7 +93417,7 @@ var root = module.exports = function(queryResponse, separator) {
 	
 	return json;
 };
-},{"../../lib/jquery.csv-0.71.js":4,"jquery":24}],51:[function(require,module,exports){
+},{"../../lib/jquery.csv-0.71.js":4,"jquery":25}],52:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var _ = require('lodash');
@@ -93465,7 +93470,7 @@ var root = module.exports = function(responseJson) {
 	return false;
 	
 };
-},{"jquery":24,"lodash":25}],52:[function(require,module,exports){
+},{"jquery":25,"lodash":26}],53:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 
@@ -93484,13 +93489,13 @@ var root = module.exports = function(queryResponse) {
 	return false;
 	
 };
-},{"jquery":24}],53:[function(require,module,exports){
+},{"jquery":25}],54:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, "\t");
 };
-},{"./dlv.js":50,"jquery":24}],54:[function(require,module,exports){
+},{"./dlv.js":51,"jquery":25}],55:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	_ = require('lodash');
@@ -93759,7 +93764,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 
 
 
-},{"./csv.js":49,"./graphJson.js":51,"./json.js":52,"./tsv.js":53,"./xml.js":55,"jquery":24,"lodash":25}],55:[function(require,module,exports){
+},{"./csv.js":50,"./graphJson.js":52,"./json.js":53,"./tsv.js":54,"./xml.js":56,"jquery":25,"lodash":26}],56:[function(require,module,exports){
 'use strict';
 var $ = require("jquery");
 var root = module.exports = function(xml) {
@@ -93845,7 +93850,7 @@ var root = module.exports = function(xml) {
 	return json;
 };
 
-},{"jquery":24}],56:[function(require,module,exports){
+},{"jquery":25}],57:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	utils = require('./utils.js'),
@@ -94108,7 +94113,7 @@ root.version = {
 	"YASR-rawResponse" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 };
-},{"../node_modules/pivottable/dist/d3_renderers.js":26,"../node_modules/pivottable/dist/gchart_renderers.js":27,"../package.json":35,"./gChartLoader.js":42,"./imgs.js":45,"./utils.js":59,"d3":19,"jquery":24,"jquery-ui/sortable":22,"pivottable":28,"yasgui-utils":31}],57:[function(require,module,exports){
+},{"../node_modules/pivottable/dist/d3_renderers.js":27,"../node_modules/pivottable/dist/gchart_renderers.js":28,"../package.json":36,"./gChartLoader.js":43,"./imgs.js":46,"./utils.js":60,"d3":20,"jquery":25,"jquery-ui/sortable":23,"pivottable":29,"yasgui-utils":32}],58:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	CodeMirror = require("codemirror");
@@ -94201,7 +94206,7 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"CodeMirror" : CodeMirror.version
 };
-},{"../package.json":35,"codemirror":15,"codemirror/addon/edit/matchbrackets.js":10,"codemirror/addon/fold/brace-fold.js":11,"codemirror/addon/fold/foldcode.js":12,"codemirror/addon/fold/foldgutter.js":13,"codemirror/addon/fold/xml-fold.js":14,"codemirror/mode/javascript/javascript.js":16,"codemirror/mode/xml/xml.js":17,"jquery":24}],58:[function(require,module,exports){
+},{"../package.json":36,"codemirror":16,"codemirror/addon/edit/matchbrackets.js":11,"codemirror/addon/fold/brace-fold.js":12,"codemirror/addon/fold/foldcode.js":13,"codemirror/addon/fold/foldgutter.js":14,"codemirror/addon/fold/xml-fold.js":15,"codemirror/mode/javascript/javascript.js":17,"codemirror/mode/xml/xml.js":18,"jquery":25}],59:[function(require,module,exports){
 'use strict';
 var $ = require("jquery"),
 	yutils = require("yasgui-utils"),
@@ -94484,12 +94489,12 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
 				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
 				if (prefixWithLocal.prefix != "") {
-					localHref = "explore/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+					localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
 				}
 			}
 		}
 		if (undefined == localHref) {
-			localHref = "explore?uri=" + encodeURIComponent(href);
+			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
@@ -94682,7 +94687,7 @@ root.version = {
 };
 
 
-},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":35,"./bindingsToCsv.js":36,"./imgs.js":45,"./utils.js":59,"jquery":24,"lodash":25,"yasgui-utils":31,"zeroclipboard":34}],59:[function(require,module,exports){
+},{"../lib/DataTables/media/js/jquery.dataTables.js":2,"../lib/colResizable-1.4.js":3,"../package.json":36,"./bindingsToCsv.js":37,"./imgs.js":46,"./utils.js":60,"jquery":25,"lodash":26,"yasgui-utils":32,"zeroclipboard":35}],60:[function(require,module,exports){
 'use strict';
 var $ = require('jquery'),
 	_ = require('lodash'),
@@ -94832,7 +94837,7 @@ var parseXmlSchemaDate = function(dateString) {
 	if (isNaN(date)) return null;
 	return date;
 };
-},{"./exceptions.js":40,"jquery":24,"lodash":25}]},{},[1])(1)
+},{"./exceptions.js":41,"jquery":25,"lodash":26}]},{},[1])(1)
 });
 
 

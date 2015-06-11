@@ -4,6 +4,8 @@ var utils = require("yasgui-utils");
 console = console || {"log":function(){}};//make sure any console statements don't break in IE
 
 require('./jquery/extendJquery.js');
+var Spinner = require("../lib/spin.min.js");
+
 
 
 /**

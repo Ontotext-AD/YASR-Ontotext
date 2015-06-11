@@ -280,12 +280,12 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
 				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
 				if (prefixWithLocal.prefix != "") {
-					localHref = "explore/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+					localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
 				}
 			}
 		}
 		if (undefined == localHref) {
-			localHref = "explore?uri=" + encodeURIComponent(href);
+			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";

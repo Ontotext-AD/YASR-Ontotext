@@ -47990,15 +47990,15 @@ var root = module.exports = function(yasr) {
 		
 		//move the table upward, so the table options nicely aligns with the yasr header
 		var headerHeight = yasr.header.outerHeight(); //do not add some space of 5 px between table and yasr header
-		if (headerHeight > 0) {
-			yasr.resultsContainer.find(".dataTables_wrapper")
-				.css("position", "relative")
-				.css("top", "-" + headerHeight + "px")
-				.css("margin-bottom", "-" + headerHeight + "px");
+		// if (headerHeight > 0) {
+		// 	yasr.resultsContainer.find(".dataTables_wrapper")
+		// 		.css("position", "relative")
+		// 		.css("top", "-" + headerHeight + "px")
+		// 		.css("margin-bottom", "-" + headerHeight + "px");
 			
-			//and: make sure the height of the resize handlers matches the height of the table header
-			$(yasr.resultsContainer).find('.JCLRgrip').css('marginTop', headerHeight + 'px');
-		}
+		// 	//and: make sure the height of the resize handlers matches the height of the table header
+		// 	$(yasr.resultsContainer).find('.JCLRgrip').css('marginTop', headerHeight + 'px');
+		// }
 		// Use placeholder instead of label
 		var searchFilter = yasr.resultsContainer.find('.dataTables_filter label');
 		searchFilter.contents().get(0).remove()
@@ -48145,7 +48145,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'"
 	} else {
-		value = "<span class='nonUri'>" + _.escape(formatLiteralCustom(yasr, plugin, binding)) + "</span>";
+		value = "<span class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</span>";
 	}
 	return "<div" + divClass +  ">" + value + "</div>";
 };

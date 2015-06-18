@@ -26327,7 +26327,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 },{"../../lib/codemirror":16}],19:[function(require,module,exports){
 (function (process,__dirname){
 /*!
- * This file is part of Cytoscape.js 2.4.1.
+ * This file is part of Cytoscape.js 2.4.2.
  * 
  * Cytoscape.js is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by the Free
@@ -26357,7 +26357,7 @@ var cytoscape;
     return cytoscape.init.apply(cytoscape, arguments);
   };
 
-  $$.version = '2.4.1';
+  $$.version = '2.4.2';
   
   // allow functional access to cytoscape.js
   // e.g. var cyto = $.cytoscape({ selector: "#foo", ... });
@@ -31451,8 +31451,8 @@ this.cytoscape = cytoscape;
           'text-transform': textTransform,
           'text-wrap': 'none',
           'text-max-width': textMaxWidth,
-          'text-background-color': 'none',
-          'text-background-opacity': 1,
+          'text-background-color': '#000',
+          'text-background-opacity': 0,
           'text-border-width': 0,
           'text-border-style': 'solid',
           'text-border-color':'#000',
@@ -40242,7 +40242,7 @@ this.cytoscape = cytoscape;
             duration: options.animationDuration,
             step: !lastNode ? undefined : function(){
               if( options.fit ){
-                cy.fit( options.padding );
+                cy.fit( options.eles, options.padding );
               } 
             },
             complete: !lastNode ? undefined : function(){
@@ -40255,7 +40255,7 @@ this.cytoscape = cytoscape;
               } 
 
               if( options.fit ){
-                cy.fit( options.padding );
+                cy.fit( options.eles, options.padding );
               } 
               
               layout.one('layoutstop', options.stop);
@@ -40270,7 +40270,7 @@ this.cytoscape = cytoscape;
         nodes.positions( fn );
 
         if( options.fit ){
-          cy.fit( options.padding );
+          cy.fit( options.eles, options.padding );
         }
 
         if( options.zoom != null ){
@@ -41062,22 +41062,28 @@ this.cytoscape = cytoscape;
         otherNodes = cy.$( otherNodes );
       }
       
-      var edges = otherNodes.connectedEdges();
       var thisIds = this._private.ids;
+      var otherIds = otherNodes._private.ids;
       
-      for( var i = 0; i < edges.length; i++ ){
-        var edge = edges[i];
-        var foundId;
-        var edgeData = edge._private.data;
-
-        if( p.thisIs ){
-          var idToFind = edgeData[ p.thisIs ];
-          foundId = thisIds[ idToFind ];
-        } else {
-          foundId = thisIds[ edgeData.source ] || thisIds[ edgeData.target ];
-        }
+      for( var h = 0; h < otherNodes.length; h++ ){
+        var edges = otherNodes[h]._private.edges;
         
-        if( foundId ){
+        for( var i = 0; i < edges.length; i++ ){
+          var edge = edges[i];
+          var foundId;
+          var edgeData = edge._private.data;
+          var thisToOther = thisIds[ edgeData.source ] && otherIds[ edgeData.target ];
+          var otherToThis = otherIds[ edgeData.source ] && thisIds[ edgeData.target ];
+          var edgeConnectsThisAndOther = thisToOther || otherToThis;
+
+          if( !edgeConnectsThisAndOther ){ continue; }
+
+          if( p.thisIs ){
+            if( p.thisIs === 'source' && !thisToOther ){ continue; }
+            
+            if( p.thisIs === 'target' && !otherToThis ){ continue; }
+          }
+          
           elements.push( edge );
         }
       }
@@ -43693,6 +43699,12 @@ this.cytoscape = cytoscape;
       
       rs.arrowStartX = arrowStart[0];
       rs.arrowStartY = arrowStart[1];
+      
+      if( !$$.is.number(rs.startX) || !$$.is.number(rs.startY) || !$$.is.number(rs.endX) || !$$.is.number(rs.endY) ){
+        rs.badLine = true;
+      } else {
+        rs.badLine = false;
+      }
             
     } else if (rs.edgeType == 'bezier') {
       // if( window.badArrow) debugger;
@@ -43999,12 +44011,12 @@ this.cytoscape = cytoscape;
       if( context.beginPath ){ context.beginPath(); }
       context.moveTo(pts[0], pts[1]);
       
-      if (pts.length === 3 * 2) { // bezier
+      if( pts.length === 6 && !rs.badBezier ){ // bezier
         context.quadraticCurveTo(pts[2], pts[3], pts[4], pts[5]);
-      } else if( pts.length === 3 * 2 * 2 ){ // double bezier loop
+      } else if( pts.length === 12 && !rs.badBezier ){ // double bezier loop
         context.quadraticCurveTo(pts[2], pts[3], pts[4], pts[5]);
         context.quadraticCurveTo(pts[8], pts[9], pts[10], pts[11]);
-      } else { // line
+      } else if( pts.length === 4 && !rs.badLine ){ // line
         context.lineTo(pts[2], pts[3]);
       }
     }
@@ -44068,10 +44080,11 @@ this.cytoscape = cytoscape;
         arrowClearFill = 'hollow';
       }
 
-      if( style.opacity.value !== 1 ){ // then extra clear is needed
+      if( style.opacity.value !== 1 || arrowFill === 'hollow' ){ // then extra clear is needed
         context.globalCompositeOperation = 'destination-out';
         
         self.fillStyle(context, 255, 255, 255, 1);
+        self.strokeStyle(context, 255, 255, 255, 1);
         
         self.drawArrowShape( edge, prefix, context, 
           arrowClearFill, style['width'].pxValue, style[prefix + '-arrow-shape'].value, 
@@ -44083,6 +44096,7 @@ this.cytoscape = cytoscape;
 
       var color = style[prefix + '-arrow-color'].value;
       self.fillStyle(context, color[0], color[1], color[2], style.opacity.value);
+      self.strokeStyle(context, color[0], color[1], color[2], style.opacity.value);
 
       self.drawArrowShape( edge, prefix, context, 
         arrowFill, style['width'].pxValue, style[prefix + '-arrow-shape'].value, 
@@ -44560,11 +44574,11 @@ this.cytoscape = cytoscape;
     var rstyle = _p.rstyle;
     var rscratch = _p.rscratch;
     var parentOpacity = element.effectiveOpacity();
-    if( parentOpacity === 0 || style["text-opacity"].value === 0){ return; }
+    if( parentOpacity === 0 || style['text-opacity'].value === 0){ return; }
 
     var text = this.setupTextStyle( context, element );
-    var halign = style["text-halign"].value;
-    var valign = style["text-valign"].value;
+    var halign = style['text-halign'].value;
+    var valign = style['text-valign'].value;
 
     if( element.isEdge() ){
       halign = 'center';
@@ -44572,21 +44586,21 @@ this.cytoscape = cytoscape;
     }
 
     if ( text != null && !isNaN(textX) && !isNaN(textY)) {
-      var backgroundOpacity = style["text-background-opacity"].value;
-      if ((style["text-background-color"] && style["text-background-color"].value != "none" || style["text-border-width"].pxValue > 0) && backgroundOpacity > 0) {
-        var textBorderWidth = style["text-border-width"].pxValue;
+      var backgroundOpacity = style['text-background-opacity'].value;
+      if ((style['text-background-color'] || style['text-border-width'].pxValue > 0) && backgroundOpacity > 0) {
+        var textBorderWidth = style['text-border-width'].pxValue;
         var margin = 4 + textBorderWidth/2;
 
         if (element.isNode()) {
           //Move textX, textY to include the background margins
-          if (valign == "top") {
+          if (valign == 'top') {
             textY -=margin;
-          } else if (valign == "bottom") {
+          } else if (valign == 'bottom') {
             textY +=margin;
           }
-          if (halign == "left") {
+          if (halign == 'left') {
             textX -=margin;
-          } else if (halign == "right") {
+          } else if (halign == 'right') {
             textX +=margin;
           }
         }
@@ -44596,9 +44610,9 @@ this.cytoscape = cytoscape;
         var bgX = textX;
 
         if (halign) {
-          if (halign == "center") {
+          if (halign == 'center') {
             bgX = bgX - bgWidth / 2;
-          } else if (halign == "left") {
+          } else if (halign == 'left') {
             bgX = bgX- bgWidth;
           }
         }
@@ -44606,9 +44620,9 @@ this.cytoscape = cytoscape;
         var bgY = textY;
 
         if (element.isNode()) {
-          if (valign == "top") {
+          if (valign == 'top') {
              bgY = bgY - bgHeight;
-          } else if (valign == "center") {
+          } else if (valign == 'center') {
             bgY = bgY- bgHeight / 2;
           }
         } else {
@@ -44628,13 +44642,13 @@ this.cytoscape = cytoscape;
           bgWidth += margin*2;
         }
 
-        if (style["text-background-color"]) {
+        if (style['text-background-color']) {
           var textFill = context.fillStyle;
-          var textBackgroundColor = style["text-background-color"].value;
+          var textBackgroundColor = style['text-background-color'].value;
 
-          context.fillStyle = "rgba(" + textBackgroundColor[0] + "," + textBackgroundColor[1] + "," + textBackgroundColor[2] + "," + backgroundOpacity * parentOpacity + ")";
+          context.fillStyle = 'rgba(' + textBackgroundColor[0] + ',' + textBackgroundColor[1] + ',' + textBackgroundColor[2] + ',' + backgroundOpacity * parentOpacity + ')';
           var styleShape = style['text-background-shape'].strValue;
-          if (styleShape == "roundrectangle") {
+          if (styleShape == 'roundrectangle') {
             roundRect(context, bgX, bgY, bgWidth, bgHeight, 2);
           } else {
             context.fillRect(bgX,bgY,bgWidth,bgHeight);
@@ -44645,10 +44659,10 @@ this.cytoscape = cytoscape;
         if (textBorderWidth > 0) {
           var textStroke = context.strokeStyle;
           var textLineWidth = context.lineWidth;
-          var textBorderColor = style["text-border-color"].value;
+          var textBorderColor = style['text-border-color'].value;
           var textBorderStyle = style['text-border-style'].value;
 
-          context.strokeStyle = "rgba(" + textBorderColor[0] + "," + textBorderColor[1] + "," + textBorderColor[2] + "," + backgroundOpacity * parentOpacity + ")";
+          context.strokeStyle = 'rgba(' + textBorderColor[0] + ',' + textBorderColor[1] + ',' + textBorderColor[2] + ',' + backgroundOpacity * parentOpacity + ')';
           context.lineWidth = textBorderWidth;
 
           if( context.setLineDash ){ // for very outofdate browsers
@@ -46852,7 +46866,7 @@ this.cytoscape = cytoscape;
         // Deselect all elements if nothing is currently under the mouse cursor and we aren't dragging something
         if ( (down == null) // not mousedown on node
           && !r.dragData.didDrag // didn't move the node around
-          && !(Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) > 7 && select[4]) // not box selection
+          //&& !(Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) > 7 && select[4]) // not box selection
           && !r.hoverData.dragged // didn't pan
         ) {
 
@@ -46910,8 +46924,8 @@ this.cytoscape = cytoscape;
           // console.log('trigger click et al');
 
           if(
-            Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) === 0
-            && !r.dragData.didDrag // didn't move a node around
+            //Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) === 0
+            !r.dragData.didDrag // didn't move a node around
             && !r.hoverData.dragged // didn't pan
           ){
             if (near != null) {
@@ -48542,12 +48556,12 @@ this.cytoscape = cytoscape;
       }
 
       // arbor doesn't work with just 1 node 
-      if( cy.nodes().size() <= 1 ){
+      if( eles.nodes().size() <= 1 ){
         if( options.fit ){
           cy.reset();
         }
 
-        cy.nodes().position({
+        eles.nodes().position({
           x: Math.round( (bb.x1 + bb.x2)/2 ),
           y: Math.round( (bb.y1 + bb.y2)/2 )
         });
@@ -52416,7 +52430,7 @@ this.cytoscape = cytoscape;
   
 })( cytoscape );
 
-}).call(this,require('_process'),"/node_modules/cytoscape/dist")
+}).call(this,require('_process'),"/node_modules\\cytoscape\\dist")
 
 },{"_process":10,"child_process":6,"os":8,"path":9}],20:[function(require,module,exports){
 !function() {
@@ -88829,7 +88843,7 @@ module.exports={
     "shasum": "bcb9091109c233e3e82737c94c202e6512389c47",
     "tarball": "http://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.6.0.tgz"
   },
-  "_from": "yasgui-utils@1.6.0",
+  "_from": "yasgui-utils@>=1.4.1 <2.0.0",
   "_npmVersion": "1.4.3",
   "_npmUser": {
     "name": "laurens.rietveld",
@@ -92048,6 +92062,7 @@ module.exports = {
 };
 
 },{}],43:[function(require,module,exports){
+(function (global){
 var EventEmitter = require('events').EventEmitter,
 	$ = require('jquery');
 //cannot package google loader via browserify....
@@ -92057,7 +92072,7 @@ var loader = function() {
 	EventEmitter.call(this);
 	var mod = this;
 	this.init = function() {
-		if (!loadingFailed && !(window.google) && !loadingMain) {//not initiated yet, not currently loading, and has not failed the previous time
+		if (!loadingFailed && !(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null) && !loadingMain) {//not initiated yet, not currently loading, and has not failed the previous time
 			loadingMain = true;
 			/**
 			 * It is extremely difficult to catch script loader errors (see http://www.html5rocks.com/en/tutorials/speed/script-loading/)
@@ -92073,7 +92088,7 @@ var loader = function() {
 			var maxTimeout = 6000;//so 6 sec max
 			var startTime = +new Date();
 			var checkAndWait = function() {
-				if (!(window.google)) {
+				if (!(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null)) {
 					if ((+new Date() - startTime) > maxTimeout) {
 						//ok, we've waited long enough. Obviously we could not load the googleloader...
 						loadingFailed = true;
@@ -92091,7 +92106,7 @@ var loader = function() {
 			}
 			checkAndWait();
 		} else {
-			if ((window.google)) {
+			if ((typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null)) {
 				//already loaded! everything is fine
 				mod.emit('initDone');
 			} else if (loadingFailed) {
@@ -92105,7 +92120,7 @@ var loader = function() {
 	this.googleLoad = function() {
 		
 		var load = function() {
-			(window.google).load("visualization", "1", {
+			(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null).load("visualization", "1", {
 				packages : ["corechart", "charteditor" ],
 				callback : function(){mod.emit('done')}
 			})
@@ -92115,7 +92130,7 @@ var loader = function() {
 			mod.once('initError', function(){
 				mod.emit('error', 'Could not load google loader')
 			});
-		} else if ((window.google)) {
+		} else if ((typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null)) {
 			//google loader is there. use it
 			load();
 		} else if (loadingFailed) {
@@ -92156,7 +92171,10 @@ loader.prototype = new EventEmitter;
 module.exports = new loader();
 
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{"events":7,"jquery":25}],44:[function(require,module,exports){
+(function (global){
 'use strict';
 /**
  * todo: chart height as option
@@ -92185,7 +92203,7 @@ var root = module.exports = function(yasr){
 	var editor = null;
 	
 	var initEditor = function(callback) {
-		var google = (window.google);
+		var google = (typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null);
 		editor = new google.visualization.ChartEditor();
 		google.visualization.events.addListener(editor, 'ok', function(){
 				var chartWrapper, tmp;
@@ -92356,7 +92374,7 @@ var root = module.exports = function(yasr){
 				yasr.updateHeader();
 			}
 			
-			if (!(window.google) || !(window.google).visualization || !editor) {
+			if (!(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null) || !(typeof window !== "undefined" ? window.google : typeof global !== "undefined" ? global.google : null).visualization || !editor) {
 				require('./gChartLoader.js')
 					.on('done', function() {
 						initEditor();
@@ -92464,6 +92482,8 @@ function deepEq$(x, y, type){
     return result;
   }
 }
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./exceptions.js":41,"./gChartLoader.js":43,"./utils.js":60,"jquery":25,"yasgui-utils":32}],45:[function(require,module,exports){
 'use strict';
@@ -92932,15 +92952,23 @@ var root = module.exports = function(parent, options, queryResults) {
 			}
 		}
 		disableOutputs(unsupportedOutputs);
-		if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
-			$(yasr.resultsContainer).empty();
-			yasr.plugins[output].draw();
-			return true;
-		} else if (selectedOutput) {
+		//First check is to return again to Table view if previous query is returning error in Raw Response view
+		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output)  {
 			$(yasr.resultsContainer).empty();
 			yasr.plugins[selectedOutput].draw();
 			yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
 			return true;
+		} else {
+			if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
+				$(yasr.resultsContainer).empty();
+				yasr.plugins[output].draw();
+				return true;
+			} else if (selectedOutput) {
+				$(yasr.resultsContainer).empty();
+				yasr.plugins[selectedOutput].draw();
+				yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
+				return true;
+			}
 		}
 		return false;
 	};

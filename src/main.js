@@ -127,15 +127,23 @@ var root = module.exports = function(parent, options, queryResults) {
 			}
 		}
 		disableOutputs(unsupportedOutputs);
-		if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
-			$(yasr.resultsContainer).empty();
-			yasr.plugins[output].draw();
-			return true;
-		} else if (selectedOutput) {
+		//First check is to return again to Table view if previous query is returning error in Raw Response view
+		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output)  {
 			$(yasr.resultsContainer).empty();
 			yasr.plugins[selectedOutput].draw();
 			yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
 			return true;
+		} else {
+			if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
+				$(yasr.resultsContainer).empty();
+				yasr.plugins[output].draw();
+				return true;
+			} else if (selectedOutput) {
+				$(yasr.resultsContainer).empty();
+				yasr.plugins[selectedOutput].draw();
+				yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
+				return true;
+			}
 		}
 		return false;
 	};

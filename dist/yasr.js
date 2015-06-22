@@ -46576,7 +46576,10 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.draw = function(output) {
 		yasr.updateHeader();
 		yasr.updateResultsInfo();
-
+		var buttonClick = true;
+		if (angular.isUndefined(output)) {
+			buttonClick = false;
+		}
 		if (!yasr.results) return false;
 		if (!output) output = yasr.options.output;
 
@@ -46598,7 +46601,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		disableOutputs(unsupportedOutputs);
 		//First check is to return again to Table view if previous query is returning error in Raw Response view
-		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output)  {
+		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output && !buttonClick)  {
 			$(yasr.resultsContainer).empty();
 			yasr.plugins[selectedOutput].draw();
 			yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
@@ -46835,7 +46838,7 @@ var root = module.exports = function(parent, options, queryResults) {
 					//close warning if there is any
 					if ($toggableWarning) $toggableWarning.hide(400);
 					
-					yasr.draw();
+					yasr.draw(pluginName);
 					yasr.updateHeader();
 				})
 				.appendTo(li);

@@ -3,7 +3,7 @@
 //the current browserify version does not support require-ing js files which are used as entry-point
 //this way, we can still require our main.js file
 module.exports = require('./main.js');
-},{"./main.js":40}],2:[function(require,module,exports){
+},{"./main.js":39}],2:[function(require,module,exports){
 /**
                _ _____           _          _     _      
               | |  __ \         (_)        | |   | |     
@@ -1169,11 +1169,8 @@ RegExp.escape= function(s) {
 
 
 },{"jquery":undefined}],4:[function(require,module,exports){
-// http://spin.js.org/#v2.1.3
-!function(a,b){"object"==typeof exports?module.exports=b():"function"==typeof define&&define.amd?define(b):a.Spinner=b()}(this,function(){"use strict";function a(a,b){var c,d=document.createElement(a||"div");for(c in b)d[c]=b[c];return d}function b(a){for(var b=1,c=arguments.length;c>b;b++)a.appendChild(arguments[b]);return a}function c(a,b,c,d){var e=["opacity",b,~~(100*a),c,d].join("-"),f=.01+c/d*100,g=Math.max(1-(1-a)/b*(100-f),a),h=j.substring(0,j.indexOf("Animation")).toLowerCase(),i=h&&"-"+h+"-"||"";return m[e]||(k.insertRule("@"+i+"keyframes "+e+"{0%{opacity:"+g+"}"+f+"%{opacity:"+a+"}"+(f+.01)+"%{opacity:1}"+(f+b)%100+"%{opacity:"+a+"}100%{opacity:"+g+"}}",k.cssRules.length),m[e]=1),e}function d(a,b){var c,d,e=a.style;if(b=b.charAt(0).toUpperCase()+b.slice(1),void 0!==e[b])return b;for(d=0;d<l.length;d++)if(c=l[d]+b,void 0!==e[c])return c}function e(a,b){for(var c in b)a.style[d(a,c)||c]=b[c];return a}function f(a){for(var b=1;b<arguments.length;b++){var c=arguments[b];for(var d in c)void 0===a[d]&&(a[d]=c[d])}return a}function g(a,b){return"string"==typeof a?a:a[b%a.length]}function h(a){this.opts=f(a||{},h.defaults,n)}function i(){function c(b,c){return a("<"+b+' xmlns="urn:schemas-microsoft.com:vml" class="spin-vml">',c)}k.addRule(".spin-vml","behavior:url(#default#VML)"),h.prototype.lines=function(a,d){function f(){return e(c("group",{coordsize:k+" "+k,coordorigin:-j+" "+-j}),{width:k,height:k})}function h(a,h,i){b(m,b(e(f(),{rotation:360/d.lines*a+"deg",left:~~h}),b(e(c("roundrect",{arcsize:d.corners}),{width:j,height:d.scale*d.width,left:d.scale*d.radius,top:-d.scale*d.width>>1,filter:i}),c("fill",{color:g(d.color,a),opacity:d.opacity}),c("stroke",{opacity:0}))))}var i,j=d.scale*(d.length+d.width),k=2*d.scale*j,l=-(d.width+d.length)*d.scale*2+"px",m=e(f(),{position:"absolute",top:l,left:l});if(d.shadow)for(i=1;i<=d.lines;i++)h(i,-2,"progid:DXImageTransform.Microsoft.Blur(pixelradius=2,makeshadow=1,shadowopacity=.3)");for(i=1;i<=d.lines;i++)h(i);return b(a,m)},h.prototype.opacity=function(a,b,c,d){var e=a.firstChild;d=d.shadow&&d.lines||0,e&&b+d<e.childNodes.length&&(e=e.childNodes[b+d],e=e&&e.firstChild,e=e&&e.firstChild,e&&(e.opacity=c))}}var j,k,l=["webkit","Moz","ms","O"],m={},n={lines:12,length:7,width:5,radius:10,scale:1,corners:1,color:"#000",opacity:.25,rotate:0,direction:1,speed:1,trail:100,fps:20,zIndex:2e9,className:"spinner",top:"50%",left:"50%",shadow:!1,hwaccel:!1,position:"absolute"};if(h.defaults={},f(h.prototype,{spin:function(b){this.stop();var c=this,d=c.opts,f=c.el=a(null,{className:d.className});if(e(f,{position:d.position,width:0,zIndex:d.zIndex,left:d.left,top:d.top}),b&&b.insertBefore(f,b.firstChild||null),f.setAttribute("role","progressbar"),c.lines(f,c.opts),!j){var g,h=0,i=(d.lines-1)*(1-d.direction)/2,k=d.fps,l=k/d.speed,m=(1-d.opacity)/(l*d.trail/100),n=l/d.lines;!function o(){h++;for(var a=0;a<d.lines;a++)g=Math.max(1-(h+(d.lines-a)*n)%l*m,d.opacity),c.opacity(f,a*d.direction+i,g,d);c.timeout=c.el&&setTimeout(o,~~(1e3/k))}()}return c},stop:function(){var a=this.el;return a&&(clearTimeout(this.timeout),a.parentNode&&a.parentNode.removeChild(a),this.el=void 0),this},lines:function(d,f){function h(b,c){return e(a(),{position:"absolute",width:f.scale*(f.length+f.width)+"px",height:f.scale*f.width+"px",background:b,boxShadow:c,transformOrigin:"left",transform:"rotate("+~~(360/f.lines*k+f.rotate)+"deg) translate("+f.scale*f.radius+"px,0)",borderRadius:(f.corners*f.scale*f.width>>1)+"px"})}for(var i,k=0,l=(f.lines-1)*(1-f.direction)/2;k<f.lines;k++)i=e(a(),{position:"absolute",top:1+~(f.scale*f.width/2)+"px",transform:f.hwaccel?"translate3d(0,0,0)":"",opacity:f.opacity,animation:j&&c(f.opacity,f.trail,l+k*f.direction,f.lines)+" "+1/f.speed+"s linear infinite"}),f.shadow&&b(i,e(h("#000","0 0 4px #000"),{top:"2px"})),b(d,b(i,h(g(f.color,k),"0 0 1px rgba(0,0,0,.1)")));return d},opacity:function(a,b,c){b<a.childNodes.length&&(a.childNodes[b].style.opacity=c)}}),"undefined"!=typeof document){k=function(){var c=a("style",{type:"text/css"});return b(document.getElementsByTagName("head")[0],c),c.sheet||c.styleSheet}();var o=e(a("group"),{behavior:"url(#default#VML)"});!d(o,"transform")&&o.adj?i():j=d(o,"animation")}return h});
-},{}],5:[function(require,module,exports){
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1476,7 +1473,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -1523,7 +1520,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -1752,7 +1749,7 @@ var substr = 'ab'.substr(-1) === 'b'
 
 }).call(this,require('_process'))
 
-},{"_process":9}],9:[function(require,module,exports){
+},{"_process":8}],8:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1840,7 +1837,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -1962,7 +1959,7 @@ process.chdir = function (dir) {
   });
 });
 
-},{"codemirror":undefined}],11:[function(require,module,exports){
+},{"codemirror":undefined}],10:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -2069,7 +2066,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
 
 });
 
-},{"codemirror":undefined}],12:[function(require,module,exports){
+},{"codemirror":undefined}],11:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -2220,7 +2217,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   });
 });
 
-},{"codemirror":undefined}],13:[function(require,module,exports){
+},{"codemirror":undefined}],12:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -2366,7 +2363,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   }
 });
 
-},{"./foldcode":12,"codemirror":undefined}],14:[function(require,module,exports){
+},{"./foldcode":11,"codemirror":undefined}],13:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -2550,7 +2547,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
   };
 });
 
-},{"codemirror":undefined}],15:[function(require,module,exports){
+},{"codemirror":undefined}],14:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -3244,7 +3241,7 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 });
 
-},{"codemirror":undefined}],16:[function(require,module,exports){
+},{"codemirror":undefined}],15:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -3630,7 +3627,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 });
 
-},{"codemirror":undefined}],17:[function(require,module,exports){
+},{"codemirror":undefined}],16:[function(require,module,exports){
 (function (process,__dirname){
 /*!
  * This file is part of Cytoscape.js 2.4.2.
@@ -29738,7 +29735,7 @@ this.cytoscape = cytoscape;
 
 }).call(this,require('_process'),"/node_modules\\cytoscape\\dist")
 
-},{"_process":9,"child_process":5,"os":7,"path":8}],18:[function(require,module,exports){
+},{"_process":8,"child_process":4,"os":6,"path":7}],17:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -41978,7 +41975,7 @@ this.cytoscape = cytoscape;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function() {
   var callWithJQuery;
 
@@ -42084,7 +42081,7 @@ this.cytoscape = cytoscape;
 }).call(this);
 
 //# sourceMappingURL=d3_renderers.js.map
-},{"jquery":undefined}],20:[function(require,module,exports){
+},{"jquery":undefined}],19:[function(require,module,exports){
 (function() {
   var callWithJQuery;
 
@@ -42274,7 +42271,7 @@ this.cytoscape = cytoscape;
 }).call(this);
 
 //# sourceMappingURL=gchart_renderers.js.map
-},{"jquery":undefined}],21:[function(require,module,exports){
+},{"jquery":undefined}],20:[function(require,module,exports){
 ;(function(win){
 	var store = {},
 		doc = win.document,
@@ -42451,7 +42448,7 @@ this.cytoscape = cytoscape;
 
 })(Function('return this')());
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 module.exports={
   "name": "yasgui-utils",
   "version": "1.6.0",
@@ -42500,7 +42497,7 @@ module.exports={
   "readme": "ERROR: No README data found!"
 }
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 window.console = window.console || {"log":function(){}};//make sure any console statements don't break IE
 module.exports = {
 	storage: require("./storage.js"),
@@ -42521,7 +42518,7 @@ module.exports = {
 	}
 };
 
-},{"../package.json":22,"./storage.js":24,"./svg.js":25}],24:[function(require,module,exports){
+},{"../package.json":21,"./storage.js":23,"./svg.js":24}],23:[function(require,module,exports){
 var store = require("store");
 var times = {
 	day: function() {
@@ -42581,7 +42578,7 @@ var root = module.exports = {
 
 };
 
-},{"store":21}],25:[function(require,module,exports){
+},{"store":20}],24:[function(require,module,exports){
 module.exports = {
 	draw: function(parent, svgString) {
 		if (!parent) return;
@@ -42610,7 +42607,7 @@ module.exports = {
 		return false;
 	}
 };
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /*!
  * ZeroClipboard
  * The ZeroClipboard library provides an easy way to copy text to the clipboard using an invisible Adobe Flash movie and a JavaScript interface.
@@ -45192,7 +45189,7 @@ module.exports = {
 })(function() {
   return this || window;
 }());
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports={
   "name": "yasgui-yasr",
   "description": "Yet Another SPARQL Resultset GUI",
@@ -45312,7 +45309,7 @@ module.exports={
   }
 }
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 module.exports = function(result) {
 	var quote = "\"";
@@ -45372,7 +45369,7 @@ module.exports = function(result) {
 	createBody();
 	return csvString;
 };
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -45432,7 +45429,7 @@ root.version = {
 };
 
 
-},{"../package.json":27,"./imgs.js":37,"jquery":undefined,"yasgui-utils":23}],30:[function(require,module,exports){
+},{"../package.json":26,"./imgs.js":36,"jquery":undefined,"yasgui-utils":22}],29:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 module.exports = {
@@ -45528,7 +45525,7 @@ module.exports = {
 	
 	
 };
-},{"jquery":undefined}],31:[function(require,module,exports){
+},{"jquery":undefined}],30:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -45622,7 +45619,7 @@ root.defaults = {
 	corsMessage: 'Unable to get response from endpoint',
 	tryQueryLink: null,
 };
-},{"jquery":undefined}],32:[function(require,module,exports){
+},{"jquery":undefined}],31:[function(require,module,exports){
 module.exports = {
 	GoogleTypeException:  function(foundTypes, varName) {
 	   this.foundTypes = foundTypes;
@@ -45642,7 +45639,7 @@ module.exports = {
 	   };
 	}
 }
-},{}],33:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 'use strict';
 module.exports = {
 	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
@@ -45706,7 +45703,7 @@ module.exports = {
                             '</div>',
 };
 
-},{}],34:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 (function (global){
 var EventEmitter = require('events').EventEmitter,
 	$ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
@@ -45818,7 +45815,7 @@ module.exports = new loader();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"events":6,"jquery":undefined}],35:[function(require,module,exports){
+},{"events":5,"jquery":undefined}],34:[function(require,module,exports){
 (function (global){
 'use strict';
 /**
@@ -46130,7 +46127,7 @@ function deepEq$(x, y, type){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./exceptions.js":32,"./gChartLoader.js":34,"./utils.js":51,"jquery":undefined,"yasgui-utils":23}],36:[function(require,module,exports){
+},{"./exceptions.js":31,"./gChartLoader.js":33,"./utils.js":50,"jquery":undefined,"yasgui-utils":22}],35:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	utils = require("./utils.js"),
@@ -46352,7 +46349,7 @@ var root = module.exports = function(yasr) {
 		canHandleResults: canHandleResults,
 	}
 }
-},{"./parsers/graphJson.js":43,"./utils.js":51,"cytoscape":17,"datatables":undefined,"jquery":undefined,"lodash":18}],37:[function(require,module,exports){
+},{"./parsers/graphJson.js":42,"./utils.js":50,"cytoscape":16,"datatables":undefined,"jquery":undefined,"lodash":17}],36:[function(require,module,exports){
 'use strict';
 module.exports = {
 	cross: '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve"><g>	<path d="M83.288,88.13c-2.114,2.112-5.575,2.112-7.689,0L53.659,66.188c-2.114-2.112-5.573-2.112-7.687,0L24.251,87.907   c-2.113,2.114-5.571,2.114-7.686,0l-4.693-4.691c-2.114-2.114-2.114-5.573,0-7.688l21.719-21.721c2.113-2.114,2.113-5.573,0-7.686   L11.872,24.4c-2.114-2.113-2.114-5.571,0-7.686l4.842-4.842c2.113-2.114,5.571-2.114,7.686,0L46.12,33.591   c2.114,2.114,5.572,2.114,7.688,0l21.721-21.719c2.114-2.114,5.573-2.114,7.687,0l4.695,4.695c2.111,2.113,2.111,5.571-0.003,7.686   L66.188,45.973c-2.112,2.114-2.112,5.573,0,7.686L88.13,75.602c2.112,2.111,2.112,5.572,0,7.687L83.288,88.13z"/></g></svg>',
@@ -46365,9 +46362,9 @@ module.exports = {
 	fullscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="640"     inkscape:window-height="480"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="0"     inkscape:current-layer="Layer_1" /><path     d="m -7.962963,-10 v 38.889 l 16.667,-16.667 16.667,16.667 5.555,-5.555 -16.667,-16.667 16.667,-16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 92.037037,-10 v 38.889 l -16.667,-16.667 -16.666,16.667 -5.556,-5.555 16.666,-16.667 -16.666,-16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M -7.962963,90 V 51.111 l 16.667,16.666 16.667,-16.666 5.555,5.556 -16.667,16.666 16.667,16.667 h -38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="M 92.037037,90 V 51.111 l -16.667,16.666 -16.666,-16.666 -5.556,5.556 16.666,16.666 -16.666,16.667 h 38.889 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 	smallscreen: '<svg   xmlns:dc="http://purl.org/dc/elements/1.1/"   xmlns:cc="http://creativecommons.org/ns#"   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"   xmlns:svg="http://www.w3.org/2000/svg"   xmlns="http://www.w3.org/2000/svg"   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"   version="1.1"      x="0px"   y="0px"   width="100%"   height="100%"   viewBox="5 -10 74.074074 100"   enable-background="new 0 0 100 100"   xml:space="preserve"   inkscape:version="0.48.4 r9939"   sodipodi:docname="noun_2186_cc.svg"><metadata     ><rdf:RDF><cc:Work         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs      /><sodipodi:namedview     pagecolor="#ffffff"     bordercolor="#666666"     borderopacity="1"     objecttolerance="10"     gridtolerance="10"     guidetolerance="10"     inkscape:pageopacity="0"     inkscape:pageshadow="2"     inkscape:window-width="1855"     inkscape:window-height="1056"          showgrid="false"     fit-margin-top="0"     fit-margin-left="0"     fit-margin-right="0"     fit-margin-bottom="0"     inkscape:zoom="2.36"     inkscape:cx="44.101509"     inkscape:cy="31.481481"     inkscape:window-x="65"     inkscape:window-y="24"     inkscape:window-maximized="1"     inkscape:current-layer="Layer_1" /><path     d="m 30.926037,28.889 0,-38.889 -16.667,16.667 -16.667,-16.667 -5.555,5.555 16.667,16.667 -16.667,16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,28.889 0,-38.889 16.667,16.667 16.666,-16.667 5.556,5.555 -16.666,16.667 16.666,16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 30.926037,51.111 0,38.889 -16.667,-16.666 -16.667,16.666 -5.555,-5.556 16.667,-16.666 -16.667,-16.667 38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /><path     d="m 53.148037,51.111 0,38.889 16.667,-16.666 16.666,16.666 5.556,-5.556 -16.666,-16.666 16.666,-16.667 -38.889,0 z"          inkscape:connector-curvature="0"     style="fill:#010101" /></svg>',
 };
-},{}],38:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 require('./tableToCsv.js');
-},{"./tableToCsv.js":39}],39:[function(require,module,exports){
+},{"./tableToCsv.js":38}],38:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -46467,14 +46464,14 @@ $.fn.tableToCsv = function(config) {
 }
 
 
-},{"jquery":undefined}],40:[function(require,module,exports){
+},{"jquery":undefined}],39:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var utils = require("yasgui-utils");
 console = console || {"log":function(){}};//make sure any console statements don't break in IE
 
 require('./jquery/extendJquery.js');
-var Spinner = require("../lib/spin.min.js");
+//var Spinner = require("../lib/spin.min.js");
 
 
 
@@ -46498,7 +46495,8 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info' style='display:none'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
-	
+
+
 	var prefix = null;
 	yasr.getPersistencyId = function(postfix) {
 		if (prefix === null) {
@@ -46645,9 +46643,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.resultsContainer.empty();
 		yasr.header.hide();
 		var qType = window.editor.getQueryType();
-		var spinWrapper = $('<div class="spinWrapper"></div>');
+		var spinWrapper = $('<div class="ot-loader" onto-loader="" size="50"><object width="50" height="50" data="js/angular/templates/loader/ot-loader.svg">Loading...</object></div>');
        	yasr.resultsContainer.append(spinWrapper);
-		yasr.spinner = new Spinner().spin(spinWrapper.get(0));
 	}
 
 	yasr.updateDownloadDropdown = function() {
@@ -46735,7 +46732,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		} else {
 			yasr.insertResultsInfo.text('Update operation changed 0 statements and took ' + timeTook + ' seconds.');
 		}
-		
+		yasr.resultsContainer.empty();
 		yasr.insertResultsInfo.show();
 	}
 
@@ -47025,13 +47022,13 @@ try {root.registerOutput('error', require("./error.js"))} catch(e){};
 try {root.registerOutput('pivot', require("./pivot.js"))} catch(e){};
 try {root.registerOutput('gchart', require("./gchart.js"))} catch(e){};
 try {root.registerOutput('graph', require("./graph.js"))} catch(e){};
-},{"../lib/spin.min.js":4,"../package.json":27,"./boolean.js":29,"./defaults.js":30,"./error.js":31,"./extensions.js":33,"./gChartLoader.js":34,"./gchart.js":35,"./graph.js":36,"./imgs.js":37,"./jquery/extendJquery.js":38,"./parsers/wrapper.js":46,"./pivot.js":48,"./rawResponse.js":49,"./table.js":50,"./utils.js":51,"jquery":undefined,"yasgui-utils":23}],41:[function(require,module,exports){
+},{"../package.json":26,"./boolean.js":28,"./defaults.js":29,"./error.js":30,"./extensions.js":32,"./gChartLoader.js":33,"./gchart.js":34,"./graph.js":35,"./imgs.js":36,"./jquery/extendJquery.js":37,"./parsers/wrapper.js":45,"./pivot.js":47,"./rawResponse.js":48,"./table.js":49,"./utils.js":50,"jquery":undefined,"yasgui-utils":22}],40:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, ",");
 };
-},{"./dlv.js":42,"jquery":undefined}],42:[function(require,module,exports){
+},{"./dlv.js":41,"jquery":undefined}],41:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 require("../../lib/jquery.csv-0.71.js");
@@ -47093,7 +47090,7 @@ var root = module.exports = function(queryResponse, separator) {
 	
 	return json;
 };
-},{"../../lib/jquery.csv-0.71.js":3,"jquery":undefined}],43:[function(require,module,exports){
+},{"../../lib/jquery.csv-0.71.js":3,"jquery":undefined}],42:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var _ = require('lodash');
@@ -47146,7 +47143,7 @@ var root = module.exports = function(responseJson) {
 	return false;
 	
 };
-},{"jquery":undefined,"lodash":18}],44:[function(require,module,exports){
+},{"jquery":undefined,"lodash":17}],43:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 
@@ -47165,13 +47162,13 @@ var root = module.exports = function(queryResponse) {
 	return false;
 	
 };
-},{"jquery":undefined}],45:[function(require,module,exports){
+},{"jquery":undefined}],44:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var root = module.exports = function(queryResponse) {
 	return require("./dlv.js")(queryResponse, "\t");
 };
-},{"./dlv.js":42,"jquery":undefined}],46:[function(require,module,exports){
+},{"./dlv.js":41,"jquery":undefined}],45:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	_ = require('lodash');
@@ -47440,7 +47437,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 
 
 
-},{"./csv.js":41,"./graphJson.js":43,"./json.js":44,"./tsv.js":45,"./xml.js":47,"jquery":undefined,"lodash":18}],47:[function(require,module,exports){
+},{"./csv.js":40,"./graphJson.js":42,"./json.js":43,"./tsv.js":44,"./xml.js":46,"jquery":undefined,"lodash":17}],46:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})();
 var root = module.exports = function(xml) {
@@ -47526,7 +47523,7 @@ var root = module.exports = function(xml) {
 	return json;
 };
 
-},{"jquery":undefined}],48:[function(require,module,exports){
+},{"jquery":undefined}],47:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	utils = require('./utils.js'),
@@ -47789,7 +47786,7 @@ root.version = {
 	"YASR-rawResponse" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 };
-},{"../node_modules/pivottable/dist/d3_renderers.js":19,"../node_modules/pivottable/dist/gchart_renderers.js":20,"../package.json":27,"./gChartLoader.js":34,"./imgs.js":37,"./utils.js":51,"d3":undefined,"jquery":undefined,"jquery-ui/sortable":undefined,"pivottable":undefined,"yasgui-utils":23}],49:[function(require,module,exports){
+},{"../node_modules/pivottable/dist/d3_renderers.js":18,"../node_modules/pivottable/dist/gchart_renderers.js":19,"../package.json":26,"./gChartLoader.js":33,"./imgs.js":36,"./utils.js":50,"d3":undefined,"jquery":undefined,"jquery-ui/sortable":undefined,"pivottable":undefined,"yasgui-utils":22}],48:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	CodeMirror = (function(){try{return require('codemirror')}catch(e){return window.CodeMirror}})();
@@ -47882,7 +47879,7 @@ root.version = {
 	"jquery": $.fn.jquery,
 	"CodeMirror" : CodeMirror.version
 };
-},{"../package.json":27,"codemirror":undefined,"codemirror/addon/edit/matchbrackets.js":10,"codemirror/addon/fold/brace-fold.js":11,"codemirror/addon/fold/foldcode.js":12,"codemirror/addon/fold/foldgutter.js":13,"codemirror/addon/fold/xml-fold.js":14,"codemirror/mode/javascript/javascript.js":15,"codemirror/mode/xml/xml.js":16,"jquery":undefined}],50:[function(require,module,exports){
+},{"../package.json":26,"codemirror":undefined,"codemirror/addon/edit/matchbrackets.js":9,"codemirror/addon/fold/brace-fold.js":10,"codemirror/addon/fold/foldcode.js":11,"codemirror/addon/fold/foldgutter.js":12,"codemirror/addon/fold/xml-fold.js":13,"codemirror/mode/javascript/javascript.js":14,"codemirror/mode/xml/xml.js":15,"jquery":undefined}],49:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	yutils = require("yasgui-utils"),
@@ -48363,7 +48360,7 @@ root.version = {
 };
 
 
-},{"../lib/colResizable-1.4.js":2,"../package.json":27,"./bindingsToCsv.js":28,"./imgs.js":37,"./utils.js":51,"datatables":undefined,"jquery":undefined,"lodash":18,"yasgui-utils":23,"zeroclipboard":26}],51:[function(require,module,exports){
+},{"../lib/colResizable-1.4.js":2,"../package.json":26,"./bindingsToCsv.js":27,"./imgs.js":36,"./utils.js":50,"datatables":undefined,"jquery":undefined,"lodash":17,"yasgui-utils":22,"zeroclipboard":25}],50:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	_ = require('lodash'),
@@ -48513,7 +48510,7 @@ var parseXmlSchemaDate = function(dateString) {
 	if (isNaN(date)) return null;
 	return date;
 };
-},{"./exceptions.js":32,"jquery":undefined,"lodash":18}]},{},[1])(1)
+},{"./exceptions.js":31,"jquery":undefined,"lodash":17}]},{},[1])(1)
 });
 
 

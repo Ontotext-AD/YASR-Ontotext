@@ -4,7 +4,7 @@ var utils = require("yasgui-utils");
 console = console || {"log":function(){}};//make sure any console statements don't break in IE
 
 require('./jquery/extendJquery.js');
-var Spinner = require("../lib/spin.min.js");
+//var Spinner = require("../lib/spin.min.js");
 
 
 
@@ -28,7 +28,8 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info' style='display:none'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
-	
+
+
 	var prefix = null;
 	yasr.getPersistencyId = function(postfix) {
 		if (prefix === null) {
@@ -175,9 +176,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.resultsContainer.empty();
 		yasr.header.hide();
 		var qType = window.editor.getQueryType();
-		var spinWrapper = $('<div class="spinWrapper"></div>');
+		var spinWrapper = $('<div class="ot-loader" onto-loader="" size="50"><object width="50" height="50" data="js/angular/templates/loader/ot-loader.svg">Loading...</object></div>');
        	yasr.resultsContainer.append(spinWrapper);
-		yasr.spinner = new Spinner().spin(spinWrapper.get(0));
 	}
 
 	yasr.updateDownloadDropdown = function() {
@@ -265,7 +265,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		} else {
 			yasr.insertResultsInfo.text('Update operation changed 0 statements and took ' + timeTook + ' seconds.');
 		}
-		
+		yasr.resultsContainer.empty();
 		yasr.insertResultsInfo.show();
 	}
 

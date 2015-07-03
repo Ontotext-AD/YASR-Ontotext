@@ -46312,7 +46312,9 @@ var root = module.exports = function(yasr) {
 			if (yasr.currentQuery.sameAs) {
 				data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
 			}
-			var url = ctx + '/repositories/' + backendRepositoryID;
+			var url = 'repositories/' + backendRepositoryID;
+			//todo com.ontotext.graphdb.auth
+
 			$.ajax({
 				url: url,
 				type: "POST",
@@ -46471,7 +46473,6 @@ var utils = require("yasgui-utils");
 console = console || {"log":function(){}};//make sure any console statements don't break in IE
 
 require('./jquery/extendJquery.js');
-//var Spinner = require("../lib/spin.min.js");
 
 
 
@@ -46709,7 +46710,10 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.allCount = -1;
 			if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
 				yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;
-			} 
+			}
+			if($.isNumeric(dataOrJqXhr.responseJSON)){
+				yasr.allCount = dataOrJqXhr.responseJSON;
+			}
 			if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
 				var result = dataOrJqXhr.responseJSON.results.bindings[0];
 				var vars = dataOrJqXhr.responseJSON.head.vars;

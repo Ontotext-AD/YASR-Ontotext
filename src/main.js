@@ -227,7 +227,10 @@ var root = module.exports = function(parent, options, queryResults) {
 
 
 	yasr.setResultsCount = function(dataOrJqXhr, textStatus, jqXhrOrErrorString) {
-		if (dataOrJqXhr.responseJSON) {
+		if (0 == dataOrJqXhr.responseJSON) {
+			yasr.allCount = -1;
+		}
+		if (dataOrJqXhr.responseJSON || 0 == dataOrJqXhr.responseJSON) {
 			yasr.allCount = -1;
 			if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
 				yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;

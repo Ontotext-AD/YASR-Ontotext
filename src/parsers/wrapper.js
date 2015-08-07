@@ -94,7 +94,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 						json = parsers.json(origResponse, window.editor.getQueryType());
 						rawJson = json;
 						var qType = window.editor.getQueryType();
-						if (qType == "DESCRIBE" || qType == "CONSTRUCT") {
+						if (qType == "DESCRIBE" || qType == "CONSTRUCT" || qType == "RESOURCE") {
 							json = parsers.graphJson(rawJson);
 						}
 					} catch (e) {

@@ -22,24 +22,43 @@ var getAsObject = function(entity) {
 }
 var root = module.exports = function(responseJson) {
 	if (responseJson) {
+		var hasContext = ('RESOURCE' == window.editor.getQueryType());
 		var mapped = _.map(responseJson, function(value, subject) { 
 			return _.map(value, function (value1, predicate) {
 				return _.map(value1, function(object) {
-					return [
-						getAsObject(subject),
-						getAsObject(predicate),
-						getAsObject(object),
-					] 
+					if (object.graphs) {
+						hasContext = true;
+						return _.map(object.graphs, function(context){
+							return [
+									getAsObject(subject),
+									getAsObject(predicate),
+									getAsObject(object),
+									getAsObject(context)
+								]
+						})
+					} else {
+						return [
+									getAsObject(subject),
+									getAsObject(predicate),
+									getAsObject(object)
+								]
+					}
 				})
 			})
 		});
 		var reduced = _.reduce(mapped, function(memo, el) {return memo.concat(el)}, []);
 		reduced = _.reduce(reduced, function(memo, el) {return memo.concat(el)}, []);
-		var bindings = reduced.map(function(triple) {return {subject : triple[0], predicate: triple[1], object: triple[2]}});
-
+		var bindings;
+		if (!hasContext) {
+			bindings = reduced.map(function(triple) {return {subject : triple[0], predicate: triple[1], object: triple[2]}});
+		} else {
+			reduced = _.reduce(reduced, function(memo, el) {return memo.concat(el)}, []);
+			bindings = reduced.map(function(triple) {return {subject : triple[0], predicate: triple[1], object: triple[2], context: triple[3]}});
+		}
+		var variables = (hasContext) ? [ "subject", "predicate", "object", "context" ] : [ "subject", "predicate", "object"];
 		return {
 			"head" : {
-				"vars" : [ "subject", "predicate", "object" ]
+				"vars" : variables
 				},
 				"results" : {
 					"bindings": bindings

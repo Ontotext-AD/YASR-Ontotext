@@ -1,24 +1,24 @@
 'use strict';
 module.exports = {
-	selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
+    selectSaveAsDropDown: '<div class="saveAsDropDown btn-group">' + 
                                 '<button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
                                     'Download as &nbsp;<span class="fa fa-caret-right"></span>' + 
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/sparql-results+json" href="javascript:;">JSON</a>' +
+                                        '<a class="format" data-accepts="application/sparql-results+json" href="#">JSON</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/sparql-results+xml" href="javascript:;">XML</a>' +
+                                        '<a class="format" data-accepts="application/sparql-results+xml" href="#">XML</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/csv" href="javascript:;">CSV</a>' +
+                                        '<a class="format" data-accepts="text/csv" href="#">CSV</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/tab-separated-values" href="javascript:;">TSV</a>' +
+                                        '<a class="format" data-accepts="text/tab-separated-values" href="#">TSV</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/x-binary-rdf-results-table" href="javascript:;">Binary RDF Results</a>' +
+                                        '<a class="format" data-accepts="application/x-binary-rdf-results-table" href="#">Binary RDF Results</a>' +
                                     '</li>' + 
                                 '</ul>' + 
                             '</div>',
@@ -28,34 +28,34 @@ module.exports = {
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/rdf+json" href="javascript:;">JSON</a>' +
+                                        '<a class="format" data-accepts="application/rdf+json" href="#">JSON</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/ld+json" href="javascript:;">JSON-LD</a>' +
+                                        '<a class="format" data-accepts="application/ld+json" href="#">JSON-LD</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/rdf+xml" href="javascript:;">RDF-XML</a>' +
+                                        '<a class="format" data-accepts="application/rdf+xml" href="#">RDF-XML</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/rdf+n3" href="javascript:;">N3</a>' +
+                                        '<a class="format" data-accepts="text/rdf+n3" href="#">N3</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/plain" href="javascript:;">N-Triples</a>' +
+                                        '<a class="format" data-accepts="text/plain" href="#">N-Triples</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/x-nquads" href="javascript:;">N-Quads</a>' +
+                                        '<a class="format" data-accepts="text/x-nquads" href="#">N-Quads</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/turtle" href="javascript:;">Turtle</a>' +
+                                        '<a class="format" data-accepts="text/turtle" href="#">Turtle</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/trix" href="javascript:;">TriX</a>' +
+                                        '<a class="format" data-accepts="application/trix" href="#">TriX</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/x-trig" href="javascript:;">TriG</a>' +
+                                        '<a class="format" data-accepts="application/x-trig" href="#">TriG</a>' +
                                     '</li>' +   
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/x-binary-rdf" href="javascript:;">Binary RDF</a>' +
+                                        '<a class="format" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
                                     '</li>' +                                   
                                 '</ul>' + 
                             '</div>',

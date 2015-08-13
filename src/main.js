@@ -164,9 +164,9 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.resultsContainer.empty();
 		yasr.header.hide();
 		var qType = window.editor.getQueryType();
-		var spinWrapper = $('<div class="spinWrapper"></div>');
-       	yasr.resultsContainer.append(spinWrapper);
-		yasr.spinner = new Spinner().spin(spinWrapper.get(0));
+		var spinWrapper = $('<div class="ot-loader" onto-loader="" size="50"><object width="50" height="50" data="js/angular/templates/loader/ot-loader.svg">Loading...</object></div>');
+		yasr.resultsContainer.append(spinWrapper);
+
 	}
 
 	yasr.updateDownloadDropdown = function() {
@@ -259,6 +259,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		
 		yasr.insertResultsInfo.show();
+		yasr.resultsContainer.find(".ot-loader").hide();
 	}
 
 	yasr.setResponse = function(dataOrJqXhr, textStatus, jqXhrOrErrorString, timeTook) {

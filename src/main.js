@@ -4,7 +4,6 @@ var utils = require("yasgui-utils");
 console = console || {"log":function(){}};//make sure any console statements don't break in IE
 
 require('./jquery/extendJquery.js');
-var Spinner = require("../lib/spin.min.js");
 
 
 
@@ -28,7 +27,8 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.insertResultsInfo = $("<div class='alert alert-info results-info' style='display:none'></div>").appendTo(yasr.container);
 	yasr.resultsContainer = $("<div class='yasr_results'></div>").appendTo(yasr.container);
 	yasr.storage = utils.storage;
-	
+
+
 	var prefix = null;
 	yasr.getPersistencyId = function(postfix) {
 		if (prefix === null) {
@@ -106,7 +106,10 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.draw = function(output) {
 		yasr.updateHeader();
 		yasr.updateResultsInfo();
-
+		var buttonClick = true;
+		if (angular.isUndefined(output)) {
+			buttonClick = false;
+		}
 		if (!yasr.results) return false;
 		if (!output) output = yasr.options.output;
 
@@ -127,15 +130,23 @@ var root = module.exports = function(parent, options, queryResults) {
 			}
 		}
 		disableOutputs(unsupportedOutputs);
-		if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
-			$(yasr.resultsContainer).empty();
-			yasr.plugins[output].draw();
-			return true;
-		} else if (selectedOutput) {
+		//First check is to return again to Table view if previous query is returning error in Raw Response view
+		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output && !buttonClick)  {
 			$(yasr.resultsContainer).empty();
 			yasr.plugins[selectedOutput].draw();
 			yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
 			return true;
+		} else {
+			if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
+				$(yasr.resultsContainer).empty();
+				yasr.plugins[output].draw();
+				return true;
+			} else if (selectedOutput) {
+				$(yasr.resultsContainer).empty();
+				yasr.plugins[selectedOutput].draw();
+				yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
+				return true;
+			}
 		}
 		return false;
 	};
@@ -166,7 +177,6 @@ var root = module.exports = function(parent, options, queryResults) {
 		var qType = window.editor.getQueryType();
 		var spinWrapper = $('<div class="ot-loader" onto-loader="" size="50"><object width="50" height="50" data="js/angular/templates/loader/ot-loader.svg">Loading...</object></div>');
 		yasr.resultsContainer.append(spinWrapper);
-
 	}
 
 	yasr.updateDownloadDropdown = function() {
@@ -234,7 +244,10 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.allCount = -1;
 			if (dataOrJqXhr.responseJSON['http://www.ontotext.com/']) {
 				yasr.allCount = dataOrJqXhr.responseJSON['http://www.ontotext.com/']['http://www.ontotext.com/'][0].value;
-			} 
+			}
+			if($.isNumeric(dataOrJqXhr.responseJSON)){
+				yasr.allCount = dataOrJqXhr.responseJSON;
+			}
 			if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
 				var result = dataOrJqXhr.responseJSON.results.bindings[0];
 				var vars = dataOrJqXhr.responseJSON.head.vars;
@@ -257,7 +270,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		} else {
 			yasr.insertResultsInfo.text('Update operation changed 0 statements and took ' + timeTook + ' seconds.');
 		}
-		
+		yasr.resultsContainer.empty();
 		yasr.insertResultsInfo.show();
 		yasr.resultsContainer.find(".ot-loader").hide();
 	}
@@ -361,7 +374,7 @@ var root = module.exports = function(parent, options, queryResults) {
 					//close warning if there is any
 					if ($toggableWarning) $toggableWarning.hide(400);
 					
-					yasr.draw();
+					yasr.draw(pluginName);
 					yasr.updateHeader();
 				})
 				.appendTo(li);

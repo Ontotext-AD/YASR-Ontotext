@@ -3,7 +3,6 @@ var $ = require("jquery"),
 	yutils = require("yasgui-utils"),
 	utils = require('./utils.js'),
 	imgs = require('./imgs.js'),
-	ZeroClipboard = require('zeroclipboard'),
 	_ = require('lodash');
 require("../lib/DataTables/media/js/jquery.dataTables.js");
 require("../lib/colResizable-1.4.js");
@@ -61,12 +60,36 @@ var root = module.exports = function(yasr) {
 	
 	var eventId = yasr.getPersistencyId('eventId') || "yasr_" + $(yasr.container).closest('[id]').attr('id');
 	var addAdditionalEvents = function() {
-        var client = new ZeroClipboard( $('td div .fa-link') );
-        // TODO fix with new ZeroClipboard
-        // client.config({bubbleEvents: false});
-        client.on( "ready", function( readyEvent ) {
-            client.on( "aftercopy", yasr.afterCopy);
-        });
+		var yasrAngular = angular.element($('#yasr')[0]).scope();
+        $('td div .fa-link').on('click', function(){
+			var resultURI = this.dataset.clipboardText;
+			yasrAngular.copyToClipboardResult(resultURI);
+		})
+
+		/*To use copy to clipboard you need:
+		 1. To have div with id="yasr" inside of controller scope
+		 2. To add this function in CTRL where the yasr is used
+		*
+		* $scope.copyToClipboardResult = function(resultURI){
+			 var modalInstance = $modal.open({
+				 templateUrl: 'js/angular/templates/copyToClipboard.html', //Situated in core module
+				 controller: 'CopyToClipboardModalCtrl',
+				 size: 'sm',
+				 resolve: {
+					 URI: function () {
+					 	return resultURI;
+					 }
+				 }
+			 });
+
+		 	modalInstance.opened.then(function(){
+				 $timeout(function(){
+				 	$('#clipboardURI')[0].select();
+				 }, 500)
+			 })
+		 }
+		* */
+
 	}
 	var addEvents = function() {
 		table.on( 'order.dt', function () {
@@ -260,7 +283,7 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 		}
 		value = "<a " + (title? "title='" + href + "' ": "") + "class='uri' target='_blank' href='" + href + "'>" + visibleString + "</a>";
 	} else {
-		value = "<pre class='nonUri'>" + formatLiteral(yasr, plugin, binding) + "</pre>";
+		value = "<pre class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteral(yasr, plugin, binding) + "</pre>";
 	}
 	return "<div>" + value + "</div>";
 };
@@ -291,7 +314,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'"
 	} else {
-		value = "<pre class='nonUri'>" + formatLiteralCustom(yasr, plugin, binding) + "</pre>";
+		value = "<pre class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, plugin, binding) + "</pre>";
 	}
 	return "<div" + divClass +  ">" + value + "</div>";
 };

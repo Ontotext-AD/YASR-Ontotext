@@ -182,7 +182,9 @@ var root = module.exports = function(yasr) {
 			if (yasr.currentQuery.sameAs) {
 				data['default-graph-uri'] = 'http://www.ontotext.com/disable-sameAs';
 			}
-			var url = ctx + '/repositories/' + backendRepositoryID;
+			var url = 'repositories/' + backendRepositoryID;
+			//todo com.ontotext.graphdb.auth
+
 			$.ajax({
 				url: url,
 				type: "POST",

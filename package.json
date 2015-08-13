@@ -63,7 +63,6 @@
     "url": "https://github.com/YASGUI/YASR.git"
   },
   "dependencies": {
-    "zeroclipboard": "~2.2.0",	  
     "jquery": "1.11.0",
     "codemirror": "^4.7.0",
     "yasgui-utils": "^1.4.1",

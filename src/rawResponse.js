@@ -18,9 +18,6 @@ var root = module.exports = function(yasr) {
 	var draw = function() {
 		var cmOptions = options.CodeMirror;
 		cmOptions.value = yasr.results.getShortOriginalResponse(options.limit);
-		if (yasr.resultsCount > options.limit) {
-			yasr.resultsInfo.find('.res-count').text(options.limit);
-		}
 		
 		var mode = yasr.results.getType();
 		if (mode) {

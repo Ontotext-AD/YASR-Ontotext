@@ -116,17 +116,14 @@ var root = module.exports = function(yasr) {
 	};
 
 	var addNodeEdgesInfo = function(nodes, allNodes, edges, allEdges) {
-		yasr.resultsInfo.find(".view-info").text('Showing ' + nodes + ' of ' + allNodes + ' nodes, ' + edges + ' of ' + allEdges + ' edges.').show();
+		yasr.resultsContainer.find('.graph-info-title').text(nodes + ' of ' + allNodes + ' nodes, ' + edges + ' of ' + allEdges + ' edges.');
 	}
 
 
 	var draw = function() {
 		yasr.resultsContainer.empty();
-		yasr.resultsContainer.append('<div class="graph-info"></div><div id="cy"></div>');
+		yasr.resultsContainer.append('<div class="graph-info-title"></div><div class="graph-info"></div><div id="cy"></div>');
 		
-		yasr.resultsInfo.find('.count-info').hide();
-		yasr.resultsInfo.find('.time-took').hide();
-
 		var graph = constructGraph(yasr.results.getAsJson().results.bindings);
 		var cy = cytoscape({
 		  container: document.getElementById('cy'),

@@ -170,7 +170,7 @@ var root = module.exports = function(yasr) {
 		// }
 		// Use placeholder instead of label
 		var searchFilter = yasr.resultsContainer.find('.dataTables_filter label');
-		searchFilter.contents().get(0).remove()
+		$(searchFilter.contents().get(0)).remove();
 		searchFilter.find('input[type=search]').attr('placeholder', 'Filter query results').addClass('form-control');
 	};
 	

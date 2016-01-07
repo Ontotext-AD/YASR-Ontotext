@@ -22,6 +22,7 @@ module.exports = {
 	uriToPrefixWithLocalName: function(invertPrefixes, visibleString) {
 		var foundPrefixes = Object.keys(invertPrefixes).filter(function (key) { return visibleString.indexOf(key) == 0});
 		if (foundPrefixes.length > 0) {
+			foundPrefixes = foundPrefixes.sort(function(a, b) {return a.length < b.length});
 			var prefixVal = foundPrefixes[0];
 			var prefix = invertPrefixes[prefixVal];
 			var localName = visibleString.substring(prefixVal.length);

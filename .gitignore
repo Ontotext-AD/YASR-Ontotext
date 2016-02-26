@@ -1,4 +1,9 @@
+#Intellij Idea project files
+*.iml
+.idea
+
 .project
 .settings
 node_modules
 test
+dist

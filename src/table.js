@@ -303,7 +303,11 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
 				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
 				if (prefixWithLocal.prefix != "") {
-					localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+				    if (prefixWithLocal.localName.lastIndexOf("/") === -1) {
+					    localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+                    } else {
+                        localHref = "resource?uri=" + encodeURIComponent(href);
+                    }
 				}
 			}
 		}

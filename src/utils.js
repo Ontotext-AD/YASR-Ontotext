@@ -114,7 +114,7 @@ module.exports = {
 					return binding.value;
 			}
 		} else {
-			if (binding.type = 'uri') {
+			if (binding.type == 'uri') {
 				return module.exports.uriToPrefixed(prefixes, binding.value);
 			} else {
 				return binding.value;

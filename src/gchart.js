@@ -121,8 +121,12 @@ var root = module.exports = function(yasr){
 		},
 		draw: function(){
 			var doDraw = function () {
+			    // Fix for WB-930
+			    yasr.resultsContainer = $('.yasr_results');
+
 				//clear previous results (if any)
 				yasr.resultsContainer.empty();
+
 				// workaround for OWLIM-1970
 				if (yasr.options.output != root.defaults.persistencyId) {
 					return;

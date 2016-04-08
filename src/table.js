@@ -301,10 +301,11 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		if (context.usedPrefixes) {
 			var prefixWithLocal = utils.uriToPrefixWithLocalName(context.usedPrefixes, visibleString);
 			if (prefixWithLocal) {
-				visibleString = prefixWithLocal.prefix + ":" + prefixWithLocal.localName;
+                var localName = prefixWithLocal.localName;
+				visibleString = prefixWithLocal.prefix + ":" + localName;
 				if (prefixWithLocal.prefix != "") {
-				    if (prefixWithLocal.localName.lastIndexOf("/") === -1) {
-					    localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(prefixWithLocal.localName);
+				    if (localName.lastIndexOf("/") === -1) {
+					    localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(localName);
                     } else {
                         localHref = "resource?uri=" + encodeURIComponent(href);
                     }
@@ -313,6 +314,10 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		}
 		if (undefined == localHref) {
 			localHref = "resource?uri=" + encodeURIComponent(href);
+		}
+
+		if (localHref.indexOf("'") !== -1) {
+		     localHref = localHref.replace("'", "&#39;");
 		}
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";

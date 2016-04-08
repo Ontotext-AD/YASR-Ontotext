@@ -152,11 +152,11 @@ var root = module.exports = function(yasr) {
 			})    
 	       .selector('.from')
 		      	.css({
-		       		'background-color': '#f2836b',
+		       		'background-color': '#f04e23',
 		      })
 		      .selector('.to')
 		      	.css({
-		       		'background-color': '#46A2D0',
+		       		'background-color': '#018ae1',
 		      }),
 		  
 		  elements: {

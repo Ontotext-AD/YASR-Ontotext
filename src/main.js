@@ -102,6 +102,9 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 	};
 	yasr.draw = function(output) {
+        // Fix for WB-930
+        yasr.resultsContainer = $('.yasr_results');
+
 		yasr.updateHeader();
 		if (!yasr.results) return false;
 		if (!output) output = yasr.options.output;

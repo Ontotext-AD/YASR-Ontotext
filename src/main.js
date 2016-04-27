@@ -125,24 +125,24 @@ var root = module.exports = function(parent, options, queryResults) {
 		disableOutputs(unsupportedOutputs);
 		//First check is to return again to Table view if previous query is returning error in Raw Response view
 		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output && angular.isUndefined(output))  {
-			$(yasr.resultsContainer).empty();
-			yasr.plugins[selectedOutput].draw();
-			yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
-			return true;
+			return selectAndDrawOutput(selectedOutput);
 		} else {
 			if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
-				$(yasr.resultsContainer).empty();
-				yasr.plugins[output].draw();
-				return true;
+				return selectAndDrawOutput(output);
 			} else if (selectedOutput) {
-				$(yasr.resultsContainer).empty();
-				yasr.plugins[selectedOutput].draw();
-				yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).click();
-				return true;
+				return selectAndDrawOutput(selectedOutput);
 			}
 		}
 		return false;
 	};
+
+	var selectAndDrawOutput = function(selectedOutput) {
+		yasr.header.find('.yasr_btnGroup').find("li.active").removeClass("active");
+		$(yasr.resultsContainer).empty();
+		yasr.plugins[selectedOutput].draw();
+		yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).parent().addClass('active');
+		return true;
+	}
 	
 	var disableOutputs = function(outputs) {
 		//first enable everything.

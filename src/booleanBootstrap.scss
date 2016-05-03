@@ -1,0 +1,19 @@
+
+.booleanBootResult {
+	width: 70%;
+    margin: 5px auto;
+	vertical-align: middle;
+	.fa-check {
+		color: green !important
+	}
+	.fa-times {
+		color: #c53e3e !important
+	}
+	.alert-warning {
+		text-align: center;
+		color: #8a6d3b;
+		border-color: #faebcc;
+    	border-style: solid;
+    	background-color: #fcf8e3;
+	}
+}

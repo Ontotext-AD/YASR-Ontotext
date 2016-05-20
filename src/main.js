@@ -127,7 +127,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (selectedOutput == 'table' && yasr.plugins[selectedOutput].canHandleResults(yasr) && selectedOutput != output && angular.isUndefined(output))  {
 			return selectAndDrawOutput(selectedOutput);
 		} else {
-			if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr)) {
+			if (output in yasr.plugins && yasr.plugins[output].canHandleResults(yasr) && selectedOutput != 'booleanBootstrap') {
 				return selectAndDrawOutput(output);
 			} else if (selectedOutput) {
 				return selectAndDrawOutput(selectedOutput);

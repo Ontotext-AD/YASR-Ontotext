@@ -19,9 +19,9 @@ var root = module.exports = function(yasr) {
 		
 		var alert = null;
 		if (booleanVal === true) {
-			alert = $("<div class='alert alert-warning'><i class='fa fa-check fa-2x'></i> <b class='boolResText'>True!</b></div>");
+			alert = $("<div class='boolRes alert alert-success no-icon'><span class='boolResTex'>YES</span></div>");
 		} else if (booleanVal === false) {
-			alert = $("<div class='alert alert-warning'><i class='fa fa-times fa-2x'></i> <b class='boolResText'>False!</b></div>");
+			alert = $("<div class='boolRes alert alert-danger no-icon'><span class='boolResTex'>NO</span></div>");
 		} else {
 			container.width("140");
 			textVal = "Could not find boolean value in response";

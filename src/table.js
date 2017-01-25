@@ -131,7 +131,7 @@ var root = module.exports = function(yasr) {
 	};
 	
 	plugin.draw = function() {
-		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable table table-striped table-bordered fixedCellWidth"></table>');
+		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable table stripe hover table-bordered fixedCellWidth"></table>');
 		$(yasr.resultsContainer).html(table);
 
 		var dataTableConfig = options.datatable;

@@ -283,7 +283,7 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 		}
 		value = "<a " + (title? "title='" + href + "' ": "") + "class='uri' target='_blank' href='" + href + "'>" + visibleString + "</a>";
 	} else {
-		value = "<pre class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteral(yasr, plugin, binding) + "</pre>";
+		value = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteral(yasr, plugin, binding) + "</p>";
 	}
 	return "<div>" + value + "</div>";
 };
@@ -322,7 +322,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'"
 	} else {
-		value = "<pre class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, plugin, binding) + "</pre>";
+		value = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, plugin, binding) + "</p>";
 	}
 	return "<div" + divClass +  ">" + value + "</div>";
 };

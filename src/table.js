@@ -316,7 +316,9 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
 
-        localHref = localHref.replace("'", "&#39;");
+        localHref = localHref.replace(/'/g, "&#39;");
+        href = href.replace(/'/g, "&#39;");
+
 
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";

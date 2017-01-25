@@ -14,6 +14,11 @@ var getAsObject = function(entity) {
 			type: "bnode",
 			value: entity.slice(2)
 		}
+	} else if (entity.indexOf(":") == -1) {
+        return {
+            type: "bnode",
+            value: entity
+ 	   }
 	}
 	return {
 			type: "uri",

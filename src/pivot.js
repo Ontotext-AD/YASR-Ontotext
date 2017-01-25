@@ -13,7 +13,8 @@ var root = module.exports = function(yasr) {
 	
 	if (options.useD3Chart) {
 		try {
-			var d3 = require('d3');
+			// Don't load d3 here, use the global one
+			//var d3 = require('d3');
 			if (d3) require('../node_modules/pivottable/dist/d3_renderers.js');
 		} catch (e) {
 			//do nothing. just make sure we don't use this renderer

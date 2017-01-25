@@ -327,7 +327,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				}
 				return url;
 			};
-			var button = $("<button class='btn btn-primary btn-sm yasr_downloadIcon'>Save</button>")
+			var button = $("<button class='btn btn-primary btn-sm yasr_downloadIcon pull-right'>Save</button>")
 				.click(function() {
 					var currentPlugin = yasr.plugins[yasr.options.output];
 					if (currentPlugin && currentPlugin.getDownloadInfo) {

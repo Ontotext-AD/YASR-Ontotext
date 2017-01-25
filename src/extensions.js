@@ -6,19 +6,19 @@ module.exports = {
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/sparql-results+json" href="#">JSON</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/sparql-results+json" href="#">JSON</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/sparql-results+xml" href="#">XML</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/sparql-results+xml" href="#">XML</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/csv" href="#">CSV</a>' +
+                                        '<a class="format dropdown-item" data-accepts="text/csv" href="#">CSV</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/tab-separated-values" href="#">TSV</a>' +
+                                        '<a class="format dropdown-item " data-accepts="text/tab-separated-values" href="#">TSV</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/x-binary-rdf-results-table" href="#">Binary RDF Results</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/x-binary-rdf-results-table" href="#">Binary RDF Results</a>' +
                                     '</li>' + 
                                 '</ul>' + 
                             '</div>',
@@ -28,34 +28,34 @@ module.exports = {
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/rdf+json" href="#">JSON</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/rdf+json" href="#">JSON</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/ld+json" href="#">JSON-LD</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/ld+json" href="#">JSON-LD</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/rdf+xml" href="#">RDF-XML</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/rdf+xml" href="#">RDF-XML</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/rdf+n3" href="#">N3</a>' +
+                                        '<a class="format dropdown-item" data-accepts="text/rdf+n3" href="#">N3</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/plain" href="#">N-Triples</a>' +
+                                        '<a class="format dropdown-item" data-accepts="text/plain" href="#">N-Triples</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/x-nquads" href="#">N-Quads</a>' +
+                                        '<a class="format dropdown-item" data-accepts="text/x-nquads" href="#">N-Quads</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="text/turtle" href="#">Turtle</a>' +
+                                        '<a class="format dropdown-item" data-accepts="text/turtle" href="#">Turtle</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/trix" href="#">TriX</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/trix" href="#">TriX</a>' +
                                     '</li>' + 
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/x-trig" href="#">TriG</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/x-trig" href="#">TriG</a>' +
                                     '</li>' +   
                                     '<li>' + 
-                                        '<a class="format" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
+                                        '<a class="format dropdown-item" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
                                     '</li>' +                                   
                                 '</ul>' + 
                             '</div>',

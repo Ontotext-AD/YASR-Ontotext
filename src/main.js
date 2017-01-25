@@ -284,8 +284,8 @@ var root = module.exports = function(parent, options, queryResults) {
 			$.each(yasr.plugins, function(pluginName, plugin) {
 				if (plugin.hideFromSelection) return;
 				var name = plugin.name || pluginName;
-				var li = $("<li></li>");
-				var link = $("<a></a>")
+				var li = $("<li class='nav-item'></li>");
+				var link = $("<a class='nav-link'></a>")
 				.text(name)
 				.addClass("select_" + pluginName)
 				.click(function() {
@@ -327,7 +327,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				}
 				return url;
 			};
-			var button = $("<button class='btn btn-success btn-sm yasr_downloadIcon'>Save</button>")
+			var button = $("<button class='btn btn-primary btn-sm yasr_downloadIcon'>Save</button>")
 				.click(function() {
 					var currentPlugin = yasr.plugins[yasr.options.output];
 					if (currentPlugin && currentPlugin.getDownloadInfo) {

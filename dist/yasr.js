@@ -29873,17 +29873,27 @@ var hslaNoBackRefs = 'hsl[a]?\\((?:' + number + ')\\s*,\\s*(?:' + number + '[%])
 var hex3 = '\\#[0-9a-fA-F]{3}';
 var hex6 = '\\#[0-9a-fA-F]{6}';
 
-module.exports = {
-  regex: {
-    number: number,
-    rgba: rgba,
-    rgbaNoBackRefs: rgbaNoBackRefs,
-    hsla: hsla,
-    hslaNoBackRefs: hslaNoBackRefs,
-    hex3: hex3,
-    hex6: hex6
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    var m;
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
   }
-};
 
 },{}],115:[function(require,module,exports){
 'use strict';
@@ -29891,7 +29901,9 @@ module.exports = {
 var memoize = require( './memoize' );
 var is = require( '../is' );
 
-module.exports = {
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
 
   camel2dash: memoize( function( str ){
     return str.replace( /([A-Z])/g, function( v ){
@@ -29919,7 +29931,8 @@ module.exports = {
     return str.charAt( 0 ).toUpperCase() + str.substring( 1 );
   }
 
-};
+  g.listener = listener;
+  this.on(type, g);
 
 },{"../is":94,"./memoize":113}],116:[function(require,module,exports){
 'use strict';
@@ -29928,7 +29941,8 @@ var window = require( '../window' );
 var is = require( '../is' );
 var performance = window ? window.performance : null;
 
-var util = {};
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
 
 var raf = !window ? function( fn ){
   if( fn ){
@@ -29952,9 +29966,17 @@ util.requestAnimationFrame = function( fn ){
   raf( fn );
 };
 
-var pnow = performance && performance.now ? function(){ return performance.now(); } : function(){ return Date.now(); };
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
 
-util.performanceNow = pnow;
+    if (position < 0)
+      return this;
 
 // ported lodash throttle function
 util.throttle = function( func, wait, options ){
@@ -29967,17 +29989,12 @@ util.throttle = function( func, wait, options ){
     leading = 'leading' in options ? options.leading : leading;
     trailing = 'trailing' in options ? options.trailing : trailing;
   }
-  options = options || {};
-  options.leading = leading;
-  options.maxWait = wait;
-  options.trailing = trailing;
 
   return util.debounce( func, wait, options );
 };
 
-util.now = function(){
-  return Date.now();
-};
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
 
 util.debounce = function( func, wait, options ){ // ported lodash debounce function
   var util = this;
@@ -30036,7 +30053,10 @@ util.debounce = function( func, wait, options ){ // ported lodash debounce funct
         args = thisArg = null;
       }
     }
-  };
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
 
   return function(){
     args = arguments;
@@ -30081,7 +30101,16 @@ util.debounce = function( func, wait, options ){ // ported lodash debounce funct
   };
 };
 
-module.exports = util;
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
 
 },{"../is":94,"../window":118}],117:[function(require,module,exports){
 module.exports="2.7.14"
@@ -43601,26 +43630,34 @@ process.chdir = function (dir) {
 module.exports={
   "_args": [
     [
-      "yasgui-utils@^1.4.1",
-      "/home/desislava/workspace/yasr"
+      {
+        "raw": "yasgui-utils@^1.4.1",
+        "scope": null,
+        "escapedName": "yasgui-utils",
+        "name": "yasgui-utils",
+        "rawSpec": "^1.4.1",
+        "spec": ">=1.4.1 <2.0.0",
+        "type": "range"
+      },
+      "/Users/avataar/tmp/tmp/yasr"
     ]
   ],
   "_from": "yasgui-utils@>=1.4.1 <2.0.0",
   "_id": "yasgui-utils@1.6.0",
   "_inCache": true,
-  "_installable": true,
   "_location": "/yasgui-utils",
   "_npmUser": {
-    "email": "laurens.rietveld@gmail.com",
-    "name": "laurens.rietveld"
+    "name": "laurens.rietveld",
+    "email": "laurens.rietveld@gmail.com"
   },
   "_npmVersion": "1.4.3",
   "_phantomChildren": {},
   "_requested": {
-    "name": "yasgui-utils",
     "raw": "yasgui-utils@^1.4.1",
-    "rawSpec": "^1.4.1",
     "scope": null,
+    "escapedName": "yasgui-utils",
+    "name": "yasgui-utils",
+    "rawSpec": "^1.4.1",
     "spec": ">=1.4.1 <2.0.0",
     "type": "range"
   },
@@ -43631,7 +43668,7 @@ module.exports={
   "_shasum": "bcb9091109c233e3e82737c94c202e6512389c47",
   "_shrinkwrap": null,
   "_spec": "yasgui-utils@^1.4.1",
-  "_where": "/home/desislava/workspace/yasr",
+  "_where": "/Users/avataar/tmp/tmp/yasr",
   "author": {
     "name": "Laurens Rietveld"
   },
@@ -43853,7 +43890,6 @@ module.exports={
     "yasgui-utils": "^1.4.1",
     "pivottable": "^1.2.2",
     "jquery-ui": "1.10.5",
-    "d3": "^3.4.13",
     "cytoscape": "^2.3.11",
     "lodash": "^3.6.0"
   },
@@ -43885,10 +43921,6 @@ module.exports={
     "datatables": {
       "require": "datatables",
       "global": "jQuery"
-    },
-    "d3": {
-      "require": "d3",
-      "global": "d3"
     },
     "jquery-ui/sortable": {
       "require": "jquery-ui/sortable",
@@ -46150,7 +46182,7 @@ var root = module.exports = function(yasr) {
 	
 	if (options.useD3Chart) {
 		try {
-			var d3 = (function(){try{return require('d3')}catch(e){return window.d3}})();
+			//var d3 = require('d3');
 			if (d3) require('../node_modules/pivottable/dist/d3_renderers.js');
 		} catch (e) {
 			//do nothing. just make sure we don't use this renderer
@@ -46397,7 +46429,8 @@ root.version = {
 	"YASR-rawResponse" : require("../package.json").version,
 	"jquery": $.fn.jquery,
 };
-},{"../node_modules/pivottable/dist/d3_renderers.js":123,"../node_modules/pivottable/dist/gchart_renderers.js":124,"../package.json":131,"./gChartLoader.js":139,"./imgs.js":142,"./utils.js":156,"d3":undefined,"jquery":undefined,"jquery-ui/sortable":undefined,"pivottable":undefined,"yasgui-utils":128}],154:[function(require,module,exports){
+
+},{"../node_modules/pivottable/dist/d3_renderers.js":123,"../node_modules/pivottable/dist/gchart_renderers.js":124,"../package.json":131,"./gChartLoader.js":139,"./imgs.js":142,"./utils.js":156,"jquery":undefined,"jquery-ui/sortable":undefined,"pivottable":undefined,"yasgui-utils":128}],154:[function(require,module,exports){
 'use strict';
 var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}})(),
 	CodeMirror = (function(){try{return require('codemirror')}catch(e){return window.CodeMirror}})();

@@ -85,7 +85,12 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 	} 
 
 	var getAsJson = function() {
-		if (json) return json;
+		if (json) {
+		    if (!rawJson) {
+		        rawJson = json;
+		    }
+		    return json;
+		}
 		if (json === false || exception) return false;//already tried parsing this, and failed. do not try again... 
 		var getParserFromContentType = function() {
 			if (contentType) {

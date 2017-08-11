@@ -63,8 +63,12 @@ var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}}
 		t.cs = I(ie? tb.cellSpacing || tb.currentStyle.borderSpacing :t.css('border-spacing'))||2;	//table cellspacing (not even jQuery is fully cross-browser)
 		t.b  = I(ie? tb.border || tb.currentStyle.borderLeftWidth :t.css('border-left-width'))||1;	//outer border width (again cross-browser isues)
 		// if(!(tb.style.width || tb.width)) t.width(t.width()); //I am not an IE fan at all, but it is a pitty that only IE has the currentStyle attribute working as expected. For this reason I can not check easily if the table has an explicit width or if it is rendered as "auto"
-		tables[id] = t; 	//the table object is stored using its id as key	
-		createGrips(t);		//grips are created
+		tables[id] = t; 	//the table object is stored using its id as key
+		setTimeout(function() {
+			// Ontotext: needs to be async as table has to be given time to render
+            t.w = t.width();
+			createGrips(t);		//grips are created
+        }, 0);
 	
 	};
 
@@ -97,7 +101,8 @@ var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}}
 			var g = $(t.gc.append('<div class="JCLRgrip"></div>')[0].lastChild); //add the visual node to be used as grip
 			g.t = t; g.i = i; g.c = c;	c.w =c.width();		//some values are stored in the grip's node data
 			t.g.push(g); t.c.push(c);						//the current grip and column are added to its table object
-			c.width(c.w).removeAttr("width");				//the width of the column is converted into pixel-based measurements
+			// Ontotext: we don't want it set this way
+			//c.width(c.w).removeAttr("width");				//the width of the column is converted into pixel-based measurements
 			if (i < t.ln-1) {
 				g.bind('touchstart mousedown', onGripMouseDown).append(t.opt.gripInnerHtml).append('<div class="'+SIGNATURE+'" style="cursor:'+t.opt.hoverCursor+'"></div>'); //bind the mousedown event to start dragging 
 			} else g.addClass("JCLRLastGrip").removeClass("JCLRgrip");	//the last grip is used only to store data			
@@ -267,12 +272,14 @@ var $ = (function(){try{return require('jquery')}catch(e){return window.jQuery}}
 			t.removeClass(SIGNATURE);						//firefox doesnt like layout-fixed in some cases
 			if (t.w != t.width()) {							//if the the table's width has changed
 				t.w = t.width();							//its new value is kept
-				for(i=0; i<t.ln; i++) mw+= t.c[i].w;		//the active cells area is obtained
+				// Ontotex: no need to calc this
+				// for(i=0; i<t.ln; i++) mw+= t.c[i].w;		//the active cells area is obtained
 				//cell rendering is not as trivial as it might seem, and it is slightly different for
 				//each browser. In the begining i had a big switch for each browser, but since the code
 				//was extremelly ugly now I use a different approach with several reflows. This works 
-				//pretty well but it's a bit slower. For now, lets keep things simple...   
-				for(i=0; i<t.ln; i++) t.c[i].css("width", M.round(1000*t.c[i].w/mw)/10 + "%").l=true; 
+				//pretty well but it's a bit slower. For now, lets keep things simple...
+				// Ontotext: no need to do this
+				// for(i=0; i<t.ln; i++) t.c[i].css("width", M.round(1000*t.c[i].w/mw)/10 + "%").l=true;
 				//c.l locks the column, telling us that its c.w is outdated									
 			}
 			syncGrips(t.addClass(SIGNATURE));
@@ -16107,26 +16114,34 @@ function isUndefined(arg) {
 module.exports={
   "_args": [
     [
-      "yasgui-utils@^1.4.1",
-      "/home/desislava/workspace/yasr"
+      {
+        "raw": "yasgui-utils@^1.4.1",
+        "scope": null,
+        "escapedName": "yasgui-utils",
+        "name": "yasgui-utils",
+        "rawSpec": "^1.4.1",
+        "spec": ">=1.4.1 <2.0.0",
+        "type": "range"
+      },
+      "/Users/avataar/tmp/tmp/yasr"
     ]
   ],
   "_from": "yasgui-utils@>=1.4.1 <2.0.0",
   "_id": "yasgui-utils@1.6.0",
   "_inCache": true,
-  "_installable": true,
   "_location": "/yasgui-utils",
   "_npmUser": {
-    "email": "laurens.rietveld@gmail.com",
-    "name": "laurens.rietveld"
+    "name": "laurens.rietveld",
+    "email": "laurens.rietveld@gmail.com"
   },
   "_npmVersion": "1.4.3",
   "_phantomChildren": {},
   "_requested": {
-    "name": "yasgui-utils",
     "raw": "yasgui-utils@^1.4.1",
-    "rawSpec": "^1.4.1",
     "scope": null,
+    "escapedName": "yasgui-utils",
+    "name": "yasgui-utils",
+    "rawSpec": "^1.4.1",
     "spec": ">=1.4.1 <2.0.0",
     "type": "range"
   },
@@ -16137,7 +16152,7 @@ module.exports={
   "_shasum": "bcb9091109c233e3e82737c94c202e6512389c47",
   "_shrinkwrap": null,
   "_spec": "yasgui-utils@^1.4.1",
-  "_where": "/home/desislava/workspace/yasr",
+  "_where": "/Users/avataar/tmp/tmp/yasr",
   "author": {
     "name": "Laurens Rietveld"
   },

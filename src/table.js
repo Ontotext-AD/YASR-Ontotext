@@ -303,16 +303,15 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
                 var localName = prefixWithLocal.localName;
 				visibleString = prefixWithLocal.prefix + ":" + localName;
-				if (prefixWithLocal.prefix != "") {
-				    if (localName.lastIndexOf("/") === -1) {
-					    localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(localName);
-                    } else {
-                        localHref = "resource?uri=" + encodeURIComponent(href);
-                    }
-				}
 			}
 		}
-		if (undefined == localHref) {
+
+        var urlSpace = window.location.origin + '/resource/';
+		if (href.indexOf(urlSpace) === 0 && href.length > urlSpace.length) {
+            // URI is within our URL space, use it as is
+            localHref = href;
+        } else {
+            // URI is not within our URL space, needs to be passed as parameter
 			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
 

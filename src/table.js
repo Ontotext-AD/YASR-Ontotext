@@ -335,10 +335,12 @@ var formatLiteralCustom = function(yasr, plugin, literalBinding) {
 	}
 	else if (literalBinding["xml:lang"]) {
 		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["xml:lang"] + '</sup>';
+	} else if (literalBinding["lang"]) {
+		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["lang"] + '</sup>';
 	} else if (literalBinding.datatype) {
 		var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 		var dataType = literalBinding.datatype;
-		if (dataType.indexOf(xmlSchemaNs) === 0) {
+		if (dataType.indexOf(xmlSchemaNs) === 0 && !(dataType === xmlSchemaNs + 'string')) {
 			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
 		} else {
 			dataType = "&lt;" + dataType + "&gt;";

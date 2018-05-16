@@ -19095,16 +19095,15 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 			if (prefixWithLocal) {
                 var localName = prefixWithLocal.localName;
 				visibleString = prefixWithLocal.prefix + ":" + localName;
-				if (prefixWithLocal.prefix != "") {
-				    if (localName.lastIndexOf("/") === -1) {
-					    localHref = "resource/" + encodeURIComponent(prefixWithLocal.prefix) + "/" + encodeURIComponent(localName);
-                    } else {
-                        localHref = "resource?uri=" + encodeURIComponent(href);
-                    }
-				}
 			}
 		}
-		if (undefined == localHref) {
+
+        var urlSpace = window.location.origin + '/resource/';
+		if (href.indexOf(urlSpace) === 0 && href.length > urlSpace.length) {
+            // URI is within our URL space, use it as is
+            localHref = href;
+        } else {
+            // URI is not within our URL space, needs to be passed as parameter
 			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
 
@@ -19128,10 +19127,12 @@ var formatLiteralCustom = function(yasr, plugin, literalBinding) {
 	}
 	else if (literalBinding["xml:lang"]) {
 		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["xml:lang"] + '</sup>';
+	} else if (literalBinding["lang"]) {
+		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["lang"] + '</sup>';
 	} else if (literalBinding.datatype) {
 		var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 		var dataType = literalBinding.datatype;
-		if (dataType.indexOf(xmlSchemaNs) === 0) {
+		if (dataType.indexOf(xmlSchemaNs) === 0 && !(dataType === xmlSchemaNs + 'string')) {
 			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
 		} else {
 			dataType = "&lt;" + dataType + "&gt;";

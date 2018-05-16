@@ -330,6 +330,7 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 
 var formatLiteralCustom = function(yasr, plugin, literalBinding) {
 	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
+	var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}
@@ -337,10 +338,9 @@ var formatLiteralCustom = function(yasr, plugin, literalBinding) {
 		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["xml:lang"] + '</sup>';
 	} else if (literalBinding["lang"]) {
 		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["lang"] + '</sup>';
-	} else if (literalBinding.datatype) {
-		var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
+	} else if (literalBinding.datatype && !(literalBinding.datatype === xmlSchemaNs + 'string')) {
 		var dataType = literalBinding.datatype;
-		if (dataType.indexOf(xmlSchemaNs) === 0 && !(dataType === xmlSchemaNs + 'string')) {
+		if (dataType.indexOf(xmlSchemaNs) === 0) {
 			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
 		} else {
 			dataType = "&lt;" + dataType + "&gt;";

@@ -14,11 +14,11 @@ var loader = function() {
 			 * Existing libraries either ignore several browsers (e.g. jquery 2.x), or use ugly hacks (timeouts or something)
 			 * So, we use our own custom ugly hack (yes, timeouts)
 			 */
-			loadScript('http://google.com/jsapi', function(){
+			loadScript('https://google.com/jsapi', function(){
 				loadingMain = false;
 				mod.emit('initDone');
 			});
-			
+
 			var timeout = 100; //ms
 			var maxTimeout = 6000;//so 6 sec max
 			var startTime = +new Date();
@@ -29,9 +29,9 @@ var loader = function() {
 						loadingFailed = true;
 						loadingMain = false;
 						mod.emit('initError');
-						
+
 						//TODO: clear initDone callbacks. they won't fire anymore anyway
-					
+
 					} else {
 						setTimeout(checkAndWait, timeout);
 					}
@@ -49,11 +49,11 @@ var loader = function() {
 			} else {
 				//hmmm, should never get here
 			}
-			
+
 		}
 	}
 	this.googleLoad = function() {
-		
+
 		var load = function() {
 			require('google').load("visualization", "1", {
 				packages : ["corechart", "charteditor" ],
@@ -104,4 +104,3 @@ var loadScript = function(url, callback){
 }
 loader.prototype = new EventEmitter;
 module.exports = new loader();
-

@@ -4503,7 +4503,7 @@ module.exports = require('./main.js');
 				// All sort types have formatting functions
 				displayMaster.sort( function ( a, b ) {
 					var
-						x, y, k, test, sort,
+						x, y, k, test, sort, aClassName, bClassName, aInnerHTML, bInnerHTML,
 						len=aSort.length,
 						dataA = aoData[a]._aSortData,
 						dataB = aoData[b]._aSortData;
@@ -4513,8 +4513,19 @@ module.exports = require('./main.js');
 	
 						x = dataA[ sort.col ];
 						y = dataB[ sort.col ];
-	
-						test = x<y ? -1 : x>y ? 1 : 0;
+
+						aClassName = aoData[a].anCells[sort.col].firstChild.firstChild.className;
+						bClassName = aoData[b].anCells[sort.col].firstChild.firstChild.className;
+						aInnerHTML = aoData[a].anCells[sort.col].firstChild.firstChild.lastChild.innerHTML;
+						bInnerHTML = aoData[b].anCells[sort.col].firstChild.firstChild.lastChild.innerHTML;
+
+						if (aClassName !== 'uri' && aInnerHTML !== undefined
+							&& bClassName !== 'uri' && bInnerHTML !== undefined) {
+							test = sortSpecial(typeOfSort(aInnerHTML), typeOfSort(bInnerHTML), extractValue(x), extractValue(y));
+						} else {
+							test = x < y ? -1 : x > y ? 1 : 0;
+						}
+
 						if ( test !== 0 ) {
 							return sort.dir === 'asc' ? test : -test;
 						}
@@ -4559,7 +4570,73 @@ module.exports = require('./main.js');
 		/* Tell the draw function that we have sorted the data */
 		oSettings.bSorted = true;
 	}
-	
+
+	function typeOfSort ( xsdType )
+	{
+		switch (xsdType) {
+			case "^^xsd:float":
+			case "^^xsd:double":
+			case "^^xsd:byte":
+			case "^^xsd:short":
+			case "^^xsd:int":
+			case "^^xsd:integer":
+			case "^^xsd:long":
+			case "^^xsd:decimal":
+			case "^^xsd:unsignedByte":
+			case "^^xsd:unsignedInt":
+			case "^^xsd:unsignedLong":
+			case "^^xsd:unsignedShort":
+			case "^^xsd:negativeInteger":
+			case "^^xsd:nonNegativeInteger":
+			case "^^xsd:positiveInteger":
+			case "^^xsd:nonPositiveInteger":
+			case "^^xsd:gDay":
+			case "^^xsd:gMonth":
+			case "^^xsd:gMonthDay":
+			case "^^xsd:gYear":
+			case "^^xsd:gYearMonth":
+				return "num";
+			case "^^xsd:date":
+			case "^^xsd:dateTime":
+			case "^^xsd:time":
+				return "date";
+			default:
+				return "str";
+		}
+	}
+
+	function sortSpecial ( aXsdType, bXsdType, aValue, bValue )
+	{
+		switch (aXsdType.concat(bXsdType)) {
+			case "numnum":
+				let aNum = new Number(aValue);
+				let bNum = new Number(bValue);
+				return aNum < bNum ? -1 : aNum > bNum ? 1 : 0;
+			case "datedate":
+				let aDate = new Date(aValue);
+				let bDate = new Date(bValue);
+				return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+			case "numstr":
+				return -1;
+			case "strnum":
+				return 1;
+			case "numdate":
+				return -1;
+			case "datenum":
+				return 1;
+			case "datestr":
+				return -1;
+			case "strdate":
+				return 1;
+			case "strstr" :
+				return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+		}
+	}
+
+	function extractValue (origValue)
+	{
+		return origValue.slice(1, origValue.lastIndexOf('"'));
+	}
 	
 	function _fnSortAria ( settings )
 	{

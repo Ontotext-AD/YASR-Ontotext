@@ -106,7 +106,6 @@ var root = module.exports = function(yasr){
 			
 			var svgEl = yasr.resultsContainer.find('svg')
 				.clone()//create clone, as we'd like to remove height/width attributes
-				.removeAttr('height').removeAttr('width')
 				.css('height', '').css('width','');
 			if (svgEl.length == 0) return null;
 			

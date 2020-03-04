@@ -291,8 +291,12 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 // Custom getCellContent
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
-	var value = null;
+	return getResultEntityValue(binding, context);
+};
+
+var getResultEntityValue = function(binding, context) {
 	var divClass = ""
+	var value = null;
 	if (binding.type == "uri") {
 		var title = null;
 		var href = binding.value;
@@ -317,18 +321,21 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 
         localHref = localHref.replace(/'/g, "&#39;");
         href = href.replace(/'/g, "&#39;");
-
+        divClass = " class = 'uri-cell'"; 
 
 		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
-		divClass = " class = 'uri-cell'"
+	} else if (binding.type == "triple") {
+		divClass = " class = 'triple-cell'"; 
+		value = _.escape("<<") + getResultEntityValue(binding.value['s'], context) + " " + getResultEntityValue(binding.value['p'], context) + " " + getResultEntityValue(binding.value['o'], context) + _.escape(">>");
 	} else {
-		value = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, plugin, binding) + "</p>";
+		divClass = " class = 'literal-cell'"
+		value = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding) + "</p>";
 	}
 	return "<div" + divClass +  ">" + value + "</div>";
-};
+}
 
-var formatLiteralCustom = function(yasr, plugin, literalBinding) {
+var formatLiteralCustom = function(yasr, literalBinding) {
 	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 	if (literalBinding.type == "bnode") {

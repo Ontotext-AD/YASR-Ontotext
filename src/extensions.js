@@ -9,6 +9,9 @@ module.exports = {
                                         '<a class="format dropdown-item" data-accepts="application/sparql-results+json" href="#">JSON</a>' +
                                     '</li>' + 
                                     '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-sparqlstar-results+json" href="#">JSON*</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/sparql-results+xml" href="#">XML</a>' +
                                     '</li>' + 
                                     '<li>' + 
@@ -16,6 +19,9 @@ module.exports = {
                                     '</li>' + 
                                     '<li>' + 
                                         '<a class="format dropdown-item " data-accepts="text/tab-separated-values" href="#">TSV</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
+                                        '<a class="format dropdown-item " data-accepts="text/x-tab-separated-values-star" href="#">TSV*</a>' +
                                     '</li>' + 
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-binary-rdf-results-table" href="#">Binary RDF Results</a>' +

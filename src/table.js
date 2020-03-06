@@ -291,9 +291,13 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 // Custom getCellContent
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
-	var value = null;
+	return getEntityHTML(binding, context);
+};
+
+var getEntityHTML = function(binding, context) {
 	var divClass = ""
-	if (binding.type == "uri") {
+	var entityHtml = null;
+	if (binding.type === "uri") {
 		var title = null;
 		var href = binding.value;
 		var localHref;
@@ -317,27 +321,49 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
 
         localHref = localHref.replace(/'/g, "&#39;");
         href = href.replace(/'/g, "&#39;");
-
-
-		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
+        entityHtml = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
-		divClass = " class = 'uri-cell'"
+		divClass = " class = 'uri-cell'";
+	} else if (binding.type === "triple") {
+		var sEl = getEntityHTML(binding.value['s'], context);
+		var pEl = getEntityHTML(binding.value['p'], context);
+		var oEl = getEntityHTML(binding.value['o'], context);
+		var tripleList = "<ul class='triple-list'><li>" + sEl + "</li><li>" + pEl + "</li><li>" + oEl + "</li></ul>";
+		var tripleString = getTripleString(yasr, binding, true);
+		var localHref = "resource?uri=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
+		var title = _.escape(tripleString);
+		var openLink = "<a title='" + title + "' class='triple-link' href='" + localHref + "'>" + _.escape("<<") + "</a>";
+		var closeLink = "<a title='" + title + "' class='triple-link triple-link-end' href='" + localHref + "'>" + _.escape(">>") + "</a>";
+		entityHtml = openLink + tripleList + closeLink + "<a class='fa fa-link share-result' data-clipboard-text='" + tripleString + "' title='Copy to Clipboard' href='#'></a>";
+		divClass = " class = 'triple-cell'";
 	} else {
-		value = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, plugin, binding) + "</p>";
+		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding) + "</p>";
+		divClass = " class = 'literal-cell'";
 	}
-	return "<div" + divClass +  ">" + value + "</div>";
-};
+	return "<div" + divClass +  ">" + entityHtml + "</div>";
+}
 
-var formatLiteralCustom = function(yasr, plugin, literalBinding) {
+var getTripleString = function(yasr, binding, skipSup) {
+	if (binding.type === "uri") {
+		return "<" + binding.value + ">";
+	}
+	if (binding.type === "triple") {
+		return "<<" + getTripleString(yasr, binding.value['s'], skipSup) + " " + getTripleString(yasr, binding.value['p'], skipSup) + " " + getTripleString(yasr, binding.value['o'], skipSup) + ">>";
+	}
+	return formatLiteralCustom(yasr, binding, skipSup);
+
+}
+
+var formatLiteralCustom = function(yasr, literalBinding, skipSup) {
 	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}
 	else if (literalBinding["xml:lang"]) {
-		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["xml:lang"] + '</sup>';
+		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"') + '@' + literalBinding["xml:lang"] + ((!skipSup) ? '"</sup>': '');
 	} else if (literalBinding["lang"]) {
-		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["lang"] + '</sup>';
+		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"' + '@') + literalBinding["lang"] + ((!skipSup) ? '"</sup>': '');
 	} else if (literalBinding.datatype && !(literalBinding.datatype === xmlSchemaNs + 'string')) {
 		var dataType = literalBinding.datatype;
 		if (dataType.indexOf(xmlSchemaNs) === 0) {
@@ -346,7 +372,7 @@ var formatLiteralCustom = function(yasr, plugin, literalBinding) {
 			dataType = "&lt;" + dataType + "&gt;";
 		}
 
-		stringRepresentation = '"' + stringRepresentation + '"<sup>^^' + dataType + '</sup>';
+		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"') + '^^' + dataType + ((!skipSup) ? '"</sup>': '');
 	}
 	return stringRepresentation;
 };

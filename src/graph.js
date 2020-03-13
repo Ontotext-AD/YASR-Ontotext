@@ -8,9 +8,6 @@ require("../lib/DataTables/media/js/jquery.dataTables.js");
 
 var root = module.exports = function(yasr) {
 
-	var parsers = {
-		graphJson: require("./parsers/graphJson.js"),
-	};
 
 	var invertedPrefixes = function() {
 		if (yasr.options.getUsedPrefixes) {
@@ -186,9 +183,9 @@ var root = module.exports = function(yasr) {
 				url: url,
 				type: "POST",
 				data: data,
-				headers: {Accept: "application/rdf+json"}
+				headers: {Accept: "application/x-sparqlstar-results+json"}
 			}).done(function(result){
-				var molecule = constructGraph(parsers.graphJson(result).results.bindings, true);
+				var molecule = constructGraph(parsers.json(result).results.bindings, true);
 				cy.load(molecule, cb);
 			}).fail(function(xhr, textStatus, errorThrown) {
 				console.log('Cannot browse entity: ' + entity + '; ' + xhr.responseText);

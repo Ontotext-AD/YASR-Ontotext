@@ -20,6 +20,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 		json: require("./json.js"),
 		tsv: require("./tsv.js"),
 		csv: require("./csv.js"),
+		graphJson: require("./graphJson.js"),
 	};
 	var contentType = null;
 	var origResponse = null;
@@ -97,7 +98,9 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 					try {
 						json = parsers.json(origResponse, window.editor.getQueryType());
 						rawJson = json;
-						var qType = window.editor.getQueryType();
+						if (contentType.indexOf("application/rdf+json") > -1) {
+							json = parsers.graphJson(rawJson);
+						}
 					} catch (e) {
 						exception = e;
 					}

@@ -56015,7 +56015,7 @@ var getAsObject = function(entity) {
 var root = module.exports = function(responseJson) {
 	if (responseJson) {
 		var hasContext = ('RESOURCE' == window.editor.getQueryType());
-		var mapped = _.map(responseJson, function(value, subject) { 
+		var mapped = _.map(responseJson, function(value, subject) {
 			return _.map(value, function (value1, predicate) {
 				return _.map(value1, function(object) {
 					if (object.graphs) {
@@ -56059,7 +56059,7 @@ var root = module.exports = function(responseJson) {
 
 	}
 	return false;
-	
+
 };
 },{"jquery":18,"lodash":19}],56:[function(require,module,exports){
 'use strict';

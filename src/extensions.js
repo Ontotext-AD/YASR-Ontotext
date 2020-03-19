@@ -55,11 +55,17 @@ module.exports = {
                                         '<a class="format dropdown-item" data-accepts="text/turtle" href="#">Turtle</a>' +
                                     '</li>' + 
                                     '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-turtlestar" href="#">Turtle*</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/trix" href="#">TriX</a>' +
                                     '</li>' + 
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-trig" href="#">TriG</a>' +
                                     '</li>' +   
+                                    '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-trigstar" href="#">TriG*</a>' +
+                                    '</li>' +  
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
                                     '</li>' +                                   

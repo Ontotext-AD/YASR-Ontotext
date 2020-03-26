@@ -54867,11 +54867,17 @@ module.exports = {
                                         '<a class="format dropdown-item" data-accepts="text/turtle" href="#">Turtle</a>' +
                                     '</li>' + 
                                     '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-turtlestar" href="#">Turtle*</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/trix" href="#">TriX</a>' +
                                     '</li>' + 
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-trig" href="#">TriG</a>' +
                                     '</li>' +   
+                                    '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-trigstar" href="#">TriG*</a>' +
+                                    '</li>' +  
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
                                     '</li>' +                                   
@@ -57131,52 +57137,54 @@ var getEntityHTML = function(binding, context) {
 		var pEl = getEntityHTML(binding.value['p'], context);
 		var oEl = getEntityHTML(binding.value['o'], context);
 		var tripleList = "<ul class='triple-list'><li>" + sEl + "</li><li>" + pEl + "</li><li>" + oEl + "</li></ul>";
-		var tripleString = getTripleString(yasr, binding, true);
-		var localHref = "resource?uri=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
+		var tripleString = getTripleString(yasr, binding, false);
+		console.log(tripleString);
+		var localHref = "resource?triple=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
 		var title = _.escape(tripleString);
 		var openLink = "<a title='" + title + "' class='triple-link' href='" + localHref + "'>" + _.escape("<<") + "</a>";
 		var closeLink = "<a title='" + title + "' class='triple-link triple-link-end' href='" + localHref + "'>" + _.escape(">>") + "</a>";
 		entityHtml = openLink + tripleList + closeLink + "<a class='fa fa-link share-result' data-clipboard-text='" + tripleString + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'triple-cell'";
 	} else {
-		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding) + "</p>";
+		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding, true) + "</p>";
 		divClass = " class = 'literal-cell'";
 	}
 	return "<div" + divClass +  ">" + entityHtml + "</div>";
 }
 
-var getTripleString = function(yasr, binding, skipSup) {
+var getTripleString = function(yasr, binding, forHtml) {
 	if (binding.type === "uri") {
 		return "<" + binding.value + ">";
 	}
 	if (binding.type === "triple") {
-		return "<<" + getTripleString(yasr, binding.value['s'], skipSup) + " " + getTripleString(yasr, binding.value['p'], skipSup) + " " + getTripleString(yasr, binding.value['o'], skipSup) + ">>";
+		return "<<" + getTripleString(yasr, binding.value['s'], forHtml) + " " + getTripleString(yasr, binding.value['p'], forHtml) + " " + getTripleString(yasr, binding.value['o'], forHtml) + ">>";
 	}
-	return formatLiteralCustom(yasr, binding, skipSup);
-
+	return formatLiteralCustom(yasr, binding, forHtml);
 }
 
-var formatLiteralCustom = function(yasr, literalBinding, skipSup) {
+var formatLiteralCustom = function(yasr, literalBinding, forHtml) {
 	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}
 	else if (literalBinding["xml:lang"]) {
-		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"') + '@' + literalBinding["xml:lang"] + ((!skipSup) ? '"</sup>': '');
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"') + '@' + literalBinding["xml:lang"] + ((forHtml) ? '</sup>': '');
 	} else if (literalBinding["lang"]) {
-		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"' + '@') + literalBinding["lang"] + ((!skipSup) ? '"</sup>': '');
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"' + '@') + literalBinding["lang"] + ((forHtml) ? '</sup>': '');
 	} else if (literalBinding.datatype && !(literalBinding.datatype === xmlSchemaNs + 'string')) {
 		var dataType = literalBinding.datatype;
-		if (dataType.indexOf(xmlSchemaNs) === 0) {
+		if (dataType.indexOf(xmlSchemaNs) === 0 && forHtml) {
 			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
-		} else {
+		} else if (forHtml) {
 			dataType = "&lt;" + dataType + "&gt;";
+		} else {
+			dataType = "<" + dataType + ">";
 		}
 
-		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"') + '^^' + dataType + ((!skipSup) ? '"</sup>': '');
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"') + '^^' + dataType + ((forHtml) ? '</sup>': '');
 	}
-	return stringRepresentation;
+	return (stringRepresentation.indexOf('"') === 0) ? stringRepresentation : '"' + stringRepresentation + '"';
 };
 
 

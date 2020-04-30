@@ -63,7 +63,7 @@
     "url": "https://github.com/YASGUI/YASR.git"
   },
   "dependencies": {
-    "jquery": "1.11.0",
+    "jquery": "3.5.0",
     "codemirror": "^4.7.0",
     "yasgui-utils": "^1.4.1",
     "pivottable": "^1.2.2",

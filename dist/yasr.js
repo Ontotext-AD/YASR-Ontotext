@@ -17173,32 +17173,50 @@ function clearAll() {
 module.exports={
   "_args": [
     [
-      "yasgui-utils@1.6.7",
-      "/home/desislava/workspace/YASR-Ontotext"
+      {
+        "raw": "yasgui-utils@^1.4.1",
+        "scope": null,
+        "escapedName": "yasgui-utils",
+        "name": "yasgui-utils",
+        "rawSpec": "^1.4.1",
+        "spec": ">=1.4.1 <2.0.0",
+        "type": "range"
+      },
+      "/Users/avataar/tmp/tmp/YASR-Ontotext"
     ]
   ],
-  "_from": "yasgui-utils@1.6.7",
+  "_from": "yasgui-utils@>=1.4.1 <2.0.0",
   "_id": "yasgui-utils@1.6.7",
-  "_inBundle": false,
-  "_integrity": "sha1-K8/FoxVojeOuYFeIPZrjQrIF8mc=",
+  "_inCache": true,
   "_location": "/yasgui-utils",
+  "_nodeVersion": "7.10.0",
+  "_npmOperationalInternal": {
+    "host": "s3://npm-registry-packages",
+    "tmp": "tmp/yasgui-utils-1.6.7.tgz_1495459781202_0.06725964159704745"
+  },
+  "_npmUser": {
+    "name": "laurens.rietveld",
+    "email": "laurens.rietveld@gmail.com"
+  },
+  "_npmVersion": "4.2.0",
   "_phantomChildren": {},
   "_requested": {
-    "type": "version",
-    "registry": true,
-    "raw": "yasgui-utils@1.6.7",
-    "name": "yasgui-utils",
+    "raw": "yasgui-utils@^1.4.1",
+    "scope": null,
     "escapedName": "yasgui-utils",
-    "rawSpec": "1.6.7",
-    "saveSpec": null,
-    "fetchSpec": "1.6.7"
+    "name": "yasgui-utils",
+    "rawSpec": "^1.4.1",
+    "spec": ">=1.4.1 <2.0.0",
+    "type": "range"
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "https://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.6.7.tgz",
-  "_spec": "1.6.7",
-  "_where": "/home/desislava/workspace/YASR-Ontotext",
+  "_shasum": "2bcfc5a315688de3ae6057883d9ae342b205f267",
+  "_shrinkwrap": null,
+  "_spec": "yasgui-utils@^1.4.1",
+  "_where": "/Users/avataar/tmp/tmp/YASR-Ontotext",
   "author": {
     "name": "Laurens Rietveld"
   },
@@ -17209,6 +17227,13 @@ module.exports={
     "store": "^2.0.4"
   },
   "description": "Utils for YASGUI libs",
+  "devDependencies": {},
+  "directories": {},
+  "dist": {
+    "shasum": "2bcfc5a315688de3ae6057883d9ae342b205f267",
+    "tarball": "https://registry.npmjs.org/yasgui-utils/-/yasgui-utils-1.6.7.tgz"
+  },
+  "gitHead": "6031b1cb732d390b29cd5376dceb9a9d665bbd11",
   "homepage": "https://github.com/YASGUI/Utils",
   "licenses": [
     {
@@ -17219,16 +17244,18 @@ module.exports={
   "main": "src/main.js",
   "maintainers": [
     {
-      "name": "Laurens Rietveld",
-      "email": "laurens.rietveld@gmail.com",
-      "url": "http://laurensrietveld.nl"
+      "name": "laurens.rietveld",
+      "email": "laurens.rietveld@gmail.com"
     }
   ],
   "name": "yasgui-utils",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/YASGUI/Utils.git"
   },
+  "scripts": {},
   "version": "1.6.7"
 }
 
@@ -17929,11 +17956,17 @@ module.exports = {
                                         '<a class="format dropdown-item" data-accepts="text/turtle" href="#">Turtle</a>' +
                                     '</li>' + 
                                     '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-turtlestar" href="#">Turtle*</a>' +
+                                    '</li>' + 
+                                    '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/trix" href="#">TriX</a>' +
                                     '</li>' + 
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-trig" href="#">TriG</a>' +
                                     '</li>' +   
+                                    '<li>' + 
+                                        '<a class="format dropdown-item" data-accepts="application/x-trigstar" href="#">TriG*</a>' +
+                                    '</li>' +  
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
                                     '</li>' +                                   
@@ -19077,7 +19110,7 @@ var getAsObject = function(entity) {
 var root = module.exports = function(responseJson) {
 	if (responseJson) {
 		var hasContext = ('RESOURCE' == window.editor.getQueryType());
-		var mapped = _.map(responseJson, function(value, subject) { 
+		var mapped = _.map(responseJson, function(value, subject) {
 			return _.map(value, function (value1, predicate) {
 				return _.map(value1, function(object) {
 					if (object.graphs) {
@@ -19121,7 +19154,7 @@ var root = module.exports = function(responseJson) {
 
 	}
 	return false;
-	
+
 };
 },{"jquery":undefined,"lodash":12}],48:[function(require,module,exports){
 'use strict';
@@ -20155,10 +20188,11 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 // Custom getCellContent
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
-	return getEntityHTML(binding, context);
+	var isShacl = yasr.header.context.ownerDocument.URL.includes("http:%2F%2Frdf4j.org%2Fschema%2Frdf4j%23SHACLShapeGraph");
+	return getEntityHTML(binding, context, isShacl);
 };
 
-var getEntityHTML = function(binding, context) {
+var getEntityHTML = function(binding, context, isShacl) {
 	var divClass = ""
 	var entityHtml = null;
 	if (binding.type === "uri") {
@@ -20182,6 +20216,9 @@ var getEntityHTML = function(binding, context) {
             // URI is not within our URL space, needs to be passed as parameter
 			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
+		if (isShacl != null && isShacl === true) {
+			localHref += ("&context=" + encodeURIComponent("http://rdf4j.org/schema/rdf4j#SHACLShapeGraph"));
+		}
 
         localHref = localHref.replace(/'/g, "&#39;");
         href = href.replace(/'/g, "&#39;");
@@ -20189,56 +20226,57 @@ var getEntityHTML = function(binding, context) {
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'";
 	} else if (binding.type === "triple") {
-		var sEl = getEntityHTML(binding.value['s'], context);
-		var pEl = getEntityHTML(binding.value['p'], context);
-		var oEl = getEntityHTML(binding.value['o'], context);
+		var sEl = getEntityHTML(binding.value['s'], context, isShacl);
+		var pEl = getEntityHTML(binding.value['p'], context, isShacl);
+		var oEl = getEntityHTML(binding.value['o'], context, isShacl);
 		var tripleList = "<ul class='triple-list'><li>" + sEl + "</li><li>" + pEl + "</li><li>" + oEl + "</li></ul>";
-		var tripleString = getTripleString(yasr, binding, true);
-		var localHref = "resource?uri=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
+		var tripleString = getTripleString(yasr, binding, false);
+		var localHref = "resource?triple=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
 		var title = _.escape(tripleString);
 		var openLink = "<a title='" + title + "' class='triple-link' href='" + localHref + "'>" + _.escape("<<") + "</a>";
 		var closeLink = "<a title='" + title + "' class='triple-link triple-link-end' href='" + localHref + "'>" + _.escape(">>") + "</a>";
 		entityHtml = openLink + tripleList + closeLink + "<a class='fa fa-link share-result' data-clipboard-text='" + tripleString + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'triple-cell'";
 	} else {
-		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding) + "</p>";
+		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding, true) + "</p>";
 		divClass = " class = 'literal-cell'";
 	}
 	return "<div" + divClass +  ">" + entityHtml + "</div>";
 }
 
-var getTripleString = function(yasr, binding, skipSup) {
+var getTripleString = function(yasr, binding, forHtml) {
 	if (binding.type === "uri") {
 		return "<" + binding.value + ">";
 	}
 	if (binding.type === "triple") {
-		return "<<" + getTripleString(yasr, binding.value['s'], skipSup) + " " + getTripleString(yasr, binding.value['p'], skipSup) + " " + getTripleString(yasr, binding.value['o'], skipSup) + ">>";
+		return "<<" + getTripleString(yasr, binding.value['s'], forHtml) + " " + getTripleString(yasr, binding.value['p'], forHtml) + " " + getTripleString(yasr, binding.value['o'], forHtml) + ">>";
 	}
-	return formatLiteralCustom(yasr, binding, skipSup);
-
+	return formatLiteralCustom(yasr, binding, forHtml);
 }
 
-var formatLiteralCustom = function(yasr, literalBinding, skipSup) {
+var formatLiteralCustom = function(yasr, literalBinding, forHtml) {
 	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}
 	else if (literalBinding["xml:lang"]) {
-		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"') + '@' + literalBinding["xml:lang"] + ((!skipSup) ? '"</sup>': '');
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"') + '@' + literalBinding["xml:lang"] + ((forHtml) ? '</sup>': '');
 	} else if (literalBinding["lang"]) {
-		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"' + '@') + literalBinding["lang"] + ((!skipSup) ? '"</sup>': '');
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"' + '@') + literalBinding["lang"] + ((forHtml) ? '</sup>': '');
 	} else if (literalBinding.datatype && !(literalBinding.datatype === xmlSchemaNs + 'string')) {
 		var dataType = literalBinding.datatype;
-		if (dataType.indexOf(xmlSchemaNs) === 0) {
+		if (dataType.indexOf(xmlSchemaNs) === 0 && forHtml) {
 			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
-		} else {
+		} else if (forHtml) {
 			dataType = "&lt;" + dataType + "&gt;";
+		} else {
+			dataType = "<" + dataType + ">";
 		}
 
-		stringRepresentation = '"' + stringRepresentation + ((!skipSup) ? '"<sup>': '"') + '^^' + dataType + ((!skipSup) ? '"</sup>': '');
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"') + '^^' + dataType + ((forHtml) ? '</sup>': '');
 	}
-	return stringRepresentation;
+	return (stringRepresentation.indexOf('"') === 0) ? stringRepresentation : '"' + stringRepresentation + '"';
 };
 
 

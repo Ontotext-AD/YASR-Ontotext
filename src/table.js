@@ -291,10 +291,11 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 // Custom getCellContent
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
-	return getEntityHTML(binding, context);
+	var isShacl = yasr.header.context.ownerDocument.URL.includes("http:%2F%2Frdf4j.org%2Fschema%2Frdf4j%23SHACLShapeGraph");
+	return getEntityHTML(binding, context, isShacl);
 };
 
-var getEntityHTML = function(binding, context) {
+var getEntityHTML = function(binding, context, isShacl) {
 	var divClass = ""
 	var entityHtml = null;
 	if (binding.type === "uri") {
@@ -318,6 +319,9 @@ var getEntityHTML = function(binding, context) {
             // URI is not within our URL space, needs to be passed as parameter
 			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
+		if (isShacl != null && isShacl === true) {
+			localHref += ("&context=" + encodeURIComponent("http://rdf4j.org/schema/rdf4j#SHACLShapeGraph"));
+		}
 
         localHref = localHref.replace(/'/g, "&#39;");
         href = href.replace(/'/g, "&#39;");
@@ -325,9 +329,9 @@ var getEntityHTML = function(binding, context) {
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
 		divClass = " class = 'uri-cell'";
 	} else if (binding.type === "triple") {
-		var sEl = getEntityHTML(binding.value['s'], context);
-		var pEl = getEntityHTML(binding.value['p'], context);
-		var oEl = getEntityHTML(binding.value['o'], context);
+		var sEl = getEntityHTML(binding.value['s'], context, isShacl);
+		var pEl = getEntityHTML(binding.value['p'], context, isShacl);
+		var oEl = getEntityHTML(binding.value['o'], context, isShacl);
 		var tripleList = "<ul class='triple-list'><li>" + sEl + "</li><li>" + pEl + "</li><li>" + oEl + "</li></ul>";
 		var tripleString = getTripleString(yasr, binding, false);
 		var localHref = "resource?triple=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");

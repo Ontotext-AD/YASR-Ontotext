@@ -3,6 +3,10 @@
   "description": "Yet Another SPARQL Resultset GUI",
   "version": "2.4.12",
   "main": "src/main.js",
+  "scripts": {
+    "dev": "gulp serve",
+    "build": "gulp"
+  },
   "licenses": [
     {
       "type": "MIT",

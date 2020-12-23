@@ -98,8 +98,7 @@ var root = module.exports = function(dataOrJqXhr, textStatus, jqXhrOrErrorString
 					try {
 						json = parsers.json(origResponse, window.editor.getQueryType());
 						rawJson = json;
-						var qType = window.editor.getQueryType();
-						if (qType == "DESCRIBE" || qType == "CONSTRUCT" || qType == "RESOURCE") {
+						if (contentType.indexOf("application/rdf+json") > -1) {
 							json = parsers.graphJson(rawJson);
 						}
 					} catch (e) {

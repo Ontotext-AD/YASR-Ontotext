@@ -16,9 +16,9 @@ require('./jquery/extendJquery.js');
  * @class YASR
  * @return {doc} YASR document
  */
-var root = module.exports = function(parent, options, queryResults) {	
+var root = module.exports = function(parent, options, queryResults) {
 
-	
+
 	var yasr = {};
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $(parent).find(".yasr");
@@ -26,6 +26,8 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.resultsContainer = $(parent).find(".yasr_results");
 	yasr.storage = utils.storage;
 
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
 
 	var prefix = null;
 	yasr.getPersistencyId = function(postfix) {
@@ -85,7 +87,7 @@ var root = module.exports = function(parent, options, queryResults) {
 					this.style.fill = "black";
 				});
 			} else {
-				downloadIcon.prop("disabled", true).prop("title", "Download not supported for this result representation");
+				downloadIcon.prop("disabled", true).prop("title", yasr.translate('yasr.btn.title.unsupported_download'));
 				downloadIcon.find("path").each(function(){
 					this.style.fill = "gray";
 				});
@@ -225,7 +227,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		if (403 == dataOrJqXhr.status) {
 			yasr.results.getException = function() {
-				return {status: 403, statusText: "Forbidden", responseText: "You don't have permission to execute this query. Ask your admin for support."};
+				return {status: 403, statusText: "Forbidden", responseText: yasr.translate('yasr.http.403')};
 			}
 		} 
 		yasr.draw();
@@ -327,7 +329,8 @@ var root = module.exports = function(parent, options, queryResults) {
 				}
 				return url;
 			};
-			var button = $("<button class='btn btn-primary btn-sm yasr_downloadIcon pull-right'>Save</button>")
+            var btnLabelSave = yasr.translate('yasr.btn.label.save');
+			var button = $("<button class='btn btn-primary btn-sm yasr_downloadIcon pull-right'>" + btnLabelSave + "</button>")
 				.click(function() {
 					var currentPlugin = yasr.plugins[yasr.options.output];
 					if (currentPlugin && currentPlugin.getDownloadInfo) {
@@ -361,7 +364,7 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.header.append(button);
 		};
 		var drawEmbedButton = function() {
-			embedBtn = $("<button>", {class:'yasr_btn yasr_embedBtn', title: 'Get HTML snippet to embed results on a web page'})
+			embedBtn = $("<button>", {class:'yasr_btn yasr_embedBtn', title: yasr.translate('yasr.btn.title.embed')})
 			.text('</>')
 			.click(function(event) {
 				var currentPlugin = yasr.plugins[yasr.options.output];

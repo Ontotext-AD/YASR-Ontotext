@@ -1,0 +1,6 @@
+{
+  "yasr.http.403": "You don't have permission to execute this query. Ask your admin for support.",
+  "yasr.btn.title.unsupported_download": "Download not supported for this result representation",
+  "yasr.btn.title.embed": "Save",
+  "yasr.btn.label.save": "Get HTML snippet to embed results on a web page"
+}

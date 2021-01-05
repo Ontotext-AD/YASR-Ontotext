@@ -13,8 +13,11 @@ module.exports = {
                                     '</li>' + 
                                     '<li>' + 
                                         '<a class="format dropdown-item" data-accepts="application/sparql-results+xml" href="#">XML</a>' +
-                                    '</li>' + 
-                                    '<li>' + 
+                                    '</li>' +
+                                    '<li>' +
+                                        '<a class="format dropdown-item" data-accepts="application/x-sparqlstar-results+xml" href="#">XML*</a>' +
+                                    '</li>' +
+                                    '<li>' +
                                         '<a class="format dropdown-item" data-accepts="text/csv" href="#">CSV</a>' +
                                     '</li>' + 
                                     '<li>' + 

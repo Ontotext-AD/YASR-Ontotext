@@ -172,6 +172,8 @@ var root = module.exports = function(yasr) {
 		var searchFilter = yasr.resultsContainer.find('.dataTables_filter label');
 		$(searchFilter.contents().get(0)).remove();
 		searchFilter.find('input[type=search]').attr('placeholder', 'Filter query results').addClass('form-control');
+
+		options.highlightLiteralCellResult();
 	};
 	
 	var drawSvgIcons = function() {
@@ -426,6 +428,8 @@ root.defaults = {
 	 * @default YASR.plugins.table.getFormattedValueFromBinding
 	 */
 	getCellContent: getCellContentCustom,
+
+	highlightLiteralCellResult: function () {},
 	
 	persistency: {
 		tableLength: "tableLength",

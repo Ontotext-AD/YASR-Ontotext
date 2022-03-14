@@ -5,7 +5,7 @@ const bundle = {
 const DEFAULT_LANG = 'en';
 var currentLang = DEFAULT_LANG;
 
-var translate = function (key, lang) {
+var translate = function (key, parameter) {
     const selectedLang = lang || currentLang;
     if (!bundle || !bundle[selectedLang]) {
         console.warn('Missing locale file for [' + selectedLang + ']');
@@ -14,6 +14,9 @@ var translate = function (key, lang) {
 
     const translation = bundle[selectedLang][key];
     if (translation) {
+        if(parameter) {
+            translation = translation.replace(`{{${parameter.key}}}`, parameter.value)
+        }
         return translation;
     }
     console.warn('Missing translation for [' + key + '] key in [' + selectedLang + '] locale');

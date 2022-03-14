@@ -4,6 +4,9 @@ var EventEmitter = require('events').EventEmitter,
 var loadingMain = false;
 var loadingFailed = false;
 var loader = function() {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	EventEmitter.call(this);
 	var mod = this;
 	this.init = function() {
@@ -63,18 +66,18 @@ var loader = function() {
 		if (loadingMain) {
 			mod.once('initDone', load);
 			mod.once('initError', function(){
-				mod.emit('error', 'Could not load google loader')
+				mod.emit('error', yasr.translate('yasr.gchartLoader.unable_to_load'))
 			});
 		} else if (require('google')) {
 			//google loader is there. use it
 			load();
 		} else if (loadingFailed) {
-			mod.emit('error',  'Could not load google loader');
+			mod.emit('error',  yasr.translate('yasr.gchartLoader.unable_to_load'));
 		} else {
 			//not loading, no loading error, and not loaded. it must not have been initialized yet. Do that
 			mod.once('initDone', load);
 			mod.once('initError', function(){
-				mod.emit('error', 'Could not load google loader')
+				mod.emit('error', yasr.translate('yasr.gchartLoader.unable_to_load'))
 			});
 		}
 	};

@@ -8,6 +8,9 @@ require('pivottable');
 
 if (!$.fn.pivotUI) throw new Error("Pivot lib not loaded");
 var root = module.exports = function(yasr) {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var plugin = {};
 	var options = $.extend(true, {}, root.defaults);
 	
@@ -146,10 +149,10 @@ var root = module.exports = function(yasr) {
 			$pivotWrapper.find('.pvtTriangle').replaceWith(icon);
 			
 			//add headers to selector rows
-			$('.pvtCols').prepend($('<div>', {class: 'containerHeader'}).text("Columns"));
-			$('.pvtRows').prepend($('<div>', {class: 'containerHeader'}).text("Rows"));
-			$('.pvtUnused').prepend($('<div>', {class: 'containerHeader'}).text("Available Variables"));
-			$('.pvtVals').prepend($('<div>', {class: 'containerHeader'}).text("Cells"));
+			$('.pvtCols').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.columns')));
+			$('.pvtRows').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.rows')));
+			$('.pvtUnused').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.variables')));
+			$('.pvtVals').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.cells')));
 			
 			//hmmm, directly after the callback finishes (i.e., directly after this line), the svg is draw.
 			//just use a short timeout to update the header
@@ -200,7 +203,7 @@ var root = module.exports = function(yasr) {
 				
 				filename: "queryResults.svg",
 				contentType: "image/svg+xml",
-				buttonTitle: "Download SVG Image"
+				buttonTitle: yasr.translate('yasr.btn.title.svg')
 			};
 		} 
 		
@@ -213,7 +216,7 @@ var root = module.exports = function(yasr) {
 				},
 				filename: "queryResults.csv",
 				contentType: "text/csv",
-				buttonTitle: "Download as CSV"
+				buttonTitle: yasr.translate('yasr.btn.title.csv')
 			};
 		} 
 		
@@ -240,7 +243,7 @@ var root = module.exports = function(yasr) {
 		getEmbedHtml: getEmbedHtml,
 		options: options,
 		draw: draw,
-		name: "Pivot Table",
+		name: yasr.translate('yasr.pivot.pivot_table'),
 		canHandleResults: canHandleResults,
 		getPriority: 4,
 	}

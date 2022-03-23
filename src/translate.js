@@ -12,7 +12,7 @@ var translate = function (key, parameter) {
         return key;
     }
 
-    const translation = bundle[selectedLang][key];
+    let translation = bundle[selectedLang][key];
     if (translation) {
         if(parameter) {
             translation = translation.replace(`{{${parameter.key}}}`, parameter.value)

@@ -20,6 +20,9 @@ require("../lib/colResizable-1.4.js");
  * 
  */
 var root = module.exports = function(yasr) {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var table = null;
 	var plugin = {
 		name: "Table",
@@ -171,7 +174,7 @@ var root = module.exports = function(yasr) {
 		// Use placeholder instead of label
 		var searchFilter = yasr.resultsContainer.find('.dataTables_filter label');
 		$(searchFilter.contents().get(0)).remove();
-		searchFilter.find('input[type=search]').attr('placeholder', 'Filter query results').addClass('form-control');
+		searchFilter.find('input[type=search]').attr('placeholder', yasr.translate('yasr.table.filter')).addClass('form-control');
 	};
 	
 	var drawSvgIcons = function() {
@@ -212,7 +215,7 @@ var root = module.exports = function(yasr) {
 			getContent: function(){return require("./bindingsToCsv.js")(yasr.results.getAsJson());},
 			filename: "queryResults.csv",
 			contentType: "text/csv",
-			buttonTitle: "Download as CSV"
+			buttonTitle: yasr.translate('yasr.btn.title.csv')
 		};
 	};
 	
@@ -291,9 +294,14 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 // Custom getCellContent
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
-	var value = null;
+	var isShacl = yasr.header.context.ownerDocument.URL.includes("http:%2F%2Frdf4j.org%2Fschema%2Frdf4j%23SHACLShapeGraph");
+	return getEntityHTML(binding, context, isShacl);
+};
+
+var getEntityHTML = function(binding, context, isShacl) {
 	var divClass = ""
-	if (binding.type == "uri") {
+	var entityHtml = null;
+	if (binding.type === "uri") {
 		var title = null;
 		var href = binding.value;
 		var localHref;
@@ -314,41 +322,67 @@ var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) 
             // URI is not within our URL space, needs to be passed as parameter
 			localHref = "resource?uri=" + encodeURIComponent(href);
 		}
+		if (isShacl != null && isShacl === true) {
+			localHref += ("&context=" + encodeURIComponent("http://rdf4j.org/schema/rdf4j#SHACLShapeGraph"));
+		}
 
         localHref = localHref.replace(/'/g, "&#39;");
         href = href.replace(/'/g, "&#39;");
-
-
-		value = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
+        entityHtml = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
 		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
-		divClass = " class = 'uri-cell'"
+		divClass = " class = 'uri-cell'";
+	} else if (binding.type === "triple") {
+		var sEl = getEntityHTML(binding.value['s'], context, isShacl);
+		var pEl = getEntityHTML(binding.value['p'], context, isShacl);
+		var oEl = getEntityHTML(binding.value['o'], context, isShacl);
+		var tripleList = "<ul class='triple-list'><li>" + sEl + "</li><li>" + pEl + "</li><li>" + oEl + "</li></ul>";
+		var tripleString = getTripleString(yasr, binding, false);
+		var localHref = "resource?triple=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
+		var title = _.escape(tripleString);
+		var openLink = "<a title='" + title + "' class='triple-link' href='" + localHref + "'>" + _.escape("<<") + "</a>";
+		var closeLink = "<a title='" + title + "' class='triple-link triple-link-end' href='" + localHref + "'>" + _.escape(">>") + "</a>";
+		entityHtml = openLink + tripleList + closeLink + "<a class='fa fa-link share-result' data-clipboard-text='" + tripleString + "' title='Copy to Clipboard' href='#'></a>";
+		divClass = " class = 'triple-cell'";
 	} else {
-		value = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, plugin, binding) + "</p>";
+		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding, true) + "</p>";
+		divClass = " class = 'literal-cell'";
 	}
-	return "<div" + divClass +  ">" + value + "</div>";
-};
+	return "<div" + divClass +  ">" + entityHtml + "</div>";
+}
 
-var formatLiteralCustom = function(yasr, plugin, literalBinding) {
+var getTripleString = function(yasr, binding, forHtml) {
+	if (binding.type === "uri") {
+		return "<" + binding.value + ">";
+	}
+	if (binding.type === "triple") {
+		return "<<" + getTripleString(yasr, binding.value['s'], forHtml) + " " + getTripleString(yasr, binding.value['p'], forHtml) + " " + getTripleString(yasr, binding.value['o'], forHtml) + ">>";
+	}
+	return formatLiteralCustom(yasr, binding, forHtml);
+}
+
+var formatLiteralCustom = function(yasr, literalBinding, forHtml) {
 	var stringRepresentation = utils.escapeHtmlEntities(literalBinding.value);
 	var xmlSchemaNs = "http://www.w3.org/2001/XMLSchema#";
 	if (literalBinding.type == "bnode") {
 		return "_:" + stringRepresentation;
 	}
 	else if (literalBinding["xml:lang"]) {
-		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["xml:lang"] + '</sup>';
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"') + '@' + literalBinding["xml:lang"] + ((forHtml) ? '</sup>': '');
 	} else if (literalBinding["lang"]) {
-		stringRepresentation = '"' + stringRepresentation + '"<sup>@' + literalBinding["lang"] + '</sup>';
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"' + '@') + literalBinding["lang"] + ((forHtml) ? '</sup>': '');
 	} else if (literalBinding.datatype && !(literalBinding.datatype === xmlSchemaNs + 'string')) {
 		var dataType = literalBinding.datatype;
-		if (dataType.indexOf(xmlSchemaNs) === 0) {
+		if (dataType.indexOf(xmlSchemaNs) === 0 && forHtml) {
 			dataType = "xsd:" + dataType.substring(xmlSchemaNs.length);
-		} else {
+		} else if (forHtml) {
 			dataType = "&lt;" + dataType + "&gt;";
+		} else {
+			dataType = "<" + dataType + ">";
 		}
 
-		stringRepresentation = '"' + stringRepresentation + '"<sup>^^' + dataType + '</sup>';
+		stringRepresentation = '"' + stringRepresentation + ((forHtml) ? '"<sup>': '"') + '^^' + dataType + ((forHtml) ? '</sup>': '');
 	}
-	return stringRepresentation;
+	return (stringRepresentation.indexOf('"') === 0) ? stringRepresentation : '"' + stringRepresentation + '"';
 };
 
 

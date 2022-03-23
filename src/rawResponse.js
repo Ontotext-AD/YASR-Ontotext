@@ -12,6 +12,9 @@ require('codemirror/mode/xml/xml.js');
 require('codemirror/mode/javascript/javascript.js');
 
 var root = module.exports = function(yasr) {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var plugin = {};
 	var options = $.extend(true, {}, root.defaults);
 	var cm = null;
@@ -55,13 +58,13 @@ var root = module.exports = function(yasr) {
 			getContent: function() {return yasr.results.getOriginalResponse();},
 			filename: "queryResults" + (type? "." + type: ""),
 			contentType: (contentType? contentType: "text/plain"),
-			buttonTitle: "Download raw response"
+			buttonTitle: yasr.translate('yasr.btn.title.raw')
 		};
 	};
 	
 	return {
 		draw: draw,
-		name: "Raw Response",
+		name: yasr.translate('yasr.name.raw_response'),
 		canHandleResults: canHandleResults,
 		getPriority: 2,
 		getDownloadInfo: getDownloadInfo,

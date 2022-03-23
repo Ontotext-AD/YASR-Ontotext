@@ -8,6 +8,9 @@ var $ = require('jquery'),
 	yUtils = require('yasgui-utils');
 
 var root = module.exports = function(yasr){
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var options = $.extend(true, {}, root.defaults);
 	var id = yasr.container.closest('[id]').attr('id');
 	if (yasr.options.gchart == null) {
@@ -62,7 +65,7 @@ var root = module.exports = function(yasr){
 	};
 
 	return {
-		name: "Google Chart",
+		name: yasr.translate('yasr.gchart.chart_name'),
 		hideFromSelection: false,
 		priority: 7,
 		canHandleResults: function(yasr){
@@ -85,7 +88,7 @@ var root = module.exports = function(yasr){
 					},
 					filename: "queryResults.svg",
 					contentType: "image/svg+xml",
-					buttonTitle: "Download SVG Image"
+					buttonTitle: yasr.translate('yasr.btn.title.svg')
 				};
 			}
 			//ok, not a svg. is it a table?
@@ -97,7 +100,7 @@ var root = module.exports = function(yasr){
 					},
 					filename: "queryResults.csv",
 					contentType: "text/csv",
-					buttonTitle: "Download as CSV"
+					buttonTitle: yasr.translate('yasr.btn.title.csv')
 				};
 			} 
 		},

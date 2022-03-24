@@ -1,5 +1,6 @@
 {
   "yasr.table.filter": "Filter query results",
+  "yasr.table": "Table",
   "yasr.pivot.pivot_table": "Pivot Table",
   "yasr.name.raw_response": "Raw Response",
   "yasr.headers.columns": "Columns",

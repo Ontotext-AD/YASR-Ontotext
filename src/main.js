@@ -29,6 +29,22 @@ var root = module.exports = function(parent, options, queryResults) {
     // load and register the translation service providing the locale config
     yasr.translate = require('./translate.js')(yasr.options.locale);
 
+	yasr.changeLanguage = function (lang) {
+		yasr.translate = require('./translate.js')(lang);
+		let downLoadBtn = document.getElementById('saveAsBtn');
+		downLoadBtn.innerText = yasr.translate('yasr.download.as.label');
+		let menuUl = document.getElementById('yasrBtnGroup');
+		let downloadIcon = document.getElementById('yasrDownloadIcon');
+		if (menuUl) {
+			menuUl.remove();
+		}
+		if (downloadIcon) {
+			downloadIcon.remove();
+		}
+		drawHeader(yasr);
+		yasr.updateHeader();
+	};
+
 	var prefix = null;
 	yasr.getPersistencyId = function(postfix) {
 		if (prefix === null) {
@@ -282,13 +298,12 @@ var root = module.exports = function(parent, options, queryResults) {
 	var embedBtn = null;
 	var drawHeader = function(yasr) {
 		var drawOutputSelector = function() {
-			var menuUl = $('<ul class="yasr_btnGroup nav nav-tabs"></ul>');
+			var menuUl = $('<ul id="yasrBtnGroup" class="yasr_btnGroup nav nav-tabs"></ul>');
 			$.each(yasr.plugins, function(pluginName, plugin) {
 				if (plugin.hideFromSelection) return;
-				var name = plugin.name || pluginName;
 				var li = $("<li class='nav-item'></li>");
 				var link = $("<a class='nav-link'></a>")
-				.text(name)
+				.text(yasr.translate(plugin.nameLabel))
 				.addClass("select_" + pluginName)
 				.click(function() {
 					if ($(this).parent().hasClass('disabled')) {
@@ -330,7 +345,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				return url;
 			};
             var btnLabelSave = yasr.translate('yasr.btn.label.save');
-			var button = $("<button class='btn btn-primary btn-sm yasr_downloadIcon pull-right'>" + btnLabelSave + "</button>")
+			var button = $("<button id='yasrDownloadIcon' class='btn btn-primary btn-sm yasr_downloadIcon pull-right'>" + btnLabelSave + "</button>")
 				.click(function() {
 					var currentPlugin = yasr.plugins[yasr.options.output];
 					if (currentPlugin && currentPlugin.getDownloadInfo) {

@@ -65,7 +65,8 @@ var root = module.exports = function(yasr){
 	};
 
 	return {
-		name: yasr.translate('yasr.gchart.chart_name'),
+		name: 'Google Chart',
+		nameLabel: 'yasr.gchart.chart_name',
 		hideFromSelection: false,
 		priority: 7,
 		canHandleResults: function(yasr){

@@ -64,7 +64,8 @@ var root = module.exports = function(yasr) {
 	
 	return {
 		draw: draw,
-		name: yasr.translate('yasr.name.raw_response'),
+		name: "Raw Response",
+		nameLabel: 'yasr.name.raw_response',
 		canHandleResults: canHandleResults,
 		getPriority: 2,
 		getDownloadInfo: getDownloadInfo,

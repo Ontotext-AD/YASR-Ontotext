@@ -243,7 +243,8 @@ var root = module.exports = function(yasr) {
 		getEmbedHtml: getEmbedHtml,
 		options: options,
 		draw: draw,
-		name: yasr.translate('yasr.pivot.pivot_table'),
+		nameLabel: 'yasr.pivot.pivot_table',
+		name: "Pivot Table",
 		canHandleResults: canHandleResults,
 		getPriority: 4,
 	}

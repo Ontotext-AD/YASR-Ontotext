@@ -25,7 +25,8 @@ var root = module.exports = function(yasr) {
 
 	var table = null;
 	var plugin = {
-		name: yasr.translate('yasr.table'),
+		name: "Table",
+		nameLabel: 'yasr.table',
 		getPriority: 10,
 	};
 	var options = plugin.options = $.extend(true, {}, root.defaults);

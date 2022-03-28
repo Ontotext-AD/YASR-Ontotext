@@ -212,6 +212,7 @@ var root = module.exports = function(yasr) {
 
 	return {
 		name: 'Graph(beta)',
+		nameLabel: 'yasr.graph.beta',
 		draw: draw,
 		getPriority: 20,
 		hideFromSelection: false,

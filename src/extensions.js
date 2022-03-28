@@ -1,8 +1,10 @@
 'use strict';
+let translate = require('./translate.js')();
+let download = translate('yasr.download.as.label');
 module.exports = {
     selectSaveAsDropDown: '<div class="saveAsDropDown btn-group pull-right">' + 
-                                '<button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Download as &nbsp;' + 
+                                '<button id="saveAsBtn" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' +
+                                    download + ' &nbsp;' +
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 
@@ -32,8 +34,8 @@ module.exports = {
                                 '</ul>' + 
                             '</div>',
     graphSaveAsDropDown: '<div class="saveAsDropDown btn-group pull-right">' + 
-                                '<button class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' + 
-                                    'Download as &nbsp;' + 
+                                '<button id="saveAsBtn" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' +
+                                    download + ' &nbsp;' +
                                 '</button>' + 
                                 '<ul class="dropdown-menu" role="menu">' + 
                                     '<li>' + 

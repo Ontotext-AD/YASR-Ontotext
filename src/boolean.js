@@ -12,6 +12,9 @@ var $ = require("jquery");
  * 
  */
 var root = module.exports = function(yasr) {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var container = $("<div class='booleanResult'></div>");
 	var draw = function() {
 		container.empty().appendTo(yasr.resultsContainer);
@@ -21,13 +24,13 @@ var root = module.exports = function(yasr) {
 		var textVal = null;
 		if (booleanVal === true) {
 			imgId = "check";
-			textVal = "True";
+			textVal = yasr.translate('yasr.boolean.true');
 		} else if (booleanVal === false) {
 			imgId = "cross";
-			textVal = "False";
+			textVal = yasr.translate('yasr.boolean.false');
 		} else {
 			container.width("140");
-			textVal = "Could not find boolean value in response";
+			textVal = yasr.translate('yasr.boolean.no_boolean');
 		}
 		
 		//add icon

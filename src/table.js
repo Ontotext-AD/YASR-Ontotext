@@ -20,9 +20,13 @@ require("../lib/colResizable-1.4.js");
  * 
  */
 var root = module.exports = function(yasr) {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var table = null;
 	var plugin = {
 		name: "Table",
+		nameLabel: 'yasr.table',
 		getPriority: 10,
 	};
 	var options = plugin.options = $.extend(true, {}, root.defaults);
@@ -171,7 +175,7 @@ var root = module.exports = function(yasr) {
 		// Use placeholder instead of label
 		var searchFilter = yasr.resultsContainer.find('.dataTables_filter label');
 		$(searchFilter.contents().get(0)).remove();
-		searchFilter.find('input[type=search]').attr('placeholder', 'Filter query results').addClass('form-control');
+		searchFilter.find('input[type=search]').attr('placeholder', yasr.translate('yasr.table.filter')).addClass('form-control');
 
 		options.highlightLiteralCellResult();
 	};
@@ -214,7 +218,7 @@ var root = module.exports = function(yasr) {
 			getContent: function(){return require("./bindingsToCsv.js")(yasr.results.getAsJson());},
 			filename: "queryResults.csv",
 			contentType: "text/csv",
-			buttonTitle: "Download as CSV"
+			buttonTitle: yasr.translate('yasr.btn.title.csv')
 		};
 	};
 	
@@ -294,12 +298,13 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 var getCellContentCustom = function(yasr, plugin, bindings, sparqlVar, context) {
 	var binding = bindings[sparqlVar];
 	var isShacl = yasr.header.context.ownerDocument.URL.includes("http:%2F%2Frdf4j.org%2Fschema%2Frdf4j%23SHACLShapeGraph");
-	return getEntityHTML(binding, context, isShacl);
+	return getEntityHTML(binding, context, isShacl, yasr);
 };
 
-var getEntityHTML = function(binding, context, isShacl) {
+var getEntityHTML = function(binding, context, isShacl, yasr) {
 	var divClass = ""
 	var entityHtml = null;
+	let copyToClipBoardTranslation = yasr.translate('yasr.copy.to.clipboard');
 	if (binding.type === "uri") {
 		var title = null;
 		var href = binding.value;
@@ -328,19 +333,19 @@ var getEntityHTML = function(binding, context, isShacl) {
         localHref = localHref.replace(/'/g, "&#39;");
         href = href.replace(/'/g, "&#39;");
         entityHtml = "<a title='" + href + "' class='uri' href='" + localHref + "'>" + _.escape(visibleString) + "</a> " +
-		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='Copy to Clipboard' href='#'></a>";
+		"<a class='fa fa-link share-result' data-clipboard-text='" + href + "' title='" + copyToClipBoardTranslation + "' href='#'></a>";
 		divClass = " class = 'uri-cell'";
 	} else if (binding.type === "triple") {
-		var sEl = getEntityHTML(binding.value['s'], context, isShacl);
-		var pEl = getEntityHTML(binding.value['p'], context, isShacl);
-		var oEl = getEntityHTML(binding.value['o'], context, isShacl);
+		var sEl = getEntityHTML(binding.value['s'], context, isShacl, yasr);
+		var pEl = getEntityHTML(binding.value['p'], context, isShacl, yasr);
+		var oEl = getEntityHTML(binding.value['o'], context, isShacl, yasr);
 		var tripleList = "<ul class='triple-list'><li>" + sEl + "</li><li>" + pEl + "</li><li>" + oEl + "</li></ul>";
 		var tripleString = getTripleString(yasr, binding, false);
 		var localHref = "resource?triple=" + encodeURIComponent(tripleString).replace(/'/g, "&#39;");
 		var title = _.escape(tripleString);
 		var openLink = "<a title='" + title + "' class='triple-link' href='" + localHref + "'>" + _.escape("<<") + "</a>";
 		var closeLink = "<a title='" + title + "' class='triple-link triple-link-end' href='" + localHref + "'>" + _.escape(">>") + "</a>";
-		entityHtml = openLink + tripleList + closeLink + "<a class='fa fa-link share-result' data-clipboard-text='" + tripleString + "' title='Copy to Clipboard' href='#'></a>";
+		entityHtml = openLink + tripleList + closeLink + "<a class='fa fa-link share-result' data-clipboard-text='" + tripleString + "' title='" + copyToClipBoardTranslation + "' href='#'></a>";
 		divClass = " class = 'triple-cell'";
 	} else {
 		entityHtml = "<p class='nonUri' style='border: none; background-color: transparent; padding: 0; margin: 0'>" + formatLiteralCustom(yasr, binding, true) + "</p>";

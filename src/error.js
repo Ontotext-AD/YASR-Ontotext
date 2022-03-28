@@ -12,6 +12,9 @@ var $ = require("jquery");
  * 
  */
 var root = module.exports = function(yasr) {
+    // load and register the translation service providing the locale config
+    yasr.translate = require('./translate.js')(yasr.options.locale);
+
 	var $container = $("<div class='errorResult'></div>");
 	var options = $.extend(true, {}, root.defaults);
 	
@@ -20,7 +23,7 @@ var root = module.exports = function(yasr) {
 		if (options.tryQueryLink) {
 			var link = options.tryQueryLink();
 			$tryBtn = $('<button>', {class: 'yasr_btn yasr_tryQuery'})
-				.text('Try query in new browser window')
+				.text(yasr.translate('yasr.error.new_window'))
 				.click(function() {
 					window.open(link, '_blank');
 					$(this).blur();
@@ -88,6 +91,6 @@ var root = module.exports = function(yasr) {
  * @attribute YASR.plugins.error.defaults
  */
 root.defaults = {
-	corsMessage: 'Unable to get response from endpoint',
+	corsMessage: yasr.translate('yasr.error.no_response'),
 	tryQueryLink: null,
 };

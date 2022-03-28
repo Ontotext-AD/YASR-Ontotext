@@ -301,9 +301,10 @@ var root = module.exports = function(parent, options, queryResults) {
 			var menuUl = $('<ul id="yasrBtnGroup" class="yasr_btnGroup nav nav-tabs"></ul>');
 			$.each(yasr.plugins, function(pluginName, plugin) {
 				if (plugin.hideFromSelection) return;
+				var name = plugin.nameLabel ? yasr.translate(plugin.nameLabel) : pluginName;
 				var li = $("<li class='nav-item'></li>");
 				var link = $("<a class='nav-link'></a>")
-				.text(yasr.translate(plugin.nameLabel))
+				.text(name)
 				.addClass("select_" + pluginName)
 				.click(function() {
 					if ($(this).parent().hasClass('disabled')) {

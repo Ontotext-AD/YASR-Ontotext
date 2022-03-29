@@ -140,7 +140,7 @@ var root = module.exports = function(yasr){
 
 				yasr.resultsContainer.append(
 					$('<button>', {class: 'openGchartBtn yasr_btn'})
-						.text('Chart Config')
+						.text(yasr.translate('yasr.chart.config'))
 						.click(function() {
 							editor.openDialog(wrapper);
 						})

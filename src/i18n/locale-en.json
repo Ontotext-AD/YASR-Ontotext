@@ -27,5 +27,6 @@
   "yasr.btn.title.svg": "Download SVG Image",
   "yasr.btn.title.csv": "Download as CSV",
   "yasr.btn.title.raw": "Download raw response",
-  "yasr.copy.to.clipboard": "Copy to Clipboard"
+  "yasr.copy.to.clipboard": "Copy to Clipboard",
+  "yasr.chart.config": "Chart Config"
 }

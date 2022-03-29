@@ -123,7 +123,7 @@ var root = module.exports = function(yasr) {
 			
 			
 			var openGchartBtn = $('<button>', {class: 'openPivotGchart yasr_btn'})
-			.text('Chart Config')
+			.text(yasr.translate('yasr.chart.config'))
 			.click(function() {
 				$pivotWrapper.find('div[dir="ltr"]').dblclick();
 			}).appendTo(yasr.resultsContainer);

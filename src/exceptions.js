@@ -4,10 +4,10 @@ module.exports = {
 		this.foundTypes = foundTypes;
 		this.varName = varName;
 		this.toString = function () {
-			return translate('yasr.exceptions.conflict', {key: varName, value: this.varName});
+			return translate('yasr.exceptions.conflict', {key: 'varName', value: this.varName});
 		};
 		this.toHtml = function () {
-			return translate('yasr.exceptions.conflict_render', {key: varName, value: '<i>' + this.varName + '</i>'});
+			return translate('yasr.exceptions.conflict_render', {key: 'varName', value: '<i>' + this.varName + '</i>'});
 		};
 	}
 }

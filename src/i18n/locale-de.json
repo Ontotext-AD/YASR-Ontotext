@@ -1,0 +1,12 @@
+{
+  "yasr.http.403": "Sie haben keine Berechtigung, diese Abfrage auszuführen. Bitten Sie Ihren Administrator um Unterstützung.",
+  "yasr.btn.title.unsupported_download": "Download für diese Ergebnisdarstellung nicht unterstützt",
+  "yasr.btn.title.embed": "sparen",
+  "yasr.btn.label.save": "Holen Sie sich ein HTML-Snippet, um Ergebnisse auf einer Webseite einzubetten",
+  "yasr.download.as.label": "Herunterladen als",
+  "yasr.table.filter": "Abfrageergebnisse filtern",
+  "yasr.table": "Tisch",
+  "yasr.pivot.pivot_table": "Pivot-Tabelle",
+  "yasr.gchart.chart_name": "Google-Diagramm",
+  "yasr.name.raw_response": "Rohe Antwort"
+}

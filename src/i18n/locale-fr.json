@@ -23,7 +23,7 @@
   "yasr.btn.title.unsupported_download": "Le téléchargement n'est pas pris en charge pour cette représentation de résultat",
   "yasr.btn.title.embed": "Sauvegarder",
   "yasr.btn.label.save": "Obtenir un extrait HTML pour intégrer les résultats dans une page web",
-  "yasr.download.as.label": "Download as",
+  "yasr.download.as.label": "Téléchargement",
   "yasr.btn.title.svg": "Télécharger l'image SVG",
   "yasr.btn.title.csv": "Télécharger comme CSV",
   "yasr.btn.title.raw": "Télécharger la réponse brute",

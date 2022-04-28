@@ -145,8 +145,8 @@ var root = module.exports = function(yasr) {
 		//fetch stored datatables length value
 		var pLength = yutils.storage.get(tableLengthPersistencyId);
 		if (pLength) dataTableConfig.pageLength = pLength;
-		
-		
+
+		dataTableConfig.translate = require('./translate.js')(yasr.options.locale);
 		
 		table.DataTable($.extend(true, {}, dataTableConfig));//make copy. datatables adds properties for backwards compatability reasons, and don't want this cluttering our own 
 		

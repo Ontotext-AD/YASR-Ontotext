@@ -20,7 +20,11 @@ var translate = function (key, parameter) {
     if(parameter) {
         translation = translation.replace(`{{${parameter.key}}}`, parameter.value)
     }
-    return translation;
+    if (translation) {
+        return translation;
+    }
+    console.warn('Missing translation for [' + key + '] key in [' + selectedLang + '] locale');
+    return key;
 };
 
 function init(lang) {

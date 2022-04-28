@@ -28,5 +28,7 @@
   "yasr.btn.title.csv": "Download as CSV",
   "yasr.btn.title.raw": "Download raw response",
   "yasr.copy.to.clipboard": "Copy to Clipboard",
-  "yasr.chart.config": "Chart Config"
+  "yasr.chart.config": "Chart Config",
+  "yasr.empty.table": "No data available in table",
+  "yasr.loading.label": "Loading..."
 }

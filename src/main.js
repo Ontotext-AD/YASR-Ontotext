@@ -43,8 +43,10 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (downloadIcon) {
 			downloadIcon.remove();
 		}
-		drawHeader(yasr);
-		yasr.updateHeader();
+		if (!yasr.options.hideHeader) {
+			drawHeader(yasr);
+		}
+		yasr.draw();
 	};
 
 	var prefix = null;

@@ -28,5 +28,7 @@
   "yasr.btn.title.csv": "Télécharger comme CSV",
   "yasr.btn.title.raw": "Télécharger la réponse brute",
   "yasr.copy.to.clipboard": "Copier dans le presse-papiers",
-  "yasr.chart.config": "Configuration du graphique"
+  "yasr.chart.config": "Configuration du graphique",
+  "yasr.empty.table": "Aucune donnée disponible dans le tableau",
+  "yasr.loading.label": "Chargement..."
 }

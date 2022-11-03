@@ -12,6 +12,15 @@ var root = module.exports = function(yasr) {
 		graphJson: require("./parsers/graphJson.js"),
 	};
 
+	const plugin = {
+		id: 'graphBeta',
+		name: 'Graph(beta)',
+		nameLabel: 'yasr.graph.beta',
+		getPriority: 20,
+		hideFromSelection: false,
+	}
+	plugin.options = $.extend(true, {}, yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {});
+
 	var invertedPrefixes = function() {
 		if (yasr.options.getUsedPrefixes) {
 			return _.invert(typeof yasr.options.getUsedPrefixes == "function"? yasr.options.getUsedPrefixes(yasr):  yasr.options.getUsedPrefixes);
@@ -120,7 +129,7 @@ var root = module.exports = function(yasr) {
 	}
 
 
-	var draw = function() {
+	plugin.draw = function() {
 		yasr.resultsContainer.empty();
 		yasr.resultsContainer.append('<div class="graph-info-title"></div><div class="graph-info"></div><div id="cy"></div>');
 		
@@ -206,16 +215,9 @@ var root = module.exports = function(yasr) {
 		});
 	}
 
-	var canHandleResults = function() {
+	plugin.canHandleResults = function() {
 		return "CONSTRUCT" == window.editor.getQueryType() || "DESCRIBE" == window.editor.getQueryType();
 	}
 
-	return {
-		name: 'Graph(beta)',
-		nameLabel: 'yasr.graph.beta',
-		draw: draw,
-		getPriority: 20,
-		hideFromSelection: false,
-		canHandleResults: canHandleResults,
-	}
+	return plugin;
 }

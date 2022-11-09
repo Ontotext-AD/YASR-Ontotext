@@ -25,11 +25,14 @@ var root = module.exports = function(yasr) {
 
 	var table = null;
 	var plugin = {
+		id: 'table',
 		name: "Table",
 		nameLabel: 'yasr.table',
 		getPriority: 10,
 	};
-	var options = plugin.options = $.extend(true, {}, root.defaults);
+
+	const customOptions = yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {};
+	var options = plugin.options = $.extend(true, {}, root.defaults, customOptions);
 	var tableLengthPersistencyId = (options.persistency? yasr.getPersistencyId(options.persistency.tableLength): null);
 
 	var getRows = function() {
@@ -133,7 +136,7 @@ var root = module.exports = function(yasr) {
 		// hideOrShowDatatablesControls();
 		addAdditionalEvents();
 	};
-	
+
 	plugin.draw = function() {
 		table = $('<table cellpadding="0" cellspacing="0" border="0" class="resultsTable table stripe hover table-bordered fixedCellWidth"></table>');
 		$(yasr.resultsContainer).html(table);
@@ -152,11 +155,12 @@ var root = module.exports = function(yasr) {
 		
 		
 		drawSvgIcons();
-		
-		addEvents();
-		
-		//finally, make the columns dragable:
-		table.colResizable();
+
+		if (!options.enableColumnResizingOnWindowWidth || options.enableColumnResizingOnWindowWidth <= $(window).width()) {
+			addEvents();
+			//finally, make the columns dragable:
+			table.colResizable();
+		}
 		//and: make sure the height of the resize handlers matches the height of the table header
 		var thHeight = table.find('thead').outerHeight();
 		$(yasr.resultsContainer).find('.JCLRgrip').height(table.find('thead').outerHeight());

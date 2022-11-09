@@ -16,7 +16,15 @@ var root = module.exports = function(yasr) {
     yasr.translate = require('./translate.js')(yasr.options.locale);
 
 	var container = $("<div class='booleanBootResult'></div>");
-	var draw = function() {
+	const plugin = {
+		id: 'booleanBootstrap',
+		name: null,//don't need to set this: we don't show it in the selection widget anyway, so don't need a human-friendly name
+		hideFromSelection: true,
+		getPriority: 3,
+	}
+	plugin.options = $.extend(true, {}, yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {});
+
+	plugin.draw = function() {
 		container.empty().appendTo(yasr.resultsContainer);
 		var booleanVal = yasr.results.getBoolean();
 		
@@ -32,21 +40,11 @@ var root = module.exports = function(yasr) {
 			
 		alert.appendTo(container);
 	};
-	
 
-	var canHandleResults = function(){return yasr.results.getBoolean && (yasr.results.getBoolean() === true || yasr.results.getBoolean() == false);};
+	plugin.canHandleResults = function(){return yasr.results.getBoolean && (yasr.results.getBoolean() === true || yasr.results.getBoolean() == false);};
 
-	
-	
-	return {
-		name: null,//don't need to set this: we don't show it in the selection widget anyway, so don't need a human-friendly name
-		draw: draw,
-		hideFromSelection: true,
-		getPriority: 3,
-		canHandleResults: canHandleResults
-	}
+	return plugin;
 };
-
 
 root.version = {
 	"YASR-boolean" : require("../package.json").version,

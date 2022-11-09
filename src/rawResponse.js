@@ -15,10 +15,18 @@ var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
     yasr.translate = require('./translate.js')(yasr.options.locale);
 
-	var plugin = {};
-	var options = $.extend(true, {}, root.defaults);
+	const plugin = {
+		id: 'rawResponse',
+		name: "Raw Response",
+		nameLabel: 'yasr.name.raw_response',
+		getPriority: 2,
+	}
+
+	const customOptions = yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {};
+	var options = plugin.options = $.extend(true, {}, root.defaults, customOptions);
 	var cm = null;
-	var draw = function() {
+
+	plugin.draw = function() {
 		var cmOptions = options.CodeMirror;
 		cmOptions.value = yasr.results.getShortOriginalResponse(options.limit);
 		
@@ -40,17 +48,17 @@ var root = module.exports = function(yasr) {
 		cm.on('unfold', function() {
 			cm.refresh();
 		});
-		
 	};
-	var canHandleResults = function(){
+
+	plugin.canHandleResults = function(){
 		if (!yasr.results) return false;
 		if (!yasr.results.getOriginalResponseAsString) return false;
 		var response = yasr.results.getOriginalResponseAsString();
 		if ((!response || response.length === 0) && yasr.results.getException()) return false;//in this case, show exception instead, as we have nothing to show anyway
 		return true;
 	};
-	
-	var getDownloadInfo = function() {
+
+	plugin.getDownloadInfo = function() {
 		if (!yasr.results) return null;
 		var contentType = yasr.results.getOriginalContentType();
 		var type = yasr.results.getType();
@@ -62,18 +70,8 @@ var root = module.exports = function(yasr) {
 		};
 	};
 	
-	return {
-		draw: draw,
-		name: "Raw Response",
-		nameLabel: 'yasr.name.raw_response',
-		canHandleResults: canHandleResults,
-		getPriority: 2,
-		getDownloadInfo: getDownloadInfo,
-		
-	}
+	return plugin;
 };
-
-
 
 root.defaults = {
 	CodeMirror: {

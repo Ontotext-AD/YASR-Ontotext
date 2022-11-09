@@ -16,8 +16,17 @@ var root = module.exports = function(yasr) {
     yasr.translate = require('./translate.js')(yasr.options.locale);
 
 	var $container = $("<div class='errorResult'></div>");
-	var options = $.extend(true, {}, root.defaults);
-	
+
+	const plugin = {
+		id: 'error',
+		name: null,//don't need to set this: we don't show it in the selection widget anyway, so don't need a human-friendly name
+		getPriority: 20,
+		hideFromSelection: true,
+	}
+
+	const customOptions = yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {};
+	var options = plugin.options = $.extend(true, {}, root.defaults, customOptions);
+
 	var getTryBtn = function(){
 		var $tryBtn = null;
 		if (options.tryQueryLink) {
@@ -32,7 +41,7 @@ var root = module.exports = function(yasr) {
 		return $tryBtn;
 	}
 	
-	var draw = function() {
+	plugin.draw = function() {
 		var error = yasr.results.getException();
 		$container.empty().appendTo(yasr.resultsContainer);
 		var $header = $("<div>", {class:'errorHeader'}).appendTo($container);
@@ -71,17 +80,9 @@ var root = module.exports = function(yasr) {
 		}
 		
 	};
-	
-	
-	var  canHandleResults = function(yasr){return yasr.results.getException() || false;};
-	
-	return {
-		name: null,//don't need to set this: we don't show it in the selection widget anyway, so don't need a human-friendly name
-		draw: draw,
-		getPriority: 20,
-		hideFromSelection: true,
-		canHandleResults: canHandleResults,
-	}
+
+	plugin.canHandleResults = function(yasr){return yasr.results.getException() || false;};
+	return plugin;
 };
 
 /**

@@ -11,9 +11,16 @@ var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
     yasr.translate = require('./translate.js')(yasr.options.locale);
 
-	var plugin = {};
-	var options = $.extend(true, {}, root.defaults);
-	
+	var plugin = {
+		id: 'pivot',
+		name: "Pivot Table",
+		nameLabel: 'yasr.pivot.pivot_table',
+		getPriority: 4,
+	};
+
+	const customOptions = yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {};
+	var options = plugin.options = $.extend(true, {}, root.defaults, customOptions);
+
 	if (options.useD3Chart) {
 		try {
 			// Don't load d3 here, use the global one
@@ -24,9 +31,7 @@ var root = module.exports = function(yasr) {
 		}
 		if ($.pivotUtilities.d3_renderers) $.extend(true,  $.pivotUtilities.renderers, $.pivotUtilities.d3_renderers);
 	}
-	
-	
-	
+
 	var $pivotWrapper;
 	var mergeLabelPostfix = null;
 	var getShownVariables = function() {
@@ -49,7 +54,6 @@ var root = module.exports = function(yasr) {
 	};
 	
 	var formatForPivot = function(callback) {
-		
 		var vars = getShownVariables();
 		var usedPrefixes = null;
 		if (yasr.options.getUsedPrefixes) {
@@ -100,7 +104,8 @@ var root = module.exports = function(yasr) {
 		}
 		return settings;
 	};
-	var draw = function() {
+
+	plugin.draw = function() {
 		var doDraw = function() {
 			var onRefresh = function(pivotObj) {
 				if (persistencyId) {
@@ -182,11 +187,12 @@ var root = module.exports = function(yasr) {
 			doDraw();
 		}
 	};
-	var canHandleResults = function(){
+
+	plugin.canHandleResults = function(){
 		return yasr.results && yasr.results.getVariables && yasr.results.getVariables() && yasr.results.getVariables().length > 0;
 	};
 	
-	var getDownloadInfo =  function() {
+	plugin.getDownloadInfo =  function() {
 		if (!yasr.results) return null;
 		var svgEl = yasr.resultsContainer.find('.pvtRendererArea svg');
 		if (svgEl.length > 0) {
@@ -221,7 +227,8 @@ var root = module.exports = function(yasr) {
 		} 
 		
 	};
-	var getEmbedHtml = function() {
+
+	plugin.getEmbedHtml = function() {
 		if (!yasr.results) return null;
 		
 		var svgEl = yasr.resultsContainer.find('.pvtRendererArea svg')
@@ -238,19 +245,9 @@ var root = module.exports = function(yasr) {
 		//don't use jquery, so we can easily influence indentation
 		return '<div style="width: 800px; height: 600px;">\n' + htmlString + '\n</div>';
 	};
-	return {
-		getDownloadInfo: getDownloadInfo,
-		getEmbedHtml: getEmbedHtml,
-		options: options,
-		draw: draw,
-		name: "Pivot Table",
-		nameLabel: 'yasr.pivot.pivot_table',
-		canHandleResults: canHandleResults,
-		getPriority: 4,
-	}
+
+	return plugin;
 };
-
-
 
 root.defaults = {
 	mergeLabelsWithUris: false,

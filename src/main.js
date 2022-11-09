@@ -5,8 +5,6 @@ console = console || {"log":function(){}};//make sure any console statements don
 
 require('./jquery/extendJquery.js');
 
-
-
 /**
  * Main YASR constructor
  * 
@@ -17,8 +15,6 @@ require('./jquery/extendJquery.js');
  * @return {doc} YASR document
  */
 var root = module.exports = function(parent, options, queryResults) {
-
-
 	var yasr = {};
 	yasr.options = $.extend(true, {}, root.defaults, options);
 	yasr.container = $(parent).find(".yasr");
@@ -476,6 +472,18 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.setResponse(queryResults);
 	} 
 	yasr.updateHeader();
+
+	const resizeEvent = 'resize.' + new Date().getTime();
+	$(window).on(resizeEvent, yasr.draw);
+
+	yasr.destroy = function () {
+		$(window).off(resizeEvent);
+		for (const plugin in yasr.plugins) {
+			if ($.isFunction(plugin.destroy)) {
+				plugin.destroy();
+			}
+		}
+	}
 	return yasr;
 };
 

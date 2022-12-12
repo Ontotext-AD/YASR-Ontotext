@@ -11,13 +11,13 @@ require("../lib/colResizable-1.4.js");
 
 /**
  * Constructor of plugin which displays results as a table
- * 
+ *
  * @param yasr {object}
  * @param parent {DOM element}
  * @param options {object}
  * @class YASR.plugins.table
  * @return yasr-table (doc)
- * 
+ *
  */
 var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
@@ -64,7 +64,7 @@ var root = module.exports = function(yasr) {
 		}
 		return rows;
 	};
-	
+
 	var eventId = yasr.getPersistencyId('eventId') || "yasr_" + $(yasr.container).closest('[id]').attr('id');
 	var addAdditionalEvents = function() {
 		var yasrAngular = angular.element($('#yasr')[0]).scope();
@@ -118,7 +118,7 @@ var root = module.exports = function(yasr) {
 				options.callbacks.onCellMouseEnter(this, event);
 			}
 			var tdEl = $(this);
-			if (options.fetchTitlesFromPreflabel 
+			if (options.fetchTitlesFromPreflabel
 					&& tdEl.attr("title") === undefined
 					&& tdEl.text().trim().indexOf("http") == 0) {
 				addPrefLabel(tdEl);
@@ -126,11 +126,11 @@ var root = module.exports = function(yasr) {
 		}).delegate("td",'mouseleave', function(event) {
 			if (options.callbacks && options.callbacks.onCellMouseLeave) {
 				options.callbacks.onCellMouseLeave(this, event);
-				
+
 			}
 		});
-		
-		
+
+
 		// $(window).off('resize.' + eventId);//remove previously attached handlers
 		// $(window).on('resize.' + eventId, hideOrShowDatatablesControls);
 		// hideOrShowDatatablesControls();
@@ -144,16 +144,16 @@ var root = module.exports = function(yasr) {
 		var dataTableConfig = options.datatable;
 		dataTableConfig.data = getRows();
 		dataTableConfig.columns = options.getColumns(yasr, plugin);
-		
+
 		//fetch stored datatables length value
 		var pLength = yutils.storage.get(tableLengthPersistencyId);
 		if (pLength) dataTableConfig.pageLength = pLength;
 
 		dataTableConfig.translate = require('./translate.js')(yasr.options.locale);
-		
-		table.DataTable($.extend(true, {}, dataTableConfig));//make copy. datatables adds properties for backwards compatability reasons, and don't want this cluttering our own 
-		
-		
+
+		table.DataTable($.extend(true, {}, dataTableConfig));//make copy. datatables adds properties for backwards compatability reasons, and don't want this cluttering our own
+
+
 		drawSvgIcons();
 
 		if (!options.enableColumnResizingOnWindowWidth || options.enableColumnResizingOnWindowWidth <= $(window).width()) {
@@ -164,7 +164,7 @@ var root = module.exports = function(yasr) {
 		//and: make sure the height of the resize handlers matches the height of the table header
 		var thHeight = table.find('thead').outerHeight();
 		$(yasr.resultsContainer).find('.JCLRgrip').height(table.find('thead').outerHeight());
-		
+
 		//move the table upward, so the table options nicely aligns with the yasr header
 		var headerHeight = yasr.header.outerHeight(); //do not add some space of 5 px between table and yasr header
 		// if (headerHeight > 0) {
@@ -172,7 +172,7 @@ var root = module.exports = function(yasr) {
 		// 		.css("position", "relative")
 		// 		.css("top", "-" + headerHeight + "px")
 		// 		.css("margin-bottom", "-" + headerHeight + "px");
-			
+
 		// 	//and: make sure the height of the resize handlers matches the height of the table header
 		// 	$(yasr.resultsContainer).find('.JCLRgrip').css('marginTop', headerHeight + 'px');
 		// }
@@ -183,7 +183,7 @@ var root = module.exports = function(yasr) {
 
 		options.highlightLiteralCellResult();
 	};
-	
+
 	var drawSvgIcons = function() {
 		var sortings = {
 			"sorting": "unsorted",
@@ -206,7 +206,7 @@ var root = module.exports = function(yasr) {
 	};
 	/**
 	 * Check whether this plugin can handler the current results
-	 * 
+	 *
 	 * @property canHandleResults
 	 * @type function
 	 * @default If resultset contains variables in the resultset, return true
@@ -215,7 +215,7 @@ var root = module.exports = function(yasr) {
 		return yasr.results && yasr.results.getVariables && yasr.results.getVariables() && yasr.results.getVariables().length > 0;
 	};
 
-	
+
 	plugin.getDownloadInfo = function() {
 		if (!yasr.results) return null;
 		return {
@@ -225,7 +225,7 @@ var root = module.exports = function(yasr) {
 			buttonTitle: yasr.translate('yasr.btn.title.csv')
 		};
 	};
-	
+
 	var hideOrShowDatatablesControls = function() {
 		var show = true;
 		var downloadIcon = yasr.container.find('.yasr_downloadIcon');
@@ -233,7 +233,7 @@ var root = module.exports = function(yasr) {
 		var downloadPosLeft = downloadIcon.offset().left;
 		if (downloadPosLeft > 0) {
 			var downloadPosRight = downloadPosLeft + downloadIcon.outerWidth();
-			
+
 			var filterPosLeft = dataTablesFilter.offset().left;
 			if (filterPosLeft > 0 && filterPosLeft < downloadPosRight) {
 				//overlapping! hide
@@ -245,9 +245,9 @@ var root = module.exports = function(yasr) {
 		} else {
 			dataTablesFilter.css("visibility", "hidden");
 		}
-		
+
 	}
-	
+
 	return plugin;
 };
 
@@ -264,7 +264,7 @@ var formatLiteral = function(yasr, plugin, literalBinding) {
 		} else {
 			dataType = "&lt;" + dataType + "&gt;";
 		}
-		
+
 		stringRepresentation = '"' + stringRepresentation + '"<sup>^^' + dataType + '</sup>';
 	}
 	return stringRepresentation;
@@ -275,7 +275,7 @@ var getCellContent = function(yasr, plugin, bindings, sparqlVar, context) {
 	if (binding.type == "uri") {
 		var title = null;
 		var href = binding.value;
-		var visibleString = href;  
+		var visibleString = href;
 		if (context.usedPrefixes) {
 			for (var prefix in context.usedPrefixes) {
 				if (visibleString.indexOf(context.usedPrefixes[prefix]) == 0) {
@@ -408,7 +408,7 @@ var addPrefLabel = function(td) {
 			} else {
 				addEmptyTitle();
 			}
-			
+
 		})
 		.fail(addEmptyTitle);
 };
@@ -421,15 +421,15 @@ var openCellUriInNewWindow = function(cell) {
 
 /**
  * Defaults for table plugin
- * 
+ *
  * @type object
  * @attribute YASR.plugins.table.defaults
  */
 root.defaults = {
-	
+
 	/**
 	 * Draw the cell content, from a given binding
-	 * 
+	 *
 	 * @property drawCellContent
 	 * @param binding {object}
 	 * @type function
@@ -439,11 +439,11 @@ root.defaults = {
 	getCellContent: getCellContentCustom,
 
 	highlightLiteralCellResult: function () {},
-	
+
 	persistency: {
 		tableLength: "tableLength",
 	},
-	
+
 	getColumns: function(yasr, plugin) {
 		var includeVariable = function(variableToCheck) {
 			if (!plugin.options.mergeLabelsWithUris) return true;
@@ -457,34 +457,35 @@ root.defaults = {
 			}
 			return true;
 		};
-		
+
 		var cols = [];
 		cols.push({"title": ""});//row numbers column
 		yasr.results.getVariables().forEach(function(variable) {
-			cols.push({"title": "<span>" + variable + "</span>", "visible": includeVariable(variable)});
+			var headerLabel = yasr.options.translateHeaders ? yasr.translate('yasr.headers.labels.' + variable) : variable;
+			cols.push({"title": "<span>" + headerLabel + "</span>", "visible": includeVariable(variable)});
 		});
 		return cols;
 	},
 	/**
 	 * Try to fetch the label representation for each URI, using the preflabel.org services. (fetching occurs when hovering over the cell)
-	 * 
+	 *
 	 * @property fetchTitlesFromPreflabel
 	 * @type boolean
 	 * @default true
 	 */
 	fetchTitlesFromPreflabel: true,
-	
+
 	mergeLabelsWithUris: false,
 	/**
 	 * Set a number of handlers for the table
-	 * 
+	 *
 	 * @property handlers
 	 * @type object
 	 */
 	callbacks: {
 		/**
 		 * Mouse-enter-cell event
-		 * 
+		 *
 		 * @property handlers.onCellMouseEnter
 		 * @type function
 		 * @param td-element
@@ -493,7 +494,7 @@ root.defaults = {
 		onCellMouseEnter: null,
 		/**
 		 * Mouse-leave-cell event
-		 * 
+		 *
 		 * @property handlers.onCellMouseLeave
 		 * @type function
 		 * @param td-element
@@ -502,7 +503,7 @@ root.defaults = {
 		onCellMouseLeave: null,
 		/**
 		 * Cell clicked event
-		 * 
+		 *
 		 * @property handlers.onCellClick
 		 * @type function
 		 * @param td-element
@@ -511,9 +512,9 @@ root.defaults = {
 		onCellClick: null
 	},
 	/**
-	 * This plugin uses the datatables jquery plugin (See datatables.net). For any datatables specific defaults, change this object. 
+	 * This plugin uses the datatables jquery plugin (See datatables.net). For any datatables specific defaults, change this object.
 	 * See the datatables reference for more information
-	 * 
+	 *
 	 * @property datatable
 	 * @type object
 	 */
@@ -530,7 +531,7 @@ root.defaults = {
         	for ( var i = 0; i < oSettings.aiDisplay.length; i++) {
 				$('td:eq(0)',oSettings.aoData[oSettings.aiDisplay[i]].nTr).html(i + 1);
 			}
-        	
+
         	//Hide pagination when we have a single page
         	var activePaginateButton = false;
         	$(oSettings.nTableWrapper).find(".paginate_button").each(function() {

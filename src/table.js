@@ -461,7 +461,7 @@ root.defaults = {
 		var cols = [];
 		cols.push({"title": ""});//row numbers column
 		yasr.results.getVariables().forEach(function(variable) {
-			var headerLabel = yasr.options.translateHeaders ? yasr.translate('yasr.headers.labels.' + variable) : variable;
+			var headerLabel = yasr.translate('yasr.headers.labels.' + variable);
 			cols.push({"title": "<span>" + headerLabel + "</span>", "visible": includeVariable(variable)});
 		});
 		return cols;

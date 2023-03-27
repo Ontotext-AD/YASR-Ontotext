@@ -1,5 +1,5 @@
 'use strict';
-let translate = require('./translate.js')();
+let translate = require('./translate.js').translate;
 let download = translate('yasr.download.as.label');
 module.exports = {
     selectSaveAsDropDown: '<div class="saveAsDropDown btn-group pull-right">' + 

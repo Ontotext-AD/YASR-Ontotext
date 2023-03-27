@@ -1,6 +1,6 @@
 module.exports = {
 	GoogleTypeException: function (foundTypes, varName) {
-		let translate = require('./translate.js')('');
+		let translate = require('./translate.js').translate;
 		this.foundTypes = foundTypes;
 		this.varName = varName;
 		this.toString = function () {

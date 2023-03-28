@@ -21,6 +21,9 @@ var translate = function (key, parameter) {
         translation = translation.replace(`{{${parameter.key}}}`, parameter.value)
     }
     if (translation) {
+        if(parameter) {
+            translation = translation.replace(`{{${parameter.key}}}`, parameter.value)
+        }
         return translation;
     }
     console.warn('Missing translation for [' + key + '] key in [' + selectedLang + '] locale');

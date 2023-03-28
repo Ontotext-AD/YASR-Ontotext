@@ -1,7 +1,7 @@
 'use strict';
 /**
  * todo: chart height as option
- * 
+ *
  */
 var $ = require('jquery'),
 	utils = require('./utils.js'),
@@ -24,10 +24,10 @@ var root = module.exports = function(yasr){
 	if (yasr.options.gchart.chartConfig == null) {
 		yasr.options.gchart.chartConfig = yUtils.storage.get(persistencyIdChartConfig);
 	}
-	
-	
+
+
 	var editor = null;
-	
+
 	var initEditor = function(callback) {
 		var google = require('google');
 		editor = new google.visualization.ChartEditor();
@@ -39,7 +39,7 @@ var root = module.exports = function(yasr){
 
 					yUtils.storage.set(persistencyIdMotionChart, yasr.options.gchart.motionChartState);
 					chartWrapper.setOption("state", yasr.options.gchart.motionChartState);
-					
+
 					google.visualization.events.addListener(chartWrapper, 'ready', function(){
 						var motionChart;
 						motionChart = chartWrapper.getChart();
@@ -52,7 +52,7 @@ var root = module.exports = function(yasr){
 				tmp = chartWrapper.getDataTable();
 				chartWrapper.setDataTable(null);
 				yasr.options.gchart.chartConfig = chartWrapper.toJSON();
-				
+
 				yUtils.storage.set(persistencyIdChartConfig, yasr.options.gchart.chartConfig);
 				chartWrapper.setDataTable(tmp);
 				// Fix for OWLIM-1971
@@ -65,7 +65,7 @@ var root = module.exports = function(yasr){
 	};
 
 	return {
-		name: "Google Chart",
+		name: 'Google Chart',
 		nameLabel: 'yasr.gchart.chart_name',
 		hideFromSelection: false,
 		priority: 7,
@@ -77,7 +77,7 @@ var root = module.exports = function(yasr){
 			if (!yasr.results) return null;
 			var svgEl = yasr.resultsContainer.find('svg');
 			if (svgEl.length > 0) {
-			
+
 				return {
 					getContent: function(){
 						if (svgEl[0].outerHTML) {
@@ -103,16 +103,16 @@ var root = module.exports = function(yasr){
 					contentType: "text/csv",
 					buttonTitle: yasr.translate('yasr.btn.title.csv')
 				};
-			} 
+			}
 		},
 		getEmbedHtml: function() {
 			if (!yasr.results) return null;
-			
+
 			var svgEl = yasr.resultsContainer.find('svg')
 				.clone()//create clone, as we'd like to remove height/width attributes
 				.css('height', '').css('width','');
 			if (svgEl.length == 0) return null;
-			
+
 			var htmlString = svgEl[0].outerHTML;
 			if (!htmlString) {
 				//outerHTML not supported. use workaround
@@ -149,7 +149,7 @@ var root = module.exports = function(yasr){
 				);
 				var dataTable = new google.visualization.DataTable();
 				var jsonResults = yasr.results.getAsJson();
-				
+
 				jsonResults.head.vars.forEach(function(variable) {
 					var type = 'string';
 					try {
@@ -178,7 +178,7 @@ var root = module.exports = function(yasr){
 				if (yasr.options.gchart.chartConfig) {
 
 					wrapper = new google.visualization.ChartWrapper(yasr.options.gchart.chartConfig);
-					
+
 					if (wrapper.getChartType() === "MotionChart" && yasr.options.gchart.motionChartState != null) {
 						wrapper.setOption("state", yasr.options.gchart.motionChartState);
 						google.visualization.events.addListener(wrapper, 'ready', function(){
@@ -203,7 +203,7 @@ var root = module.exports = function(yasr){
 				wrapper.draw();
 				yasr.updateHeader();
 			}
-			
+
 			if (!require('google') || !require('google').visualization || !editor) {
 				require('./gChartLoader.js')
 					.on('done', function() {

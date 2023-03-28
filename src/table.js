@@ -26,7 +26,7 @@ var root = module.exports = function(yasr) {
 	var table = null;
 	var plugin = {
 		id: 'table',
-		name: "Table",
+		name: yasr.translate('yasr.table'),
 		nameLabel: 'yasr.table',
 		getPriority: 10,
 	};

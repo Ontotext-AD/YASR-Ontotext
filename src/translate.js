@@ -27,11 +27,11 @@ var translate = function (key, parameter) {
     return key;
 };
 
-function init(lang) {
-    if (lang) {
-        currentLang = lang;
-    }
-    return translate;
+function setLanguage(lang) {
+    currentLang = lang;
 }
 
-module.exports = init;
+module.exports = {
+    setLanguage,
+    translate
+}

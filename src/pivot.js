@@ -9,7 +9,7 @@ require('pivottable');
 if (!$.fn.pivotUI) throw new Error("Pivot lib not loaded");
 var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
-    yasr.translate = require('./translate.js')(yasr.options.locale);
+    yasr.translate = require('./translate.js').translate;
 
 	var plugin = {
 		id: 'pivot',

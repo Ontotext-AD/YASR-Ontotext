@@ -23,10 +23,12 @@ var root = module.exports = function(parent, options, queryResults) {
 	yasr.storage = utils.storage;
 
     // load and register the translation service providing the locale config
-    yasr.translate = require('./translate.js')(yasr.options.locale);
+	yasr.translationService = require('./translate.js');
+	yasr.translationService.setLanguage(yasr.options.locale);
+	yasr.translate = yasr.translationService.translate;
 
 	yasr.changeLanguage = function (lang) {
-		yasr.translate = require('./translate.js')(lang);
+		yasr.translationService.setLanguage(lang);
 		let downLoadBtn = document.getElementById('saveAsBtn');
 		if (downLoadBtn) {
 			downLoadBtn.innerText = yasr.translate('yasr.download.as.label');
@@ -186,10 +188,10 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.header.find('.saveAsDropDown').remove();
 		var qType = window.editor.getQueryType();
 		if ('SELECT' == qType) {
-			saveAsDropDown = $(require('./extensions.js').selectSaveAsDropDown);
+			saveAsDropDown = $(require('./extensions.js').getSelectSaveAsDropDown());
 		}
 		if ('CONSTRUCT' == qType || 'DESCRIBE' == qType) {
-			saveAsDropDown = $(require('./extensions.js').graphSaveAsDropDown);
+			saveAsDropDown = $(require('./extensions.js').getGraphSaveAsDropDown());
 		}
 		if (saveAsDropDown) {
 			saveAsDropDown.find(".format").click(function () {

@@ -21,7 +21,7 @@ require("../lib/colResizable-1.4.js");
  */
 var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
-    yasr.translate = require('./translate.js')(yasr.options.locale);
+    yasr.translate = require('./translate.js').translate;
 
 	var table = null;
 	var plugin = {
@@ -149,7 +149,7 @@ var root = module.exports = function(yasr) {
 		var pLength = yutils.storage.get(tableLengthPersistencyId);
 		if (pLength) dataTableConfig.pageLength = pLength;
 
-		dataTableConfig.translate = require('./translate.js')(yasr.options.locale);
+		dataTableConfig.translate = require('./translate.js').translate;
 
 		table.DataTable($.extend(true, {}, dataTableConfig));//make copy. datatables adds properties for backwards compatability reasons, and don't want this cluttering our own
 

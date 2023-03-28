@@ -1,6 +1,6 @@
 #Intellij Idea project files
 *.iml
-.idea
+.idea/
 
 .project
 .settings

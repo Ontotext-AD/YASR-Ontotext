@@ -13,7 +13,7 @@ var $ = require("jquery");
  */
 var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
-    yasr.translate = require('./translate.js')(yasr.options.locale);
+    yasr.translate = require('./translate.js').translate;
 
 	var container = $("<div class='booleanBootResult'></div>");
 	const plugin = {

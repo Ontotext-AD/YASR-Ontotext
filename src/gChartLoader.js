@@ -5,7 +5,7 @@ var loadingMain = false;
 var loadingFailed = false;
 var loader = function() {
     // load and register the translation service providing the locale config
-	let translate = require('./translate.js')('');
+	let translate = require('./translate.js').translate;
 
 	EventEmitter.call(this);
 	var mod = this;

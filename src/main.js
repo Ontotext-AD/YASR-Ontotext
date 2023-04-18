@@ -7,7 +7,7 @@ require('./jquery/extendJquery.js');
 
 /**
  * Main YASR constructor
- * 
+ *
  * @constructor
  * @param {DOM-Element} parent element to append editor to.
  * @param {object} settings
@@ -63,22 +63,22 @@ var root = module.exports = function(parent, options, queryResults) {
 			return null;
 		}
 	};
-	
+
 	if (yasr.options.useGoogleCharts) {
 		//pre-load google-loader
 		require('./gChartLoader.js')
 			.once('initError', function(){yasr.options.useGoogleCharts = false})
 			.init();
 	}
-	
+
 	//first initialize plugins
 	yasr.plugins = {};
 	for (var pluginName in root.plugins) {
-		if (!yasr.options.useGoogleCharts && pluginName == "gchart") continue; 
+		if (!yasr.options.useGoogleCharts && pluginName == "gchart") continue;
 		yasr.plugins[pluginName] = new root.plugins[pluginName](yasr);
 	}
-	
-	
+
+
 	yasr.updateHeader = function() {
 		var downloadIcon = yasr.header.find(".yasr_downloadIcon")
 				.removeAttr("title");//and remove previous titles
@@ -110,7 +110,7 @@ var root = module.exports = function(parent, options, queryResults) {
 					this.style.fill = "gray";
 				});
 			}
-			
+
 			//Manage embed button
 			var link = null;
 			if (outputPlugin.getEmbedHtml) link = outputPlugin.getEmbedHtml();
@@ -163,17 +163,17 @@ var root = module.exports = function(parent, options, queryResults) {
 		yasr.header.find('.yasr_btnGroup .select_' + selectedOutput).parent().addClass('active');
 		return true;
 	}
-	
+
 	var disableOutputs = function(outputs) {
 		//first enable everything.
 		yasr.header.find('.yasr_btnGroup li').removeClass('disabled');
-		
-		
+
+
 		//now disable the outputs passed as param
 		outputs.forEach(function(outputName) {
 			yasr.header.find('.yasr_btnGroup .select_' + outputName).parent().addClass('disabled');
 		});
-		
+
 	};
 	yasr.somethingDrawn = function() {
 		return !yasr.resultsContainer.is(":empty");
@@ -197,7 +197,7 @@ var root = module.exports = function(parent, options, queryResults) {
 			saveAsDropDown.find(".format").click(function () {
 				yasr.getQueryResultsAsFormat($(this).data("accepts"));
 			});
-		
+
 			yasr.header.append(saveAsDropDown);
 		}
 	}
@@ -220,10 +220,12 @@ var root = module.exports = function(parent, options, queryResults) {
 			if (dataOrJqXhr.responseJSON.results && dataOrJqXhr.responseJSON.results.bindings) {
 				var result = dataOrJqXhr.responseJSON.results.bindings[0];
 				var vars = dataOrJqXhr.responseJSON.head.vars;
-				var bindingVars = Object.keys(result).filter(function(b) {return vars.indexOf(b) > -1} )
+				var bindingVars = Object.keys(result).filter(function (b) {
+					return vars.indexOf(b) > -1 && $.isNumeric(result[b].value);
+				});
 				if (bindingVars.length > 0) {
 					yasr.allCount = result[bindingVars[0]].value;
-				} 
+				}
 			}
 		}
 	}
@@ -247,10 +249,10 @@ var root = module.exports = function(parent, options, queryResults) {
 			yasr.results.getException = function() {
 				return {status: 403, statusText: "Forbidden", responseText: yasr.translate('yasr.http.403')};
 			}
-		} 
+		}
 		yasr.draw();
 
-		
+
 		//store if needed
 		if (yasr.options.persistency) {
 			var resultsId = yasr.getPersistencyId(yasr.options.persistency.results.key);
@@ -288,7 +290,7 @@ var root = module.exports = function(parent, options, queryResults) {
 		}
 		$toggableWarning.show(400);
 	};
-	
+
 	var blobDownloadSupported = null;
 	var checkBlobDownloadSupported = function() {
 		if (blobDownloadSupported === null) {
@@ -317,16 +319,16 @@ var root = module.exports = function(parent, options, queryResults) {
 					li.addClass("active");
 					//set and draw output
 					yasr.options.output = pluginName;
-					
+
 					//store if needed
 					var selectorId = yasr.getPersistencyId(yasr.options.persistency.outputSelector);
 					if (selectorId) {
 						utils.storage.set(selectorId, yasr.options.output, "month");
 					}
-					
+
 					//close warning if there is any
 					if ($toggableWarning) $toggableWarning.hide(400);
-					
+
 					yasr.draw(pluginName);
 					yasr.updateHeader();
 				})
@@ -334,7 +336,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				li.appendTo(menuUl);
 				if (yasr.options.output == pluginName) li.addClass("active");
 			});
-			
+
 			if (menuUl.children().length > 1) yasr.header.append(menuUl);
 		};
 		var drawDownloadIcon = function() {
@@ -388,7 +390,7 @@ var root = module.exports = function(parent, options, queryResults) {
 				var currentPlugin = yasr.plugins[yasr.options.output];
 				if (currentPlugin && currentPlugin.getEmbedHtml) {
 					var embedLink = currentPlugin.getEmbedHtml();
-					
+
 					event.stopPropagation();
 					var popup = $("<div class='yasr_embedPopup'></div>").appendTo(yasr.header);
 					$('html').click(function() {
@@ -411,14 +413,14 @@ var root = module.exports = function(parent, options, queryResults) {
 					        return false;
 					    });
 					});
-					
+
 					popup.empty().append(prePopup);
 					var positions = embedBtn.position();
 					var top = (positions.top + embedBtn.outerHeight()) + 'px';
 					var left = Math.max(((positions.left + embedBtn.outerWidth()) - popup.outerWidth()), 0) + 'px';
-					
+
 					popup.css("top",top).css("left", left);
-					
+
 				}
 			})
 			yasr.header.append(embedBtn);
@@ -428,9 +430,9 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (yasr.options.drawDownloadIcon && checkBlobDownloadSupported()) drawDownloadIcon();//only draw when it's supported
 		// drawEmbedButton();
 	};
-	
-	
-	
+
+
+
 
 	/**
 	 * postprocess
@@ -449,8 +451,8 @@ var root = module.exports = function(parent, options, queryResults) {
 		if (resultsId) {
 			fromStorage = utils.storage.get(resultsId);
 		}
-		
-		
+
+
 		if (!fromStorage && yasr.options.persistency.results.id) {
 			//deprecated! But keep for backwards compatability
 			//if results are stored under old ID. Fetch the results, and delete that key (results can be large, and clutter space)
@@ -469,10 +471,10 @@ var root = module.exports = function(parent, options, queryResults) {
 			}
 		}
 	}
-	
+
 	if (queryResults) {
 		yasr.setResponse(queryResults);
-	} 
+	}
 	yasr.updateHeader();
 
 	const resizeEvent = 'resize.' + new Date().getTime();
@@ -502,7 +504,7 @@ root.registerOutput = function(name, constructor) {
 /**
  * The default options of YASR. Either change the default options by setting YASR.defaults, or by
  * passing your own options as second argument to the YASR constructor
- * 
+ *
  * @attribute YASR.defaults
  */
 root.defaults = require('./defaults.js');

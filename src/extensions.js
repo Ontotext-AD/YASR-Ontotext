@@ -52,6 +52,9 @@ function getGraphSaveAsDropDown() {
                         '<a class="format dropdown-item" data-accepts="application/ld+json" href="#">JSON-LD</a>' +
                     '</li>' +
                     '<li>' +
+                        '<a class="format dropdown-item" data-accepts="application/x-ld+ndjson" href="#">NDJSON-LD</a>' +
+                    '</li>' +
+                    '<li>' +
                         '<a class="format dropdown-item" data-accepts="application/rdf+xml" href="#">RDF-XML</a>' +
                     '</li>' +
                     '<li>' +

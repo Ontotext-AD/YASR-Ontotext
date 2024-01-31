@@ -9,7 +9,8 @@ require('pivottable');
 if (!$.fn.pivotUI) throw new Error("Pivot lib not loaded");
 var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
-    yasr.translate = require('./translate.js').translate;
+    yasr.translateService = require('./translate.js');
+	$.pivotUtilities.locales = require('./pivot.fr.js');
 
 	var plugin = {
 		id: 'pivot',
@@ -38,7 +39,7 @@ var root = module.exports = function(yasr) {
 		var variables = yasr.results.getVariables();
 		if (!options.mergeLabelsWithUris) return variables;
 		var shownVariables = [];
-		
+
 		mergeLabelPostfix = (typeof options.mergeLabelsWithUris == "string"? options.mergeLabelsWithUris: "Label");
 		variables.forEach(function(variable){
 			if (variable.indexOf(mergeLabelPostfix, variable.length - mergeLabelPostfix.length) !== -1) {
@@ -52,7 +53,7 @@ var root = module.exports = function(yasr) {
 		});
 		return shownVariables;
 	};
-	
+
 	var formatForPivot = function(callback) {
 		var vars = getShownVariables();
 		var usedPrefixes = null;
@@ -76,10 +77,10 @@ var root = module.exports = function(yasr) {
 			});
 			callback(rowObj);
 		});
-	} 
-	
+	}
+
 	var persistencyId = yasr.getPersistencyId(options.persistencyId);
-	
+
 	var getStoredSettings = function() {
 		var settings = yUtils.storage.get(persistencyId);
 		//validate settings. we may have different variables, or renderers might be gone
@@ -87,11 +88,11 @@ var root = module.exports = function(yasr) {
 			var vars = yasr.results.getVariables();
 			var keepColsAndRows = true;
 			settings.cols.forEach(function(variable) {
-				if (vars.indexOf(variable) < 0) keepColsAndRows = false; 
+				if (vars.indexOf(variable) < 0) keepColsAndRows = false;
 			});
 			if (keepColsAndRows) {
 				settings.rows.forEach(function(variable) {
-					if (vars.indexOf(variable) < 0) keepColsAndRows = false; 
+					if (vars.indexOf(variable) < 0) keepColsAndRows = false;
 				});
 			}
 			if (!keepColsAndRows) {
@@ -125,17 +126,17 @@ var root = module.exports = function(yasr) {
 				}
 				yasr.updateHeader();
 			};
-			
-			
+
+
 			var openGchartBtn = $('<button>', {class: 'openPivotGchart yasr_btn'})
-			.text(yasr.translate('yasr.chart.config'))
+			.text(yasr.translateService.translate('yasr.chart.config'))
 			.click(function() {
 				$pivotWrapper.find('div[dir="ltr"]').dblclick();
 			}).appendTo(yasr.resultsContainer);
 			$pivotWrapper = $('<div>', {class: 'pivotTable'}).appendTo($(yasr.resultsContainer));
-			
+
 			var settings = $.extend(true, {}, getStoredSettings(), root.defaults.pivotTable);
-			
+
 			settings.onRefresh = (function() {
 			    var originalRefresh = settings.onRefresh;
 			    return function(pivotObj) {
@@ -143,27 +144,27 @@ var root = module.exports = function(yasr) {
 			    	if (originalRefresh) originalRefresh(pivotObj);
 			    };
 			})();
-			
-			window.pivot = $pivotWrapper.pivotUI(formatForPivot, settings);
-	
+
+			window.pivot = $pivotWrapper.pivotUI(formatForPivot, settings, false, yasr.translateService.getLanguage());
+
 			/**
 			 * post process
 			 */
 			//use 'move' handler for variables. This removes the 'filter' button though. Might want to re-enable this in the future
 			var icon = $(yUtils.svg.getElement(imgs.move));
 			$pivotWrapper.find('.pvtTriangle').replaceWith(icon);
-			
+
 			//add headers to selector rows
-			$('.pvtCols').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.columns')));
-			$('.pvtRows').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.rows')));
-			$('.pvtUnused').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.variables')));
-			$('.pvtVals').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translate('yasr.headers.cells')));
-			
+			$('.pvtCols').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translateService.translate('yasr.headers.columns')));
+			$('.pvtRows').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translateService.translate('yasr.headers.rows')));
+			$('.pvtUnused').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translateService.translate('yasr.headers.variables')));
+			$('.pvtVals').prepend($('<div>', {class: 'containerHeader'}).text(yasr.translateService.translate('yasr.headers.cells')));
+
 			//hmmm, directly after the callback finishes (i.e., directly after this line), the svg is draw.
 			//just use a short timeout to update the header
 			setTimeout(yasr.updateHeader, 400);
 		}
-		
+
 		if (yasr.options.useGoogleCharts && options.useGoogleCharts && !$.pivotUtilities.gchart_renderers) {
 			require('./gChartLoader.js')
 				.on('done', function() {
@@ -191,12 +192,12 @@ var root = module.exports = function(yasr) {
 	plugin.canHandleResults = function(){
 		return yasr.results && yasr.results.getVariables && yasr.results.getVariables() && yasr.results.getVariables().length > 0;
 	};
-	
+
 	plugin.getDownloadInfo =  function() {
 		if (!yasr.results) return null;
 		var svgEl = yasr.resultsContainer.find('.pvtRendererArea svg');
 		if (svgEl.length > 0) {
-		
+
 			return {
 				getContent: function(){
 					if (svgEl[0].outerHTML) {
@@ -206,13 +207,13 @@ var root = module.exports = function(yasr) {
 						return $('<div>').append(svgEl.clone()).html();
 					}
 				},
-				
+
 				filename: "queryResults.svg",
 				contentType: "image/svg+xml",
-				buttonTitle: yasr.translate('yasr.btn.title.svg')
+				buttonTitle: yasr.translateService.translate('yasr.btn.title.svg')
 			};
-		} 
-		
+		}
+
 		//ok, not a svg. is it a table?
 		var $table = yasr.resultsContainer.find('.pvtRendererArea table');
 		if ($table.length > 0) {
@@ -222,20 +223,20 @@ var root = module.exports = function(yasr) {
 				},
 				filename: "queryResults.csv",
 				contentType: "text/csv",
-				buttonTitle: yasr.translate('yasr.btn.title.csv')
+				buttonTitle: yasr.translateService.translate('yasr.btn.title.csv')
 			};
-		} 
-		
+		}
+
 	};
 
 	plugin.getEmbedHtml = function() {
 		if (!yasr.results) return null;
-		
+
 		var svgEl = yasr.resultsContainer.find('.pvtRendererArea svg')
 			.clone()//create clone, as we'd like to remove height/width attributes
 			.css('height', '').css('width','');
 		if (svgEl.length == 0) return null;
-		
+
 		var htmlString = svgEl[0].outerHTML;
 		if (!htmlString) {
 			//outerHTML not supported. use workaround

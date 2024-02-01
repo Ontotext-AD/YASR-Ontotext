@@ -5,6 +5,10 @@ function getDownloadAsDropdownLabel() {
     return translate('yasr.download.as.label');
 }
 
+function getDropdownItemLabel(jsonKey) {
+    return translate(jsonKey);
+}
+
 function getSelectSaveAsDropDown() {
     return '<div class="saveAsDropDown btn-group pull-right">' +
                 '<button id="saveAsBtn" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" type="button">' +
@@ -33,7 +37,8 @@ function getSelectSaveAsDropDown() {
                         '<a class="format dropdown-item " data-accepts="text/x-tab-separated-values-star" href="#">TSV*</a>' +
                     '</li>' +
                     '<li>' +
-                        '<a class="format dropdown-item" data-accepts="application/x-binary-rdf-results-table" href="#">Binary RDF Results</a>' +
+                        '<a class="format dropdown-item" data-accepts="application/x-binary-rdf-results-table" href="#">' +
+                            getDropdownItemLabel('yasr.download.as.rdf.label') + '</a>' +
                     '</li>' +
                 '</ul>' +
             '</div>'

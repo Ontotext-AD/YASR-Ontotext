@@ -31,7 +31,12 @@ function setLanguage(lang) {
     currentLang = lang;
 }
 
+function getLanguage() {
+    return currentLang;
+}
+
 module.exports = {
     setLanguage,
+    getLanguage,
     translate
 }

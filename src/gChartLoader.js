@@ -60,6 +60,7 @@ var loader = function() {
 		var load = function() {
 			require('google').load("visualization", "1", {
 				packages : ["corechart", "charteditor" ],
+				language: window.editor.options.locale,
 				callback : function(){mod.emit('done')}
 			})
 		}

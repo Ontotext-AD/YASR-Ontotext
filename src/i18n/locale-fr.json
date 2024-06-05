@@ -29,6 +29,7 @@
   "yasr.btn.label.save": "Obtenir un extrait HTML pour intégrer les résultats dans une page web",
   "yasr.download.as.label": "Téléchargement",
   "yasr.download.as.rdf.label": "Résultats en RDF binaire",
+  "yasr.download.rdf.label": "RDF binaire",
   "yasr.btn.title.svg": "Télécharger l'image SVG",
   "yasr.btn.title.csv": "Télécharger comme CSV",
   "yasr.btn.title.raw": "Télécharger la réponse brute",

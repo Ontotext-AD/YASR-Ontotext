@@ -20,6 +20,10 @@ var root = module.exports = function(yasr) {
 	};
 
 	const customOptions = yasr.options.pluginsOptions ? yasr.options.pluginsOptions[plugin.id] : {};
+	// All renderer names for Google charts in every language are added here
+	const gchartRendererNames = ["line chart", "bar chart", "stacked bar chart", "area chart", "scatter chart",
+		"graphique lin&eacute;aire", "graphique &agrave; barres", "graphique &agrave; barres empil&eacute;es", "graphique en aires", "nuage de points"]
+
 	var options = plugin.options = $.extend(true, {}, root.defaults, customOptions);
 
 	if (options.useD3Chart) {
@@ -119,7 +123,8 @@ var root = module.exports = function(yasr) {
 					}
 					yUtils.storage.set(persistencyId, storeSettings, "month");
 				}
-				if (pivotObj.rendererName.toLowerCase().indexOf(' chart') >= 0) {
+
+				if (gchartRendererNames.indexOf(pivotObj.rendererName.toLowerCase()) >= 0) {
 					openGchartBtn.show();
 				} else {
 					openGchartBtn.hide();

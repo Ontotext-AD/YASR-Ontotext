@@ -87,7 +87,8 @@ function getGraphSaveAsDropDown() {
                         '<a class="format dropdown-item" data-accepts="application/x-trigstar" href="#">TriG*</a>' +
                     '</li>' +
                     '<li>' +
-                        '<a class="format dropdown-item" data-accepts="application/x-binary-rdf" href="#">Binary RDF</a>' +
+                        '<a class="format dropdown-item" data-accepts="application/x-binary-rdf" href="#">' +
+                            getDropdownItemLabel('yasr.download.rdf.label') + '</a>' +
                     '</li>' +
                 '</ul>' +
             '</div>'

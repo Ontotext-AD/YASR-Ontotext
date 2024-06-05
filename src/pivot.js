@@ -5,12 +5,12 @@ var $ = require("jquery"),
 	imgs = require('./imgs.js');
 require('jquery-ui/sortable');
 require('pivottable');
+require("./pivot.fr");
 
 if (!$.fn.pivotUI) throw new Error("Pivot lib not loaded");
 var root = module.exports = function(yasr) {
     // load and register the translation service providing the locale config
     yasr.translateService = require('./translate.js');
-	$.pivotUtilities.locales = require('./pivot.fr.js');
 
 	var plugin = {
 		id: 'pivot',
@@ -144,6 +144,19 @@ var root = module.exports = function(yasr) {
 			    	if (originalRefresh) originalRefresh(pivotObj);
 			    };
 			})();
+			$.pivotUtilities.locales.fr.renderers =
+				{
+					"Tableau": $.pivotUtilities.renderers["Table"],
+					"Tableau &agrave; barres": $.pivotUtilities.renderers["Table Barchart"],
+					"Carte de chaleur": $.pivotUtilities.renderers["Heatmap"],
+					"Carte de chaleur par ligne": $.pivotUtilities.renderers["Row Heatmap"],
+					"Carte de chaleur par colonne": $.pivotUtilities.renderers["Col Heatmap"],
+					"Graphique lin&eacute;aire": $.pivotUtilities.renderers["Line Chart"],
+					"Graphique &agrave; barres": $.pivotUtilities.renderers["Bar Chart"],
+					"Graphique &agrave; barres empil&eacute;es": $.pivotUtilities.renderers["Stacked Bar Chart"],
+					"Graphique en aires": $.pivotUtilities.renderers["Area Chart"],
+					"Nuage de points": $.pivotUtilities.renderers["Scatter Chart"]
+				}
 
 			window.pivot = $pivotWrapper.pivotUI(formatForPivot, settings, false, yasr.translateService.getLanguage());
 

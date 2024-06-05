@@ -63,18 +63,7 @@
                 "Compte comme fraction de lignes": tpl.fractionOf(tpl.count(), "row", frFmtPct),
                 "Compte comme fraction de colonnes": tpl.fractionOf(tpl.count(), "col", frFmtPct)
             },
-            renderers: {
-                "Tableau": $.pivotUtilities.renderers["Table"],
-                "Tableau &agrave; barres": $.pivotUtilities.renderers["Table Barchart"],
-                "Carte de chaleur": $.pivotUtilities.renderers["Heatmap"],
-                "Carte de chaleur par ligne": $.pivotUtilities.renderers["Row Heatmap"],
-                "Carte de chaleur par colonne": $.pivotUtilities.renderers["Col Heatmap"],
-                "Graphique lin&eacute;aire": $.pivotUtilities.renderers["Line Chart"],
-                "Graphique &agrave; barres": $.pivotUtilities.renderers["Bar Chart"],
-                "Graphique &agrave; barres empil&eacute;es": $.pivotUtilities.renderers["Stacked Bar Chart"],
-                "Graphique en aires": $.pivotUtilities.renderers["Area Chart"],
-                "Nuage de points": $.pivotUtilities.renderers["Scatter Chart"]
-            }
+            renderers: {}
         };
     });
 

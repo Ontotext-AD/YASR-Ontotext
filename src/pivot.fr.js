@@ -45,31 +45,25 @@
                 by: "par"
             },
             aggregators: {
-                "Nombre": tpl.count(frFmtInt),
-                "Nombre de valeurs uniques": tpl.countUnique(frFmtInt),
-                "Liste de valeurs uniques": tpl.listUnique(", "),
+                "Compte": tpl.count(frFmtInt),
+                "Compte des valeurs uniques": tpl.countUnique(frFmtInt),
+                "Liste des valeurs uniques": tpl.listUnique(", "),
                 "Somme": tpl.sum(frFmt),
-                "Somme en entiers": tpl.sum(frFmtInt),
+                "Somme des entiers": tpl.sum(frFmtInt),
                 "Moyenne": tpl.average(frFmt),
                 "Minimum": tpl.min(frFmt),
                 "Maximum": tpl.max(frFmt),
                 "Ratio de sommes": tpl.sumOverSum(frFmt),
-                "Borne sup&eacute;rieure 80%": tpl.sumOverSumBound80(true, frFmt),
-                "Borne inf&eacute;rieure 80%": tpl.sumOverSumBound80(false, frFmt),
-                "Somme en proportion du totale": tpl.fractionOf(tpl.sum(), "total", frFmtPct),
-                "Somme en proportion de la ligne": tpl.fractionOf(tpl.sum(), "row", frFmtPct),
-                "Somme en proportion de la colonne": tpl.fractionOf(tpl.sum(), "col", frFmtPct),
-                "Nombre en proportion du totale": tpl.fractionOf(tpl.count(), "total", frFmtPct),
-                "Nombre en proportion de la ligne": tpl.fractionOf(tpl.count(), "row", frFmtPct),
-                "Nombre en proportion de la colonne": tpl.fractionOf(tpl.count(), "col", frFmtPct)
+                "Limite sup&eacute;rieure 80%": tpl.sumOverSumBound80(true, frFmt),
+                "Limite inf&eacute;rieure 80%": tpl.sumOverSumBound80(false, frFmt),
+                "Somme comme fraction du total": tpl.fractionOf(tpl.sum(), "total", frFmtPct),
+                "Somme comme fraction de lignes": tpl.fractionOf(tpl.sum(), "row", frFmtPct),
+                "Somme comme fraction de colonnes": tpl.fractionOf(tpl.sum(), "col", frFmtPct),
+                "Compte comme fraction du total": tpl.fractionOf(tpl.count(), "total", frFmtPct),
+                "Compte comme fraction de lignes": tpl.fractionOf(tpl.count(), "row", frFmtPct),
+                "Compte comme fraction de colonnes": tpl.fractionOf(tpl.count(), "col", frFmtPct)
             },
-            renderers: {
-                "Tableau": $.pivotUtilities.renderers["Table"],
-                "Table avec barres": $.pivotUtilities.renderers["Table Barchart"],
-                "Carte de chaleur": $.pivotUtilities.renderers["Heatmap"],
-                "Carte de chaleur par ligne": $.pivotUtilities.renderers["Row Heatmap"],
-                "Carte de chaleur par colonne": $.pivotUtilities.renderers["Col Heatmap"]
-            }
+            renderers: {}
         };
     });
 

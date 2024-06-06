@@ -29,6 +29,7 @@
   "yasr.btn.label.save": "Get HTML snippet to embed results on a web page",
   "yasr.download.as.label": "Download as",
   "yasr.download.as.rdf.label": "Binary RDF Results",
+  "yasr.download.rdf.label": "Binary RDF",
   "yasr.btn.title.svg": "Download SVG Image",
   "yasr.btn.title.csv": "Download as CSV",
   "yasr.btn.title.raw": "Download raw response",
